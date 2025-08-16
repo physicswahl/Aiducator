@@ -1,0 +1,79 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Teams{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🏆 Teams</h2>
+        <a href="{% url 'create_team' %}" class="btn btn-primary">➕ Create Team</a>
+    </div>
+
+    {% if user_teams %}
+        <div class="mb-5">
+            <h4>Your Teams</h4>
+            <div class="row">
+                {% for team in user_teams %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ team.name }}</h5>
+                                <p class="card-text">{{ team.description|truncatewords:15 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        {{ team.members.count }} member{{ team.members.count|pluralize }}
+                                    </small>
+                                    <a href="{% url 'team_detail' team.id %}" class="btn btn-primary btn-sm">View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="mb-4">
+        <h4>All Teams</h4>
+        {% if teams %}
+            <div class="row">
+                {% for team in teams %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    {{ team.name }}
+                                    {% if team in user_teams %}
+                                        <span class="badge bg-success">Member</span>
+                                    {% endif %}
+                                </h5>
+                                <p class="card-text">{{ team.description|truncatewords:15 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        {{ team.members.count }} member{{ team.members.count|pluralize }} • 
+                                        {{ team.games.count }} game{{ team.games.count|pluralize }}
+                                    </small>
+                                    {% if team in user_teams %}
+                                        <a href="{% url 'team_detail' team.id %}" class="btn btn-primary btn-sm">View</a>
+                                    {% else %}
+                                        <a href="{% url 'team_detail' team.id %}" class="btn btn-outline-primary btn-sm">Info</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading">No Teams Found</h4>
+                <p>There are currently no teams in the system.</p>
+                <hr>
+                <p class="mb-0">
+                    <a href="{% url 'create_team' %}" class="btn btn-primary">Create the first team!</a>
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

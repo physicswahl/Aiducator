@@ -1,0 +1,44 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Delete Provider{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'provider_list' %}">Providers</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Delete {{ provider.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">Delete Provider</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h4 class="alert-heading">Warning!</h4>
+                        <p>You are about to delete the provider "<strong>{{ provider.name }}</strong>".</p>
+                        {% if provider.curriculum_set.count > 0 %}
+                            <hr>
+                            <p class="mb-0"><strong>This action will also delete {{ provider.curriculum_set.count }} curricula associated with this provider.</strong></p>
+                        {% endif %}
+                    </div>
+                    
+                    <p>This action cannot be undone. Are you sure you want to proceed?</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'provider_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-danger">Yes, Delete Provider</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

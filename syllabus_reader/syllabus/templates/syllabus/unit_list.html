@@ -1,0 +1,125 @@
+{% extends 'syllabus/base.html' %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-2">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'curriculum_list' %}">Curricula</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'syllabus_list' syllabus.curriculum.id %}">{{ syllabus.curriculum.title }}</a></li>
+            <li class="breadcrumb-item active">{{ syllabus.name }} - Units</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>📚 Units</h1>
+        <p class="text-muted">{{ syllabus.curriculum.title }} - {{ syllabus.name }}</p>
+    </div>
+    {% if can_modify_syllabus %}
+        <a href="{% url 'create_unit_for_syllabus' syllabus.id %}" class="btn btn-primary">
+            ➕ Create New Unit
+        </a>
+    {% endif %}
+</div>
+
+<!-- Units List -->
+<div class="row">
+    <div class="col-12">
+        {% for unit in units %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="card-title mb-2">
+                            📖 {{ unit.title }}
+                            {% if unit.ai_game %}
+                                <span class="badge bg-success ms-2">
+                                    <i class="fas fa-gamepad"></i> Game Available
+                                </span>
+                            {% endif %}
+                        </h5>
+                        <p class="card-text text-muted mb-2">{{ unit.description|default:"No description available"|truncatewords:30 }}</p>
+                        
+                        <!-- Unit Details -->
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-book"></i> 
+                                <strong>Syllabus:</strong> {{ syllabus.name }}
+                            </small>
+                            {% if unit.ai_game %}
+                                <small class="text-info">
+                                    <i class="fas fa-gamepad"></i> 
+                                    <strong>Game:</strong> {{ unit.ai_game.title }}
+                                </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group-vertical d-grid gap-2" role="group">
+                            {% if can_modify_syllabus %}
+                                <a href="{% url 'edit_unit' unit.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit Unit
+                                </a>
+                            {% endif %}
+                            
+                            {% if unit.ai_game %}
+                                {% if can_create_teams %}
+                                    <!-- Teacher View: Setup and Management -->
+                                    <div class="btn-group-vertical d-grid gap-1" role="group">
+                                        <a href="{% url 'teacher_game_instructions' unit.ai_game.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-chalkboard-teacher"></i> Teacher Instructions
+                                        </a>
+                                        <a href="{% url 'team_management_dashboard' %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-users-cog"></i> Manage Teams
+                                        </a>
+                                        <a href="{% url 'create_game_matchup' %}?game={{ unit.ai_game.id }}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-handshake"></i> Setup Matchup
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <!-- Student View: Play Game -->
+                                    <a href="{{ unit.ai_game.html_page_link }}" class="btn btn-success btn-sm" target="_blank">
+                                        <i class="fas fa-external-link-alt"></i> Play {{ unit.ai_game.title }}
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <span class="btn btn-outline-secondary btn-sm disabled">
+                                    <i class="fas fa-gamepad"></i> No Game Associated
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-book-open fa-3x text-muted"></i>
+                </div>
+                <h4 class="card-title">No units available for this syllabus yet</h4>
+                {% if can_modify_syllabus %}
+                    <p class="card-text text-muted">Get started by creating the first unit for this syllabus!</p>
+                    <a href="{% url 'create_unit_for_syllabus' syllabus.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create First Unit
+                    </a>
+                {% else %}
+                    <p class="card-text text-muted">Units will appear here once they are added by administrators.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'syllabus_list' syllabus.curriculum.id %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Syllabi
+    </a>
+</div>
+{% endblock %}

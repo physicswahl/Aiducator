@@ -1,0 +1,431 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}Step 4: Create Your Texts - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'phoneme_density/css/steps.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Simple Instructions Button - Left Side -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas" 
+                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
+            Instructions
+        </button>
+    </div>
+
+    <!-- Instructions Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+                <i class="fas fa-clipboard-list me-2"></i>Step 4 Instructions
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% for instruction in instructions %}
+                <div class="instruction-step mb-4">
+                    <h6 class="fw-bold text-primary">
+                        <i class="fas fa-circle-check me-2"></i>Step {{ forloop.counter }}
+                    </h6>
+                    <div class="instruction-content">
+                        {{ instruction.content|safe }}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Default Instructions</h6>
+                    <ul class="mb-0">
+                        <li>Choose a phoneme from the dropdown below</li>
+                        <li>Write 8 original texts, each using your chosen phoneme</li>
+                        <li>Aim for good phoneme density in your texts</li>
+                        <li>All texts must be approved by your teacher before proceeding</li>
+                        <li>Your texts are automatically saved as you type</li>
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <!-- Main Card -->
+            <div class="card step-card">
+                <!-- Card Header -->
+                <div class="card-header bg-primary text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h2 class="card-title mb-0">
+                                <i class="fas fa-edit me-2"></i>Step 4: Create Your Own Texts
+                            </h2>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="matchup-info">
+                                <small class="d-block opacity-75">{{ matchup.team1.name }} vs {{ matchup.team2.name }}</small>
+                                <small class="d-block opacity-75">Game: {{ matchup.ai_game.title }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Section -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="progress-info">
+                                    <span class="badge bg-light text-dark me-2">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Last saved: <span id="lastSavedTime">{% if team_data.updated_at %}{{ team_data.updated_at|date:"M d, H:i" }}{% else %}Never{% endif %}</span>
+                                    </span>
+                                    {% if team_data.approval_status %}
+                                        <span class="badge bg-{% if team_data.approval_status == 'approved' %}success{% elif team_data.approval_status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                            <i class="fas fa-{% if team_data.approval_status == 'approved' %}check{% elif team_data.approval_status == 'rejected' %}times{% else %}clock{% endif %} me-1"></i>
+                                            {{ team_data.approval_status|title }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="badge bg-light text-dark">Step 4 of 6</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Body -->
+                <div class="card-body">
+                    <form id="step4Form" method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Phoneme Selection -->
+                        <div class="phoneme-selector">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="phoneme-select" class="form-label fw-bold">Select Phoneme:</label>
+                                    <select class="form-select" id="phoneme-select" name="selected_phoneme" required>
+                                        <option value="">-- Choose a phoneme --</option>
+                                        {% for code, description in phoneme_choices %}
+                                        <option value="{{ code }}" {% if selected_phoneme == code %}selected{% endif %}>{{ description }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Text Boxes -->
+        <div class="row">
+            {% for text_info in text_data %}
+            <div class="col-md-6 mb-4">
+                <div class="text-box-container {% if text_info.approval_status == 'approved' %}approved{% elif text_info.approval_status == 'pending' %}pending{% endif %}" id="text-container-{{ forloop.counter }}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">
+                            <i class="fas fa-file-text me-2"></i>Text {{ forloop.counter }}
+                        </label>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if text_info.approval_status %}
+                            <span class="approval-status status-{{ text_info.approval_status }}">
+                                {% if text_info.approval_status == 'approved' %}
+                                    <i class="fas fa-check me-1"></i>Approved
+                                {% elif text_info.approval_status == 'pending' %}
+                                    <i class="fas fa-clock me-1"></i>Pending Review
+                                {% elif text_info.approval_status == 'rejected' %}
+                                    <i class="fas fa-times me-1"></i>Needs Revision
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                            <span class="badge bg-secondary" id="phonic-percentage-{{ forloop.counter }}">0.0%</span>
+                            <a href="{% url 'phoneme_density:text_analysis' matchup_id=matchup.id text_number=forloop.counter %}" 
+                               class="btn btn-sm btn-outline-info" 
+                               target="_blank"
+                               title="View phoneme analysis">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <textarea 
+                        class="form-control" 
+                        id="text-{{ forloop.counter }}" 
+                        name="text_{{ forloop.counter }}"
+                        rows="8"
+                        placeholder="Write your text here using your chosen phoneme..."
+                        data-text-number="{{ forloop.counter }}"
+                        {% if text_info.approval_status == 'approved' %}readonly{% endif %}
+                    >{{ text_info.content }}</textarea>
+                    
+                    {% if text_info.teacher_feedback %}
+                    <div class="alert alert-warning mt-2">
+                        <strong>Teacher Feedback:</strong> {{ text_info.teacher_feedback }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+            <div>
+                <a href="{% url 'phoneme_density:step3' matchup_id=matchup.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Step 3
+                </a>
+            </div>
+            <div>
+                <button type="button" class="btn btn-info me-2" onclick="saveTextsManually()">
+                    <i class="fas fa-save me-2"></i>Save Texts
+                </button>
+                {% if can_submit %}
+                <button type="submit" class="btn btn-success me-2" name="submit_for_review">
+                    <i class="fas fa-paper-plane me-2"></i>Submit for Teacher Review
+                </button>
+                {% endif %}
+                
+                {% if all_approved %}
+                <a href="{% url 'phoneme_density:step5' matchup_id=matchup.id %}" class="btn btn-primary">
+                    Continue to Step 5<i class="fas fa-arrow-right ms-2"></i>
+                </a>
+                {% else %}
+                <button type="button" class="btn btn-secondary" disabled>
+                    <i class="fas fa-lock me-2"></i>Complete Teacher Review First
+                </button>
+                {% endif %}
+            </div>
+        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedPhoneme = document.getElementById('phoneme-select').value;
+    let saveTimers = {};
+    
+    // Phoneme selection handler
+    document.getElementById('phoneme-select').addEventListener('change', function() {
+        selectedPhoneme = this.value;
+        updateAllPhonicPercentages();
+        saveData();
+    });
+    
+    // Text input handlers
+    for (let i = 1; i <= 8; i++) {
+        const textarea = document.getElementById(`text-${i}`);
+        if (textarea && !textarea.readOnly) {
+            textarea.addEventListener('input', function() {
+                updatePhonicPercentage(i);
+                scheduleAutoSave(i);
+            });
+        }
+        updatePhonicPercentage(i);
+    }
+    
+    function updatePhonicPercentage(textNumber) {
+        const textarea = document.getElementById(`text-${textNumber}`);
+        const percentageElement = document.getElementById(`phonic-percentage-${textNumber}`);
+        const text = textarea.value.toLowerCase();
+        
+        if (!selectedPhoneme || !text.trim()) {
+            percentageElement.textContent = '0.0%';
+            percentageElement.className = 'badge bg-secondary';
+            return;
+        }
+        
+        let phonemeCount = 0;
+        
+        // Handle different phoneme patterns
+        switch(selectedPhoneme) {
+            case 'f':
+                // Count f, ph, gh patterns
+                phonemeCount = (text.match(/f/g) || []).length + 
+                              (text.match(/ph/g) || []).length + 
+                              (text.match(/gh/g) || []).length;
+                break;
+            case 'k':
+                // Count c (when it sounds like k), k, ck, ch (when it sounds like k), qu patterns
+                phonemeCount = (text.match(/k/g) || []).length + 
+                              (text.match(/ck/g) || []).length + 
+                              (text.match(/c(?=[aiou])/g) || []).length + // c before a, i, o, u often sounds like k
+                              (text.match(/qu/g) || []).length;
+                break;
+            case 'sh':
+                // Count sh, ti, ci, si patterns
+                phonemeCount = (text.match(/sh/g) || []).length + 
+                              (text.match(/ti(?=on)/g) || []).length + 
+                              (text.match(/ci(?=al|an)/g) || []).length + 
+                              (text.match(/si(?=on)/g) || []).length + 
+                              (text.match(/ch(?=ef|ai)/g) || []).length;
+                break;
+            case 'ch':
+                // Count ch, tch, tu patterns
+                phonemeCount = (text.match(/ch/g) || []).length + 
+                              (text.match(/tch/g) || []).length + 
+                              (text.match(/tu(?=re)/g) || []).length;
+                break;
+            case 'j':
+                // Count j, g (soft), dge patterns
+                phonemeCount = (text.match(/j/g) || []).length + 
+                              (text.match(/dge/g) || []).length + 
+                              (text.match(/g(?=[ei])/g) || []).length; // g before e, i often sounds like j
+                break;
+            case 'th':
+                // Count th patterns (voiceless)
+                phonemeCount = (text.match(/th/g) || []).length;
+                break;
+            case 'dh':
+                // Count th patterns (voiced) - same spelling as voiceless
+                phonemeCount = (text.match(/th/g) || []).length;
+                break;
+            case 'zh':
+                // Count s (in some positions), ge, si patterns
+                phonemeCount = (text.match(/ge(?=$|[^aeiou])/g) || []).length + 
+                              (text.match(/si(?=on)/g) || []).length + 
+                              (text.match(/s(?=ure|ion)/g) || []).length;
+                break;
+            case 'ng':
+                // Count ng, n (before k/g) patterns
+                phonemeCount = (text.match(/ng/g) || []).length + 
+                              (text.match(/n(?=[kg])/g) || []).length;
+                break;
+            case 'z':
+                // Count z, s (when it sounds like z) patterns
+                phonemeCount = (text.match(/z/g) || []).length + 
+                              (text.match(/s(?=[^aeiou]|$)/g) || []).length; // s at end of words often sounds like z
+                break;
+            default:
+                // Simple single-character phonemes
+                phonemeCount = (text.match(new RegExp(selectedPhoneme, 'g')) || []).length;
+        }
+        
+        const totalChars = text.replace(/\s/g, '').length; // Characters without spaces
+        const density = totalChars > 0 ? (phonemeCount / totalChars * 100) : 0;
+        
+        percentageElement.textContent = density.toFixed(1) + '%';
+        
+        // Color coding based on density
+        if (density >= 8) {
+            percentageElement.className = 'badge bg-success';
+        } else if (density >= 4) {
+            percentageElement.className = 'badge bg-warning';
+        } else if (density > 0) {
+            percentageElement.className = 'badge bg-info';
+        } else {
+            percentageElement.className = 'badge bg-secondary';
+        }
+    }
+    
+    function updateAllPhonicPercentages() {
+        for (let i = 1; i <= 8; i++) {
+            updatePhonicPercentage(i);
+        }
+    }
+    
+    function scheduleAutoSave(textNumber) {
+        // Clear existing timer
+        if (saveTimers[textNumber]) {
+            clearTimeout(saveTimers[textNumber]);
+        }
+        
+        // Set new timer
+        saveTimers[textNumber] = setTimeout(() => {
+            saveData();
+        }, 2000); // Save after 2 seconds of no typing
+    }
+    
+    function saveData() {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('selected_phoneme', selectedPhoneme);
+        
+        for (let i = 1; i <= 8; i++) {
+            const textarea = document.getElementById(`text-${i}`);
+            formData.append(`text_${i}`, textarea.value);
+        }
+        formData.append('auto_save', 'true');
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Auto-save successful');
+            }
+        })
+        .catch(error => {
+            console.error('Auto-save failed:', error);
+        });
+    }
+    
+    // Manual save function for the Save Texts button
+    window.saveTextsManually = function() {
+        const saveButton = document.querySelector('button[onclick="saveTextsManually()"]');
+        const originalText = saveButton.innerHTML;
+        
+        // Show saving state
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        saveButton.disabled = true;
+        
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('selected_phoneme', selectedPhoneme);
+        
+        for (let i = 1; i <= 8; i++) {
+            const textarea = document.getElementById(`text-${i}`);
+            formData.append(`text_${i}`, textarea.value);
+        }
+        formData.append('auto_save', 'true');
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success state
+                saveButton.innerHTML = '<i class="fas fa-check me-2"></i>Saved!';
+                saveButton.className = 'btn btn-success me-2';
+                
+                // Update last saved time if element exists
+                const lastSavedElement = document.getElementById('lastSavedTime');
+                if (lastSavedElement) {
+                    const now = new Date();
+                    lastSavedElement.textContent = now.toLocaleDateString() + ', ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    saveButton.innerHTML = originalText;
+                    saveButton.className = 'btn btn-info me-2';
+                    saveButton.disabled = false;
+                }, 2000);
+            } else {
+                throw new Error('Save failed');
+            }
+        })
+        .catch(error => {
+            console.error('Manual save failed:', error);
+            // Show error state
+            saveButton.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Save Failed';
+            saveButton.className = 'btn btn-danger me-2';
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                saveButton.innerHTML = originalText;
+                saveButton.className = 'btn btn-info me-2';
+                saveButton.disabled = false;
+            }, 3000);
+        });
+    };
+});
+</script>
+{% endblock %}

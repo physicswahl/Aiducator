@@ -1,0 +1,245 @@
+/* Phoneme Density Game - Step Styles */
+
+/* Common Step Styles */
+.step-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1.5rem;
+}
+
+.matchup-info {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Common Analysis Panel Styles (Steps 1-3) */
+.text-analysis-panel {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+}
+
+.provider-text {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    resize: none;
+    width: 100%;
+    min-height: 120px;
+}
+
+.text-counter {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 0.5rem;
+}
+
+.analysis-result {
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Step 3 - R Letter Highlighting */
+.step3-text-area {
+    font-family: 'Georgia', serif;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    padding: 1.5rem;
+    border: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+    background-color: #f8f9fa;
+    resize: none;
+    height: 200px;
+}
+
+.step3-text-area:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: 0;
+}
+
+.r-letter {
+    background-color: #1e7e34 !important;
+    color: white !important;
+    font-weight: 900 !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+    display: inline-block !important;
+}
+
+/* Alternative class name for bold-r used in step3 template */
+.bold-r {
+    background-color: #1e7e34 !important;
+    color: white !important;
+    font-weight: 900 !important;
+    padding: 1px 2px !important;
+    border-radius: 2px !important;
+    display: inline !important;
+}
+
+/* Step 4 - Text Creation */
+.text-editor {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    resize: vertical;
+    width: 100%;
+    min-height: 120px;
+    border: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+}
+
+.text-editor:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: 0;
+}
+
+.phoneme-stats {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+}
+
+.phoneme-count {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.phoneme-percentage {
+    font-weight: bold;
+    color: #28a745;
+}
+
+.low-density {
+    color: #dc3545;
+}
+
+.medium-density {
+    color: #ffc107;
+}
+
+.high-density {
+    color: #28a745;
+}
+
+.phoneme-selector {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+}
+
+.text-box-container {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background-color: white;
+}
+
+.text-box-container.approved {
+    border-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.text-box-container.pending {
+    border-color: #ffc107;
+    background-color: #fffbf0;
+}
+
+.approval-status {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+}
+
+.status-approved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.save-indicator {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.character-count {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 0.25rem;
+}
+
+/* General utility classes for all steps */
+.step-navigation {
+    padding: 1rem 0;
+    border-top: 1px solid #dee2e6;
+    margin-top: 2rem;
+}
+
+.step-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background-color: white;
+    margin-bottom: 1rem;
+}
+
+.step-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .step-header {
+        text-align: center;
+    }
+    
+    .matchup-info {
+        text-align: center;
+    }
+    
+    .text-editor {
+        min-height: 100px;
+    }
+    
+    .provider-text {
+        min-height: 100px;
+    }
+}

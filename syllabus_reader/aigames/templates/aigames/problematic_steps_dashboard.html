@@ -1,0 +1,466 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Problematic Steps Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">🚨 Problematic Steps Dashboard</h1>
+                    <p class="text-muted">Monitor and manage instruction steps that need attention</p>
+                </div>
+                <div>
+                    <a href="{% url 'admin:aigames_instructionstep_changelist' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-cog"></i> Manage All Steps
+                    </a>
+                    <button type="button" class="btn btn-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics Overview -->
+            <div class="row mb-4">
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ stats.problematic_count }}</h4>
+                                    <small>Problematic</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-clock fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ stats.recent_issues_count }}</h4>
+                                    <small>Recent Issues</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-question fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ stats.no_feedback_count }}</h4>
+                                    <small>No Feedback</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-check fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ stats.good_count }}</h4>
+                                    <small>Performing Well</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-comments fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ stats.total_feedback }}</h4>
+                                    <small>Total Feedback</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-calendar-week fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ stats.recent_feedback_count }}</h4>
+                                    <small>This Week</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Critical Issues Tab -->
+            <div class="row">
+                <div class="col-12">
+                    <ul class="nav nav-tabs" id="issuesTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="problematic-tab" data-bs-toggle="tab" data-bs-target="#problematic" type="button" role="tab">
+                                🚨 Critical Issues ({{ stats.problematic_count }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab">
+                                ⚡ Recent Issues ({{ stats.recent_issues_count }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="no-feedback-tab" data-bs-toggle="tab" data-bs-target="#no-feedback" type="button" role="tab">
+                                ❓ No Feedback ({{ stats.no_feedback_count }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="good-tab" data-bs-toggle="tab" data-bs-target="#good" type="button" role="tab">
+                                ✅ Good Steps ({{ stats.good_count }})
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="issuesTabContent">
+                        <!-- Problematic Steps -->
+                        <div class="tab-pane fade show active" id="problematic" role="tabpanel">
+                            <div class="card">
+                                <div class="card-header bg-danger text-white">
+                                    <h5 class="mb-0">🚨 Steps Requiring Immediate Attention</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if problematic_steps %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Game</th>
+                                                    <th>Step</th>
+                                                    <th>Feedback</th>
+                                                    <th>Issues</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for data in problematic_steps %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ data.step.ai_game.title }}</strong>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-info me-2">{{ data.step.step_number }}</span>
+                                                        <strong>{{ data.step.title }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            {% if data.step.has_teacher_content %}
+                                                                Teacher: {{ data.step.get_teacher_content|truncatewords:5 }}
+                                                            {% else %}
+                                                                {{ data.step.get_student_content|truncatewords:10 }}
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        <div class="feedback-stats">
+                                                            <span class="badge bg-danger">👎 {{ data.summary.thumbs_down }}</span>
+                                                            <span class="badge bg-success">👍 {{ data.summary.thumbs_up }}</span>
+                                                            <br>
+                                                            <small class="text-muted">{{ data.summary.percentage_positive }}% positive</small>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <ul class="list-unstyled mb-0">
+                                                            {% for reason in data.reasons %}
+                                                            <li><small class="text-danger">• {{ reason }}</small></li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group-vertical" role="group">
+                                                            <a href="{% url 'admin:aigames_instructionstep_change' data.step.id %}" 
+                                                               class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-edit"></i> Edit
+                                                            </a>
+                                                            <a href="{% url 'instruction_step_detail' data.step.id %}" 
+                                                               class="btn btn-sm btn-outline-info">
+                                                                <i class="fas fa-eye"></i> View
+                                                            </a>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-warning"
+                                                                    onclick="resetFeedback({{ data.step.id }})">
+                                                                <i class="fas fa-undo"></i> Reset
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                        <h4>No Critical Issues!</h4>
+                                        <p class="text-muted">All instruction steps are performing well.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Issues -->
+                        <div class="tab-pane fade" id="recent" role="tabpanel">
+                            <div class="card">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0">⚡ Steps with Recent Negative Feedback</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if recent_issues_steps %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Game</th>
+                                                    <th>Step</th>
+                                                    <th>Recent Feedback</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for data in recent_issues_steps %}
+                                                <tr>
+                                                    <td><strong>{{ data.step.ai_game.title }}</strong></td>
+                                                    <td>
+                                                        <span class="badge bg-info me-2">{{ data.step.step_number }}</span>
+                                                        <strong>{{ data.step.title }}</strong>
+                                                    </td>
+                                                    <td>
+                                                        {% for reason in data.reasons %}
+                                                        <small class="text-warning d-block">• {{ reason }}</small>
+                                                        {% endfor %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <a href="{% url 'admin:aigames_instructionstep_change' data.step.id %}" 
+                                                               class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-edit"></i> Edit
+                                                            </a>
+                                                            <a href="{% url 'instruction_step_detail' data.step.id %}" 
+                                                               class="btn btn-sm btn-outline-info">
+                                                                <i class="fas fa-eye"></i> View
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-smile fa-3x text-success mb-3"></i>
+                                        <h4>No Recent Issues!</h4>
+                                        <p class="text-muted">No steps have received negative feedback recently.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- No Feedback -->
+                        <div class="tab-pane fade" id="no-feedback" role="tabpanel">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0">❓ Steps Without User Feedback</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if low_feedback_steps %}
+                                    <p class="text-muted">These steps haven't received any feedback yet. Consider promoting them or checking if they're visible to users.</p>
+                                    <div class="row">
+                                        {% for data in low_feedback_steps %}
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">
+                                                        {{ data.step.ai_game.title }}
+                                                        <span class="badge bg-info">{{ data.step.step_number }}</span>
+                                                    </h6>
+                                                    <p class="card-text">{{ data.step.title }}</p>
+                                                    <div class="d-grid gap-2">
+                                                        <a href="{% url 'instruction_step_detail' data.step.id %}" 
+                                                           class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-eye"></i> View Step
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-comments fa-3x text-success mb-3"></i>
+                                        <h4>All Steps Have Feedback!</h4>
+                                        <p class="text-muted">Every instruction step has received user feedback.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Good Steps -->
+                        <div class="tab-pane fade" id="good" role="tabpanel">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">✅ Well-Performing Steps</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if good_steps %}
+                                    <p class="text-success">These steps are performing well and have positive user feedback!</p>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Game</th>
+                                                    <th>Step</th>
+                                                    <th>Satisfaction</th>
+                                                    <th>Total Feedback</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for data in good_steps %}
+                                                <tr>
+                                                    <td><strong>{{ data.step.ai_game.title }}</strong></td>
+                                                    <td>
+                                                        <span class="badge bg-info me-2">{{ data.step.step_number }}</span>
+                                                        {{ data.step.title }}
+                                                    </td>
+                                                    <td>
+                                                        <div class="progress" style="height: 20px;">
+                                                            <div class="progress-bar bg-success" 
+                                                                 style="width: {{ data.summary.percentage_positive }}%">
+                                                                {{ data.summary.percentage_positive }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">👍 {{ data.summary.thumbs_up }}</span>
+                                                        <span class="badge bg-danger">👎 {{ data.summary.thumbs_down }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-seedling fa-3x text-muted mb-3"></i>
+                                        <h4>Steps Need More Feedback</h4>
+                                        <p class="text-muted">Steps need more user engagement to be classified as "good".</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Feedback Modal -->
+<div class="modal fade" id="resetFeedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reset Feedback</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This will permanently delete all user feedback for this step. This action cannot be undone.
+                </div>
+                <p>Are you sure you want to reset the feedback counters for this instruction step?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmResetFeedback()">Reset Feedback</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let stepToReset = null;
+
+function resetFeedback(stepId) {
+    stepToReset = stepId;
+    const modal = new bootstrap.Modal(document.getElementById('resetFeedbackModal'));
+    modal.show();
+}
+
+function confirmResetFeedback() {
+    if (stepToReset) {
+        // Use Django admin action to reset feedback
+        window.location.href = `{% url 'admin:aigames_instructionstep_changelist' %}?ids=${stepToReset}&action=reset_feedback`;
+    }
+}
+
+function refreshData() {
+    location.reload();
+}
+
+// Auto-refresh every 5 minutes
+setTimeout(function() {
+    refreshData();
+}, 300000);
+</script>
+
+<style>
+.feedback-stats {
+    text-align: center;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.btn-group-vertical .btn {
+    margin-bottom: 2px;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.nav-tabs .nav-link {
+    font-weight: 500;
+}
+
+.tab-content {
+    padding-top: 20px;
+}
+</style>
+{% endblock %}

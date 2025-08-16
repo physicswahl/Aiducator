@@ -1,0 +1,124 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}My Games - Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-controller"></i> My Assigned Games</h1>
+                <div class="text-muted">
+                    <i class="bi bi-person-badge"></i> Welcome, {{ user.get_full_name|default:user.username }}
+                </div>
+            </div>
+
+            {% if pending_invitations %}
+            <div class="alert alert-info mb-4">
+                <h5><i class="bi bi-envelope-exclamation"></i> Pending Team Invitations</h5>
+                {% for invitation in pending_invitations %}
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <div>
+                        <strong>{{ invitation.team.name }}</strong>
+                        {% if invitation.ai_game %}
+                            for <em>{{ invitation.ai_game.title }}</em>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">Invited by {{ invitation.invited_by.get_full_name|default:invitation.invited_by.username }}</small>
+                        {% if invitation.message %}
+                            <br><small>"{{ invitation.message }}"</small>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="{% url 'team_detail' invitation.team.id %}" class="btn btn-sm btn-outline-primary">View Team</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if assigned_games %}
+                {% for game_info in assigned_games %}
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-joystick"></i> {{ game_info.game.title }}
+                        </h5>
+                        <div>
+                            <span class="badge bg-primary">Team: {{ game_info.team.name }}</span>
+                            {% if game_info.source == 'matchup' and game_info.opponent_team %}
+                                <span class="badge bg-warning text-dark ms-1">vs {{ game_info.opponent_team.name }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                {% if game_info.game.has_multiple_steps %}
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2"><i class="bi bi-ladder"></i> Progress:</span>
+                                        <div class="progress flex-grow-1" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ game_info.progress_percentage }}%"
+                                                 aria-valuenow="{{ game_info.completed_steps }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="{{ game_info.total_steps }}">
+                                                {{ game_info.completed_steps }}/{{ game_info.total_steps }} Steps
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    {% if game_info.current_step_url %}
+                                        <a href="{{ game_info.current_step_url }}" 
+                                           class="btn btn-primary">
+                                            <i class="bi bi-play-circle"></i> Play Game
+                                        </a>
+                                    {% elif game_info.game.get_first_step_url %}
+                                        <a href="{{ game_info.game.get_first_step_url }}" 
+                                           class="btn btn-primary">
+                                            <i class="bi bi-play-circle"></i> Play Game
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <a href="{% url 'team_detail' game_info.team.id %}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-people"></i> View Team
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-controller display-1 text-muted"></i>
+                    </div>
+                    <h3 class="text-muted mb-3">No Games Assigned Yet</h3>
+                    <p class="text-muted mb-4">
+                        You haven't been assigned to any games yet. Contact your teacher or wait for team invitations.
+                    </p>
+                    
+                    {% if user_teams %}
+                        <div class="alert alert-info d-inline-block">
+                            <h6>Your Teams:</h6>
+                            {% for team in user_teams %}
+                                <a href="{% url 'team_detail' team.id %}" class="btn btn-sm btn-outline-primary me-2 mb-1">
+                                    {{ team.name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">You're not a member of any teams yet.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

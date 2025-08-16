@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Step 1 Analysis - {{ ai_game.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .game-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .step-title {
+            font-size: 18px;
+            color: #666;
+        }
+        .matchup-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .team-info {
+            margin-bottom: 10px;
+        }
+        .instructions {
+            background-color: #e7f3ff;
+            padding: 20px;
+            border-left: 4px solid #007bff;
+            margin-bottom: 30px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .text-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .text-header {
+            background-color: #f1f1f1;
+            padding: 10px;
+            font-weight: bold;
+            border-left: 3px solid #28a745;
+        }
+        .text-content {
+            padding: 15px;
+            border: 1px solid #ddd;
+            margin-top: -1px;
+            white-space: pre-wrap;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        @media print {
+            body { margin: 0; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="game-title">{{ ai_game.name }}</div>
+        <div class="step-title">Step {{ step_number }}: Text Analysis</div>
+    </div>
+
+    <div class="matchup-info">
+        <h3>Matchup Information</h3>
+        <div class="team-info"><strong>Team 1:</strong> {{ team1.name }}</div>
+        <div class="team-info"><strong>Team 2:</strong> {{ team2.name }}</div>
+        <div class="team-info"><strong>School:</strong> {{ matchup.school.name }}</div>
+        <div class="team-info"><strong>Generated:</strong> {% now "F j, Y g:i A" %}</div>
+    </div>
+
+    {% if instructions %}
+    <div class="instructions">
+        <h3>Instructions for {{ user_role|capfirst }}s</h3>
+        {% for instruction in instructions %}
+            <div class="instruction-item">
+                {{ instruction.content|linebreaks }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if provider_texts %}
+    <h3>Text Analysis Materials</h3>
+    {% for text in provider_texts %}
+    <div class="text-section">
+        <div class="text-header">
+            Text {{ forloop.counter }}: {{ text.title|default:"Untitled" }}
+        </div>
+        <div class="text-content">{{ text.content }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="text-section">
+        <p><em>No texts have been provided for this step yet.</em></p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Generated from {{ ai_game.name }} - Step {{ step_number }}</p>
+        <p>Matchup ID: {{ matchup.id }} | {% now "F j, Y g:i A" %}</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,92 @@
+{% extends 'syllabus/base.html' %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-2">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'curriculum_list' %}">Curricula</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'syllabus_list' unit.syllabus.curriculum.id %}">{{ unit.syllabus.curriculum.title }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'unit_list' unit.syllabus.id %}">{{ unit.syllabus.name }}</a></li>
+            <li class="breadcrumb-item active">Edit {{ unit.title }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">📚 Edit Unit</h2>
+                <p class="mb-0 text-muted">For {{ unit.syllabus.name }}</p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.syllabus.id_for_label }}" class="form-label">Syllabus</label>
+                        {{ form.syllabus }}
+                        {% if form.syllabus.help_text %}
+                            <div class="form-text">{{ form.syllabus.help_text }}</div>
+                        {% endif %}
+                        {% if form.syllabus.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.syllabus.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">Unit Title</label>
+                        {{ form.title }}
+                        {% if form.title.help_text %}
+                            <div class="form-text">{{ form.title.help_text }}</div>
+                        {% endif %}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.help_text %}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                        {% endif %}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.ai_game.id_for_label }}" class="form-label">AI Game (Optional)</label>
+                        {{ form.ai_game }}
+                        {% if form.ai_game.help_text %}
+                            <div class="form-text">{{ form.ai_game.help_text }}</div>
+                        {% endif %}
+                        {% if form.ai_game.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.ai_game.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">💾 Update Unit</button>
+                        <a href="{% url 'unit_list' unit.syllabus.id %}" class="btn btn-secondary">❌ Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

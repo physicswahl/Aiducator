@@ -1,0 +1,49 @@
+{% extends 'syllabus/base.html' %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-2">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'curriculum_list' %}">Curricula</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'syllabus_list' syllabus.curriculum.id %}">{{ syllabus.curriculum.title }}</a></li>
+            <li class="breadcrumb-item active">Edit {{ syllabus.name }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">📋 Edit Syllabus</h2>
+                <p class="mb-0 text-muted">For {{ syllabus.curriculum.title }}</p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.curriculum.id_for_label }}" class="form-label">Curriculum</label>
+                        {{ form.curriculum }}
+                        {% if form.curriculum.help_text %}
+                            <div class="form-text">{{ form.curriculum.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Syllabus Name</label>
+                        {{ form.name }}
+                        {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">💾 Update Syllabus</button>
+                        <a href="{% url 'syllabus_list' syllabus.curriculum.id %}" class="btn btn-secondary">❌ Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

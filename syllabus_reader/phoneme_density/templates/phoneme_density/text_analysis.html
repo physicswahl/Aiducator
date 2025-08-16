@@ -1,0 +1,304 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Phoneme Analysis - Text {{ text_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-radar"></i>
+                        Phoneme Frequency Analysis - Text {{ text_number }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- Spider Graph -->
+                            <div class="chart-container" style="position: relative; height: 500px;">
+                                <canvas id="phonemeSpiderChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Text and Legend -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-file-text"></i> Text Content</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-content" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; background-color: #f8f9fa;">
+                                        {{ team_text.content }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-info-circle"></i> Legend</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="legend-item mb-2">
+                                        <span class="legend-color" style="background-color: #007bff; width: 15px; height: 15px; display: inline-block; margin-right: 8px; border-radius: 3px;"></span>
+                                        <strong>Your Text</strong> - Actual phoneme frequencies
+                                    </div>
+                                    <div class="legend-item mb-2">
+                                        <span class="legend-color" style="background-color: #28a745; width: 15px; height: 15px; display: inline-block; margin-right: 8px; border-radius: 3px;"></span>
+                                        <strong>English Average</strong> - Typical frequencies in English
+                                    </div>
+                                    <div class="legend-item mb-3">
+                                        <span class="legend-color" style="background-color: rgba(40, 167, 69, 0.2); width: 15px; height: 15px; display: inline-block; margin-right: 8px; border-radius: 3px; border: 1px solid #28a745;"></span>
+                                        <strong>Confidence Range</strong> - Statistical uncertainty (95% CI)
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <small>
+                                            <strong>Selected Phoneme:</strong> /{{ selected_phoneme }}/
+                                            <br>
+                                            The spider graph shows how your text compares to typical English phoneme frequencies. 
+                                            Points outside the shaded area indicate unusually high or low frequencies.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Likelihood Analysis Section -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-calculator"></i>
+                                        Target Phoneme Likelihood Analysis
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">
+                                        Based on how much each phoneme deviates above typical English frequencies, 
+                                        here's the likelihood that each phoneme is the "overweight" target phoneme:
+                                    </p>
+                                    
+                                    <div class="row">
+                                        {% for item in phoneme_analysis %}
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card h-100 {% if item.phoneme == selected_phoneme %}border-success{% endif %}">
+                                                <div class="card-body text-center">
+                                                    <h4 class="phoneme-symbol">/{{ item.phoneme }}/</h4>
+                                                    <div class="progress mb-2" style="height: 25px;">
+                                                        <div class="progress-bar {% if item.phoneme == selected_phoneme %}bg-success{% else %}bg-primary{% endif %}" 
+                                                             role="progressbar" 
+                                                             style="width: {{ item.probability|floatformat:1 }}%"
+                                                             aria-valuenow="{{ item.probability|floatformat:1 }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="100">
+                                                            {{ item.probability|floatformat:1 }}%
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        Z-score: {{ item.z_score|floatformat:2 }}
+                                                    </small>
+                                                    {% if item.phoneme == selected_phoneme %}
+                                                    <div class="mt-2">
+                                                        <span class="badge badge-success">Actual Target</span>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <div class="alert alert-light mt-3">
+                                        <small>
+                                            <strong>How it works:</strong> The analysis calculates how many standard deviations each phoneme 
+                                            frequency is above the English baseline. Higher positive deviations indicate stronger evidence 
+                                            that the phoneme was intentionally overused. Z-scores above 2.0 are statistically significant (p &lt; 0.05).
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <a href="{% url 'phoneme_density:step4' matchup.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Step 4
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get data from Django context
+    const phonemeLabels = {{ phoneme_labels|safe }};
+    const textFrequencies = {{ text_frequencies|safe }};
+    const englishFrequencies = {{ english_frequencies|safe }};
+    const standardErrors = {{ standard_errors|safe }};
+    
+    // Calculate confidence intervals
+    const upperBounds = englishFrequencies.map((freq, i) => freq + standardErrors[i]);
+    const lowerBounds = englishFrequencies.map((freq, i) => Math.max(0, freq - standardErrors[i]));
+    
+    const ctx = document.getElementById('phonemeSpiderChart').getContext('2d');
+    
+    const chart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: phonemeLabels,
+            datasets: [
+                {
+                    label: 'Your Text',
+                    data: textFrequencies,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#007bff',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    fill: true
+                },
+                {
+                    label: 'English Average',
+                    data: englishFrequencies,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#28a745',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    fill: false
+                },
+                {
+                    label: 'Upper Confidence Bound',
+                    data: upperBounds,
+                    borderColor: 'rgba(40, 167, 69, 0.3)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: '+1',
+                    hidden: false
+                },
+                {
+                    label: 'Lower Confidence Bound',
+                    data: lowerBounds,
+                    borderColor: 'rgba(40, 167, 69, 0.3)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: false,
+                    hidden: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Phoneme Frequency Comparison (%)',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        filter: function(legendItem, chartData) {
+                            // Hide confidence bound labels from legend
+                            return !legendItem.text.includes('Confidence Bound');
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 0) {
+                                return `Your Text: ${context.parsed.r.toFixed(2)}%`;
+                            } else if (context.datasetIndex === 1) {
+                                return `English Average: ${context.parsed.r.toFixed(2)}%`;
+                            }
+                            return '';
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: Math.max(...textFrequencies, ...upperBounds) * 1.1,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + '%';
+                        },
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    angleLines: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'point'
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.chart-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 15px;
+}
+
+.text-content {
+    font-family: 'Georgia', serif;
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.alert-info {
+    border-left: 4px solid #17a2b8;
+}
+</style>
+{% endblock %}

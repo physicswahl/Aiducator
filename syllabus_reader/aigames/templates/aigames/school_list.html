@@ -1,0 +1,125 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}School Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-building"></i> School Management</h1>
+        <a href="{% url 'create_school' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New School
+        </a>
+    </div>
+
+    {% if schools %}
+        <div class="row">
+            {% for school in schools %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    {% if school.logo %}
+                    <div class="card-header text-center p-3">
+                        <img src="{{ school.logo.url }}" alt="{{ school.name }} Logo" 
+                             style="max-height: 80px; max-width: 200px;" class="img-fluid">
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ school.name }}
+                            {% if not school.is_active %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ school.short_name }}</h6>
+                        {% if school.description %}
+                            <p class="card-text">{{ school.description|truncatewords:20 }}</p>
+                        {% endif %}
+                        
+                        <div class="small text-muted mb-3">
+                            <div><i class="bi bi-people"></i> {{ school.users.count }} users</div>
+                            {% if school.website_url %}
+                                <div><i class="bi bi-globe"></i> <a href="{{ school.website_url }}" target="_blank">Website</a></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{% url 'edit_school' school.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-outline-info btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#schoolModal{{ school.id }}">
+                                <i class="bi bi-eye"></i> Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- School Details Modal -->
+            <div class="modal fade" id="schoolModal{{ school.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ school.name }} Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Full Name:</dt>
+                                <dd class="col-sm-8">{{ school.name }}</dd>
+                                
+                                <dt class="col-sm-4">Short Name:</dt>
+                                <dd class="col-sm-8">{{ school.short_name }}</dd>
+                                
+                                {% if school.description %}
+                                <dt class="col-sm-4">Description:</dt>
+                                <dd class="col-sm-8">{{ school.description }}</dd>
+                                {% endif %}
+                                
+                                {% if school.address %}
+                                <dt class="col-sm-4">Address:</dt>
+                                <dd class="col-sm-8">{{ school.address|linebreaks }}</dd>
+                                {% endif %}
+                                
+                                {% if school.website_url %}
+                                <dt class="col-sm-4">Website:</dt>
+                                <dd class="col-sm-8"><a href="{{ school.website_url }}" target="_blank">{{ school.website_url }}</a></dd>
+                                {% endif %}
+                                
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    {% if school.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Users:</dt>
+                                <dd class="col-sm-8">{{ school.users.count }}</dd>
+                                
+                                <dt class="col-sm-4">Created:</dt>
+                                <dd class="col-sm-8">{{ school.created_at|date:"M j, Y" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-building display-1 text-muted"></i>
+            </div>
+            <h3 class="text-muted mb-3">No Schools Found</h3>
+            <p class="text-muted mb-4">No schools have been created yet.</p>
+            <a href="{% url 'create_school' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create First School
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

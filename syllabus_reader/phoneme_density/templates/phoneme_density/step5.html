@@ -1,0 +1,212 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}Step 5: Analyze Opponent Texts - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'phoneme_density/css/steps.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Simple Instructions Button - Left Side -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas" 
+                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
+            Instructions
+        </button>
+    </div>
+
+    <!-- Instructions Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+                <i class="fas fa-clipboard-list me-2"></i>Step 5 Instructions
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% for instruction in instructions %}
+                <div class="instruction-step mb-4">
+                    <h6 class="fw-bold text-primary">
+                        <i class="fas fa-circle-check me-2"></i>Step {{ forloop.counter }}
+                    </h6>
+                    <div class="instruction-content">
+                        {{ instruction.content|safe }}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Default Instructions</h6>
+                    <ul class="mb-0">
+                        <li>Review your opponent's 8 texts carefully</li>
+                        <li>Select which texts you think follow the phoneme rule</li>
+                        <li>Guess what phoneme your opponent used</li>
+                        <li>Describe the phoneme rule you think they applied</li>
+                        <li>Submit your guesses to continue to the next step</li>
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <!-- Main Card -->
+            <div class="card step-card">
+                <!-- Card Header -->
+                <div class="card-header bg-primary text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h2 class="card-title mb-0">
+                                <i class="fas fa-search me-2"></i>Step 5: Analyze Opponent Texts
+                            </h2>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="matchup-info">
+                                <small class="d-block opacity-75">{{ team.name }} vs {{ opposing_team.name }}</small>
+                                <small class="d-block opacity-75">Analyzing: {{ opposing_team.name }}'s texts</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Section -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="progress-info">
+                                    <span class="badge bg-light text-dark me-2">
+                                        <i class="fas fa-eye me-1"></i>
+                                        Reviewing opponent's work
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-light text-dark">Step 5 of 6</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Body -->
+                <div class="card-body">
+                    <form id="step5Form" method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Guessing Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="phoneme-guess" class="form-label fw-bold">What phoneme do you think they used?</label>
+                                <select class="form-select" id="phoneme-guess" name="phoneme_guess" required>
+                                    <option value="">-- Choose your guess --</option>
+                                    {% for code, description in phoneme_choices %}
+                                    <option value="{{ code }}" {% if phoneme_guess == code %}selected{% endif %}>{{ description }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="rule-description" class="form-label fw-bold">Describe the phoneme rule:</label>
+                                <textarea class="form-control" id="rule-description" name="rule_description" rows="3" 
+                                          placeholder="Explain what rule you think they followed...">{{ rule_description }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Opponent's Texts -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-file-text me-2"></i>{{ opposing_team.name }}'s Texts
+                            <small class="text-muted">(Select which texts follow the phoneme rule)</small>
+                        </h5>
+                        
+                        <div class="row">
+                            {% for text_info in opponent_texts %}
+                            <div class="col-md-6 mb-4">
+                                <div class="text-box-container opponent-text" id="text-container-{{ forloop.counter }}">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label fw-bold mb-0">
+                                            <i class="fas fa-file-text me-2"></i>Text {{ forloop.counter }}
+                                        </label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   id="text-{{ forloop.counter }}-follows-rule" 
+                                                   name="text_{{ forloop.counter }}_follows_rule"
+                                                   {% if forloop.counter in selected_texts %}checked{% endif %}>
+                                            <label class="form-check-label" for="text-{{ forloop.counter }}-follows-rule">
+                                                Follows rule
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <textarea 
+                                        class="form-control opponent-text-area" 
+                                        rows="8"
+                                        readonly
+                                    >{{ text_info.content }}</textarea>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                            <div>
+                                <a href="{% url 'phoneme_density:step4' matchup_id=matchup.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Step 4
+                                </a>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-success me-2" name="submit_guesses">
+                                    <i class="fas fa-paper-plane me-2"></i>Submit Guesses
+                                </button>
+                                
+                                {% if guesses_submitted %}
+                                <a href="{% url 'phoneme_density:step6' matchup_id=matchup.id %}" class="btn btn-primary">
+                                    Continue to Step 6<i class="fas fa-arrow-right ms-2"></i>
+                                </a>
+                                {% else %}
+                                <button type="button" class="btn btn-secondary" disabled>
+                                    <i class="fas fa-lock me-2"></i>Submit Guesses First
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.opponent-text {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #f8f9fa;
+}
+
+.opponent-text-area {
+    background-color: white;
+    border: 1px solid #dee2e6;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.form-check-label {
+    font-weight: 500;
+    color: #198754;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any interactive functionality here if needed
+    console.log('Step 5 loaded');
+});
+</script>
+{% endblock %}

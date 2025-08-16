@@ -1,0 +1,67 @@
+{% extends 'syllabus/base.html' %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-2">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'curriculum_list' %}">Curricula</a></li>
+            <li class="breadcrumb-item active">{{ curriculum.title }} - Syllabi</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>📋 Syllabi for {{ curriculum.title }}</h1>
+        <p class="text-muted">{{ curriculum.provider.name }}</p>
+    </div>
+    {% if can_modify_syllabus %}
+        <a href="{% url 'create_syllabus_for_curriculum' curriculum.id %}" class="btn btn-primary">
+            ➕ Create New Syllabus
+        </a>
+    {% endif %}
+</div>
+
+<div class="row">
+    {% for syllabus in syllabi %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ syllabus.name }}</h5>
+                <p class="card-text text-muted">{{ syllabus.units.count }} units</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'unit_list' syllabus.id %}" class="btn btn-outline-primary btn-sm">
+                    📚 View Units
+                </a>
+                {% if can_modify_syllabus %}
+                    <a href="{% url 'edit_syllabus' syllabus.id %}" class="btn btn-outline-secondary btn-sm">
+                        ✏️ Edit
+                    </a>
+                    <a href="{% url 'create_unit_for_syllabus' syllabus.id %}" class="btn btn-success btn-sm">
+                        ➕ Add Unit
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <h4>No syllabi available for this curriculum yet.</h4>
+            {% if can_modify_syllabus %}
+                <p>Get started by <a href="{% url 'create_syllabus_for_curriculum' curriculum.id %}" class="alert-link">creating the first syllabus</a>!</p>
+            {% else %}
+                <p>Syllabi will appear here once they are added by administrators.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'curriculum_list' %}" class="btn btn-secondary">⬅️ Back to Curricula</a>
+</div>
+{% endblock %}

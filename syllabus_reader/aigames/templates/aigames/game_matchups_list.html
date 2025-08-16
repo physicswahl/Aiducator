@@ -1,0 +1,214 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Game Matchups - {{ user_school.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">Game Matchups</h1>
+                    <p class="text-muted">{{ user_school.name }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'team_management_dashboard' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <a href="{% url 'create_game_matchup' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Matchup
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if matchups %}
+    <div class="row">
+        <div class="col-12">
+            <!-- Status Filter Tabs -->
+            <ul class="nav nav-tabs mb-3" id="statusTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                        All Matchups
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="scheduled-tab" data-bs-toggle="tab" data-bs-target="#scheduled" type="button" role="tab">
+                        Scheduled
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">
+                        In Progress
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
+                        Completed
+                    </button>
+                </li>
+            </ul>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="matchupsTable">
+                            <thead>
+                                <tr>
+                                    <th>Game</th>
+                                    <th>Teams</th>
+                                    <th>Status</th>
+                                    <th>Scheduled</th>
+                                    <th>Duration</th>
+                                    <th>Created By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matchup in matchups %}
+                                <tr data-status="{{ matchup.status }}">
+                                    <td>
+                                        <strong>{{ matchup.ai_game.title }}</strong>
+                                        {% if matchup.ai_game.has_multiple_steps %}
+                                            <br><small class="text-muted">Multi-step game</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-light text-dark me-2">{{ matchup.team1.name }}</span>
+                                            <span class="text-muted">vs</span>
+                                            <span class="badge bg-light text-dark ms-2">{{ matchup.team2.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if matchup.status == 'scheduled' %}
+                                            <span class="badge bg-warning">{{ matchup.get_status_display }}</span>
+                                        {% elif matchup.status == 'in_progress' %}
+                                            <span class="badge bg-primary">{{ matchup.get_status_display }}</span>
+                                        {% elif matchup.status == 'completed' %}
+                                            <span class="badge bg-success">{{ matchup.get_status_display }}</span>
+                                        {% elif matchup.status == 'cancelled' %}
+                                            <span class="badge bg-danger">{{ matchup.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ matchup.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if matchup.scheduled_date %}
+                                            {{ matchup.scheduled_date|date:"M d, Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">Not scheduled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if matchup.duration_minutes %}
+                                            {{ matchup.duration_minutes }} minutes
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ matchup.created_by.get_full_name|default:matchup.created_by.username }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'game_matchup_detail' matchup.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            {% if matchup.status != 'completed' and matchup.status != 'cancelled' %}
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                    Status
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    {% if matchup.status != 'in_progress' %}
+                                                    <li>
+                                                        <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="in_progress">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="fas fa-play text-primary"></i> Start
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    {% endif %}
+                                                    {% if matchup.status != 'completed' %}
+                                                    <li>
+                                                        <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="completed">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="fas fa-check text-success"></i> Complete
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    {% endif %}
+                                                    <li>
+                                                        <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="cancelled">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="fas fa-times text-danger"></i> Cancel
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
+                    <h4>No Matchups Yet</h4>
+                    <p class="text-muted">Create matchups between teams to start competitive gaming sessions.</p>
+                    <a href="{% url 'create_game_matchup' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create First Matchup
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter table based on status tabs
+    const tabs = document.querySelectorAll('#statusTabs button[data-bs-toggle="tab"]');
+    const tableRows = document.querySelectorAll('#matchupsTable tbody tr');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            const targetStatus = e.target.id.replace('-tab', '');
+            
+            tableRows.forEach(row => {
+                if (targetStatus === 'all') {
+                    row.style.display = '';
+                } else {
+                    const rowStatus = row.getAttribute('data-status');
+                    if (targetStatus === 'active' && rowStatus === 'in_progress') {
+                        row.style.display = '';
+                    } else if (targetStatus === rowStatus) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

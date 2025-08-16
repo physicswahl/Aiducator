@@ -1,0 +1,167 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Team Management - {{ user_school.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Team Management Dashboard</h1>
+                <span class="badge bg-primary fs-6">{{ user_school.name }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Teams</h5>
+                            <h2 class="mb-0">{{ total_teams }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Active Matchups</h5>
+                            <h2 class="mb-0">{{ active_matchups }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-gamepad fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="{% url 'create_school_team' %}" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-plus-circle me-2"></i>Create New Team
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="{% url 'create_game_matchup' %}" class="btn btn-success btn-lg w-100">
+                                <i class="fas fa-handshake me-2"></i>Create Game Matchup
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Manage Teams</h5>
+                    <p class="card-text">View, create, and edit teams in your school</p>
+                    <a href="{% url 'school_teams_list' %}" class="btn btn-primary">View Teams</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-gamepad fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Game Matchups</h5>
+                    <p class="card-text">Create and monitor team vs team game sessions</p>
+                    <a href="{% url 'game_matchups_list' %}" class="btn btn-success">View Matchups</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Progress Tracking</h5>
+                    <p class="card-text">Monitor team progress and performance</p>
+                    <a href="{% url 'game_matchups_list' %}" class="btn btn-info">View Progress</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Matchups -->
+    {% if school_matchups %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Matchups</h5>
+                    <a href="{% url 'game_matchups_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Game</th>
+                                    <th>Teams</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matchup in school_matchups %}
+                                <tr>
+                                    <td>{{ matchup.ai_game.title }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ matchup.team1.name }}</span>
+                                        <span class="text-muted">vs</span>
+                                        <span class="badge bg-light text-dark">{{ matchup.team2.name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if matchup.status == 'scheduled' %}
+                                            <span class="badge bg-warning">{{ matchup.get_status_display }}</span>
+                                        {% elif matchup.status == 'in_progress' %}
+                                            <span class="badge bg-primary">{{ matchup.get_status_display }}</span>
+                                        {% elif matchup.status == 'completed' %}
+                                            <span class="badge bg-success">{{ matchup.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ matchup.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ matchup.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'game_matchup_detail' matchup.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

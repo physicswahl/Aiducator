@@ -1,0 +1,51 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Providers{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Providers</h2>
+        {% if user.is_superuser or user.groups.all|length > 0 %}
+            <a href="{% url 'create_provider' %}" class="btn btn-primary">Add New Provider</a>
+        {% endif %}
+    </div>
+
+    {% if providers %}
+        <div class="row">
+            {% for provider in providers %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ provider.name }}</h5>
+                            <p class="card-text text-muted">
+                                {{ provider.curriculum_set.count }} curricula
+                            </p>
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'curriculum_list' %}?provider={{ provider.id }}" class="btn btn-outline-primary btn-sm">View Curricula</a>
+                                {% if user.is_superuser or user.groups.all|length > 0 %}
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'edit_provider' provider.id %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                        <a href="{% url 'delete_provider' provider.id %}" class="btn btn-outline-danger btn-sm">Delete</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No Providers Found</h4>
+            <p>There are currently no providers in the system.</p>
+            {% if user.is_superuser or user.groups.all|length > 0 %}
+                <hr>
+                <p class="mb-0">
+                    <a href="{% url 'create_provider' %}" class="btn btn-primary">Create the first provider</a>
+                </p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

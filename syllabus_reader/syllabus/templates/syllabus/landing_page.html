@@ -1,0 +1,185 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Games - Welcome</title>
+    <link href="{% static 'syllabus/css/bootstrap.min.css' %}" rel="stylesheet">
+    <script src="{% static 'syllabus/js/bootstrap.bundle.min.js' %}"></script>
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        .feature-card {
+            transition: transform 0.2s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-section {
+            background-color: #f8f9fa;
+            padding: 60px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'landing_page' %}">🎮 AI Games</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'login' %}">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-4">🎮 Welcome to AI Games</h1>
+            <p class="lead mb-5">Engage in interactive AI-powered educational games and team-based learning</p>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <p class="fs-5 mb-4">A comprehensive platform for team-based AI learning games that enhance education through interactive, competitive experiences.</p>
+                    <a href="{% url 'login' %}" class="btn btn-light btn-lg me-3">🔐 Login to Explore</a>
+                    <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3 mb-4">
+                    <div class="card border-0 bg-transparent">
+                        <div class="card-body">
+                            <h2 class="text-primary fw-bold">{{ total_curricula }}</h2>
+                            <p class="text-muted">Curricula Available</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card border-0 bg-transparent">
+                        <div class="card-body">
+                            <h2 class="text-success fw-bold">{{ total_syllabi }}</h2>
+                            <p class="text-muted">Syllabi Created</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card border-0 bg-transparent">
+                        <div class="card-body">
+                            <h2 class="text-warning fw-bold">{{ total_units }}</h2>
+                            <p class="text-muted">Learning Units</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">🌟 Key Features</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <span class="badge bg-primary fs-4">📋</span>
+                            </div>
+                            <h5 class="card-title">Hierarchical Navigation</h5>
+                            <p class="card-text">Navigate through curricula, syllabi, and units in a structured, intuitive way.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <span class="badge bg-success fs-4">🎮</span>
+                            </div>
+                            <h5 class="card-title">AI Learning Games</h5>
+                            <p class="card-text">Interactive AI-powered games linked to specific units to enhance learning experience.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <span class="badge bg-warning fs-4">🔐</span>
+                            </div>
+                            <h5 class="card-title">Role-Based Access</h5>
+                            <p class="card-text">Different access levels: Administrators can create/edit content, users can explore and learn.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- User Types Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">👥 User Access Levels</h2>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">🔧 Administrator Access</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li>✅ View all content</li>
+                                <li>✅ Create new curricula and syllabi</li>
+                                <li>✅ Add units with AI games</li>
+                                <li>✅ Create and link AI games</li>
+                                <li>✅ Edit existing content</li>
+                                <li>✅ Manage user permissions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">👁️ User Access</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li>✅ Browse all curricula and syllabi</li>
+                                <li>✅ Navigate through units</li>
+                                <li>✅ Access linked AI learning games</li>
+                                <li>✅ View detailed content</li>
+                                <li>❌ Cannot create new content</li>
+                                <li>❌ Cannot edit existing content</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-5 bg-primary text-white text-center">
+        <div class="container">
+            <h2 class="mb-4">Ready to Get Started?</h2>
+            <p class="lead mb-4">Login to explore the full educational content and interactive learning experience.</p>
+            <a href="{% url 'login' %}" class="btn btn-light btn-lg">🚀 Login Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 AI Games. Enhancing education through interactive AI-powered learning experiences.</p>
+        </div>
+    </footer>
+</body>
+</html>

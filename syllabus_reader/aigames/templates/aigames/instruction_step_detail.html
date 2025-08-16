@@ -1,0 +1,381 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}{{ step.title }} - {{ step.ai_game.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">{{ step.title }}</h1>
+                    <p class="text-muted">
+                        {{ step.ai_game.title }} - Step {{ step.step_number }}
+                        {% if step.audience != 'both' %}
+                        <span class="badge bg-secondary ms-2">{{ step.get_audience_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'game_instructions' step.ai_game.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> All Instructions
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Main Content -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Teacher Content Toggle (for teachers only) -->
+                            {% if user.is_staff or user.userprofile.role == 'teacher' %}
+                                {% if step.has_teacher_content %}
+                                <div class="content-toggle mb-3">
+                                    <div class="btn-group" role="group" aria-label="Content view toggle">
+                                        <input type="radio" class="btn-check" name="content-view" id="teacher-view" checked>
+                                        <label class="btn btn-outline-primary" for="teacher-view">
+                                            <i class="fas fa-chalkboard-teacher"></i> Teacher Instructions
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="content-view" id="student-view">
+                                        <label class="btn btn-outline-secondary" for="student-view">
+                                            <i class="fas fa-user-graduate"></i> Student View
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">
+                                        Switch between teacher instructions and what students see
+                                    </small>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- Step Content -->
+                            <div class="step-content mb-4">
+                                {% if user.is_staff or user.userprofile.role == 'teacher' %}
+                                    {% if step.has_teacher_content %}
+                                        <!-- Teacher content (default view for teachers) -->
+                                        <div id="teacher-content">
+                                            {{ step.get_teacher_content|linebreaks }}
+                                        </div>
+                                        <!-- Student content (toggle view for teachers) -->
+                                        <div id="student-content" style="display: none;">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i> <strong>Student View:</strong> This is what students see for this step.
+                                            </div>
+                                            {{ step.get_student_content|linebreaks }}
+                                        </div>
+                                    {% else %}
+                                        <!-- No separate teacher content, show student content -->
+                                        <div class="alert alert-warning mb-3">
+                                            <i class="fas fa-exclamation-triangle"></i> <strong>No Teacher Content:</strong> This step only has student instructions.
+                                        </div>
+                                        {{ step.get_student_content|linebreaks }}
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Student view -->
+                                    {{ step.get_student_content|linebreaks }}
+                                {% endif %}
+                            </div>
+
+                            <!-- Feedback Section -->
+                            <div class="feedback-section border-top pt-4">
+                                <h5>Was this step helpful?</h5>
+                                <p class="text-muted">Your feedback helps us improve the instructions for everyone.</p>
+                                
+                                {% if user.is_authenticated %}
+                                <div class="feedback-buttons mb-3">
+                                    <button type="button" 
+                                            class="btn feedback-btn {% if user_feedback and user_feedback.is_helpful %}btn-success{% else %}btn-outline-success{% endif %}" 
+                                            data-step-id="{{ step.id }}" 
+                                            data-helpful="true">
+                                        <i class="fas fa-thumbs-up"></i> Helpful
+                                        <span class="badge bg-light text-dark ms-1 thumbs-up-count">{{ feedback_summary.thumbs_up }}</span>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn feedback-btn ms-2 {% if user_feedback and not user_feedback.is_helpful %}btn-danger{% else %}btn-outline-danger{% endif %}" 
+                                            data-step-id="{{ step.id }}" 
+                                            data-helpful="false">
+                                        <i class="fas fa-thumbs-down"></i> Not Helpful
+                                        <span class="badge bg-light text-dark ms-1 thumbs-down-count">{{ feedback_summary.thumbs_down }}</span>
+                                    </button>
+                                </div>
+
+                                {% if user_feedback %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    You rated this step as 
+                                    <strong>{% if user_feedback.is_helpful %}helpful{% else %}not helpful{% endif %}</strong>
+                                    {% if user_feedback.feedback_comment %}
+                                    <br><small>Your comment: "{{ user_feedback.feedback_comment }}"</small>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% else %}
+                                <p class="text-muted">
+                                    <i class="fas fa-sign-in-alt"></i> 
+                                    Please <a href="{% url 'login' %}">log in</a> to provide feedback on this step.
+                                </p>
+                                {% endif %}
+
+                                <!-- Feedback Summary -->
+                                {% if feedback_summary.total > 0 %}
+                                <div class="feedback-stats">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="stat-card">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="stat-icon bg-success text-white me-3">
+                                                        <i class="fas fa-thumbs-up"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ feedback_summary.percentage_positive }}% Positive</h6>
+                                                        <small class="text-muted">{{ feedback_summary.total }} total rating{{ feedback_summary.total|pluralize }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="progress mt-2">
+                                                <div class="progress-bar bg-success" 
+                                                     style="width: {{ feedback_summary.percentage_positive }}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Navigation -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-map"></i> Navigation</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                {% if previous_step %}
+                                <a href="{% url 'instruction_step_detail' previous_step.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-arrow-left"></i> Previous
+                                </a>
+                                {% else %}
+                                <span class="btn btn-outline-secondary btn-sm disabled">
+                                    <i class="fas fa-arrow-left"></i> Previous
+                                </span>
+                                {% endif %}
+
+                                <span class="badge bg-primary">{{ step_number }} of {{ total_steps }}</span>
+
+                                {% if next_step %}
+                                <a href="{% url 'instruction_step_detail' next_step.id %}" class="btn btn-outline-primary btn-sm">
+                                    Next <i class="fas fa-arrow-right"></i>
+                                </a>
+                                {% else %}
+                                <span class="btn btn-outline-secondary btn-sm disabled">
+                                    Next <i class="fas fa-arrow-right"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="progress mb-3">
+                                <div class="progress-bar" 
+                                     style="width: {{ step_number|floatformat:0 }}{{ total_steps|floatformat:0 }}%"></div>
+                            </div>
+
+                            <a href="{% url 'game_instructions' step.ai_game.id %}" class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="fas fa-list"></i> View All Steps
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Game Info -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-gamepad"></i> Game Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>{{ step.ai_game.title }}</h6>
+                            {% if step.ai_game.description %}
+                            <p class="text-muted small">{{ step.ai_game.description|truncatewords:15 }}</p>
+                            {% endif %}
+                            
+                            {% if step.ai_game.get_first_step_url %}
+                            <a href="{{ step.ai_game.get_first_step_url }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-external-link-alt"></i> Play Game
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Provide Additional Feedback</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="feedbackStepId" name="step_id" value="{{ step.id }}">
+                    <input type="hidden" id="feedbackIsHelpful" name="is_helpful">
+                    <div class="mb-3">
+                        <label for="feedbackComment" class="form-label">Additional Comments (Optional)</label>
+                        <textarea class="form-control" id="feedbackComment" name="feedback_comment" rows="3" 
+                                  placeholder="Tell us more about your experience with this step..."
+                                  >{% if user_feedback %}{{ user_feedback.feedback_comment }}{% endif %}</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitFeedback()">Submit Feedback</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle feedback button clicks
+    document.querySelectorAll('.feedback-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const stepId = this.dataset.stepId;
+            const isHelpful = this.dataset.helpful === 'true';
+            
+            // Set modal values
+            document.getElementById('feedbackIsHelpful').value = isHelpful;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+            modal.show();
+        });
+    });
+});
+
+function submitFeedback() {
+    const form = document.getElementById('feedbackForm');
+    const formData = new FormData(form);
+    const stepId = formData.get('step_id');
+    
+    fetch(`/aigames/instruction-steps/${stepId}/feedback/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload page to show updated feedback
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting feedback:', error);
+        alert('Error submitting feedback. Please try again.');
+    });
+}
+
+// Content toggle for teachers
+document.addEventListener('DOMContentLoaded', function() {
+    const teacherViewRadio = document.getElementById('teacher-view');
+    const studentViewRadio = document.getElementById('student-view');
+    const teacherContent = document.getElementById('teacher-content');
+    const studentContent = document.getElementById('student-content');
+    
+    if (teacherViewRadio && studentViewRadio && teacherContent && studentContent) {
+        teacherViewRadio.addEventListener('change', function() {
+            if (this.checked) {
+                teacherContent.style.display = 'block';
+                studentContent.style.display = 'none';
+            }
+        });
+        
+        studentViewRadio.addEventListener('change', function() {
+            if (this.checked) {
+                teacherContent.style.display = 'none';
+                studentContent.style.display = 'block';
+            }
+        });
+    }
+});
+
+// Content toggle functionality for teachers
+document.addEventListener('DOMContentLoaded', function() {
+    const teacherViewRadio = document.getElementById('teacher-view');
+    const studentViewRadio = document.getElementById('student-view');
+    const teacherContent = document.getElementById('teacher-content');
+    const studentContent = document.getElementById('student-content');
+    
+    if (teacherViewRadio && studentViewRadio && teacherContent && studentContent) {
+        teacherViewRadio.addEventListener('change', function() {
+            if (this.checked) {
+                teacherContent.style.display = 'block';
+                studentContent.style.display = 'none';
+            }
+        });
+        
+        studentViewRadio.addEventListener('change', function() {
+            if (this.checked) {
+                teacherContent.style.display = 'none';
+                studentContent.style.display = 'block';
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.feedback-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.feedback-btn {
+    transition: all 0.2s ease;
+}
+
+.feedback-btn:hover {
+    transform: translateY(-1px);
+}
+
+.stat-card {
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-content {
+    line-height: 1.7;
+    font-size: 1.1rem;
+}
+
+.progress {
+    height: 8px;
+}
+</style>
+{% endblock %}

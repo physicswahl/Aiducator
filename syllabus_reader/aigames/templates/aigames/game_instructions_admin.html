@@ -1,0 +1,697 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Admin Instructions - {{ game.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">🛠️ Admin: {{ game.title }} Instructions</h1>
+                    <p class="text-muted">Manage GameSteps and InstructionSteps for this game</p>
+                </div>
+                <div>
+                    <a href="{% url 'team_management_dashboard' %}" class="btn btn-outline-secondary">
+                        ← Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Role Toggle -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-1">View Instructions:</h5>
+                            <small class="text-muted">Toggle between different views or see both side-by-side</small>
+                        </div>
+                        <div class="btn-group" role="group" aria-label="Role toggle">
+                            <input type="radio" class="btn-check" name="roleToggle" id="studentView" autocomplete="off">
+                            <label class="btn btn-outline-success" for="studentView">
+                                🎓 Student Only
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="roleToggle" id="teacherView" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="teacherView">
+                                👩‍🏫 Teacher Only
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="roleToggle" id="bothView" autocomplete="off" checked>
+                            <label class="btn btn-outline-info" for="bothView">
+                                👥 Side-by-Side
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Description -->
+            {% if game.description %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">About This Game</h5>
+                    <p class="card-text">{{ game.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- GameSteps -->
+            {% if game_steps_data %}
+            <div class="row">
+                <div class="col-12">
+                    {% for step_data in game_steps_data %}
+                    <div class="card mb-4 game-step-card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <span class="badge bg-primary me-2">Step {{ step_data.game_step.step_number }}</span>
+                                    {{ step_data.game_step.title }}
+                                    <span class="badge bg-info ms-2">⏱️ {{ step_data.game_step.estimated_duration_minutes }} min</span>
+                                </h5>
+                                <div>
+                                    <a href="/admin/aigames/gamestep/{{ step_data.game_step.id }}/change/" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                        ✏️ Edit GameStep
+                                    </a>
+                                </div>
+                            </div>
+                            {% if step_data.game_step.description %}
+                            <p class="text-muted mb-0 mt-2">{{ step_data.game_step.description }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-body p-0">
+                            <div class="row g-0 instruction-panels-container">
+                                <!-- Student Instructions -->
+                                <div class="col-md-6 instruction-panel student-instructions">
+                                    <div class="p-3 h-100">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <h6 class="mb-0 text-success fw-bold">
+                                                🎓 Student Instructions
+                                            </h6>
+                                            <span class="badge bg-success">{{ step_data.student_instructions|length }} instruction(s)</span>
+                                        </div>
+
+                                        {% if step_data.student_instructions %}
+                                            {% for inst_data in step_data.student_instructions %}
+                                            <div class="instruction-item mb-3 p-2 border rounded {% if inst_data.is_orphaned %}orphaned-instruction{% endif %}">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if inst_data.is_in_chain and inst_data.chain_position %}
+                                                        <span class="badge bg-success me-2">{{ inst_data.chain_position }}</span>
+                                                        {% endif %}
+                                                        {% if inst_data.is_orphaned %}
+                                                        <span class="badge bg-warning me-2" title="Orphaned instruction">⚠️ Orphaned</span>
+                                                        {% endif %}
+                                                        <h6 class="mb-0">{{ inst_data.instruction.title }}</h6>
+                                                    </div>
+                                                    <div class="btn-group">
+                                                        {% if inst_data.instruction.estimated_duration_minutes %}
+                                                        <span class="badge bg-light text-dark">{{ inst_data.instruction.estimated_duration_minutes }}min</span>
+                                                        {% endif %}
+                                                        <!-- Split instruction button -->
+                                                        <button class="btn btn-xs btn-outline-warning split-instruction-btn" 
+                                                                data-instruction-id="{{ inst_data.instruction.id }}" 
+                                                                data-step-id="{{ step_data.game_step.id }}" 
+                                                                data-role="student"
+                                                                title="Split this instruction">
+                                                            ✂️
+                                                        </button>
+                                                        <!-- Edit button -->
+                                                        <a href="/admin/aigames/instructionstep/{{ inst_data.instruction.id }}/change/" class="btn btn-xs btn-outline-primary" target="_blank" title="Edit instruction">
+                                                            ✏️
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="instruction-content mb-2">
+                                                    {{ inst_data.instruction.content|linebreaks }}
+                                                </div>
+                                                
+                                                <!-- Feedback Summary -->
+                                                <div class="feedback-summary-small">
+                                                    <small class="text-muted">
+                                                        {% if inst_data.feedback_summary.total > 0 %}
+                                                            👍 {{ inst_data.feedback_summary.thumbs_up }}
+                                                            👎 {{ inst_data.feedback_summary.thumbs_down }}
+                                                            ({{ inst_data.feedback_summary.percentage_positive }}% helpful)
+                                                        {% else %}
+                                                            No feedback yet
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                            
+                                            <!-- Add instruction at end of chain -->
+                                            <div class="text-center py-2">
+                                                <button class="btn btn-sm btn-success add-instruction-btn" 
+                                                        data-step-id="{{ step_data.game_step.id }}" 
+                                                        data-role="student"
+                                                        title="Add instruction at end">
+                                                    ➕ Add Student Instruction
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-muted text-center py-3">
+                                                ➕ No student instructions yet
+                                                <button class="btn btn-sm btn-outline-success mt-2 add-instruction-btn" 
+                                                        data-step-id="{{ step_data.game_step.id }}" 
+                                                        data-role="student">
+                                                    Add Student Instruction
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Teacher Instructions -->
+                                <div class="col-md-6 instruction-panel teacher-instructions">
+                                    <div class="p-3 h-100">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <h6 class="mb-0 text-primary fw-bold">
+                                                👩‍🏫 Teacher Instructions
+                                            </h6>
+                                            <span class="badge bg-primary">{{ step_data.teacher_instructions|length }} instruction(s)</span>
+                                        </div>
+
+                                        {% if step_data.teacher_instructions %}
+                                            {% for inst_data in step_data.teacher_instructions %}
+                                            <div class="instruction-item mb-3 p-2 border rounded {% if inst_data.is_orphaned %}orphaned-instruction{% endif %}">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if inst_data.is_in_chain and inst_data.chain_position %}
+                                                        <span class="badge bg-primary me-2">{{ inst_data.chain_position }}</span>
+                                                        {% endif %}
+                                                        {% if inst_data.is_orphaned %}
+                                                        <span class="badge bg-warning me-2" title="Orphaned instruction">⚠️ Orphaned</span>
+                                                        {% endif %}
+                                                        <h6 class="mb-0">{{ inst_data.instruction.title }}</h6>
+                                                    </div>
+                                                    <div class="btn-group">
+                                                        {% if inst_data.instruction.estimated_duration_minutes %}
+                                                        <span class="badge bg-light text-dark">{{ inst_data.instruction.estimated_duration_minutes }}min</span>
+                                                        {% endif %}
+                                                        <!-- Split instruction button -->
+                                                        <button class="btn btn-xs btn-outline-warning split-instruction-btn" 
+                                                                data-instruction-id="{{ inst_data.instruction.id }}" 
+                                                                data-step-id="{{ step_data.game_step.id }}" 
+                                                                data-role="teacher"
+                                                                title="Split this instruction">
+                                                            ✂️
+                                                        </button>
+                                                        <!-- Edit button -->
+                                                        <a href="/admin/aigames/instructionstep/{{ inst_data.instruction.id }}/change/" class="btn btn-xs btn-outline-primary" target="_blank" title="Edit instruction">
+                                                            ✏️
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="instruction-content mb-2">
+                                                    {{ inst_data.instruction.content|linebreaks }}
+                                                </div>
+                                                
+                                                <!-- Feedback Summary -->
+                                                <div class="feedback-summary-small">
+                                                    <small class="text-muted">
+                                                        {% if inst_data.feedback_summary.total > 0 %}
+                                                            👍 {{ inst_data.feedback_summary.thumbs_up }}
+                                                            👎 {{ inst_data.feedback_summary.thumbs_down }}
+                                                            ({{ inst_data.feedback_summary.percentage_positive }}% helpful)
+                                                        {% else %}
+                                                            No feedback yet
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                            
+                                            <!-- Add instruction at end of chain -->
+                                            <div class="text-center py-2">
+                                                <button class="btn btn-sm btn-primary add-instruction-btn" 
+                                                        data-step-id="{{ step_data.game_step.id }}" 
+                                                        data-role="teacher"
+                                                        title="Add instruction at end">
+                                                    ➕ Add Teacher Instruction
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-muted text-center py-3">
+                                                <i class="fas fa-plus-circle"></i>
+                                                <p class="mb-0">No teacher instructions yet</p>
+                                                <button class="btn btn-sm btn-outline-primary mt-2 add-instruction-btn" 
+                                                        data-step-id="{{ step_data.game_step.id }}" 
+                                                        data-role="teacher">
+                                                    Add Teacher Instruction
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Add New GameStep -->
+            <div class="card border-dashed">
+                <div class="card-body text-center py-4">
+                    <h5 class="text-muted"><i class="fas fa-plus-circle"></i> Add New GameStep</h5>
+                    <p class="text-muted mb-3">Create a new step for this game</p>
+                    <a href="/admin/aigames/gamestep/add/?ai_game={{ game.id }}" class="btn btn-outline-primary" target="_blank">
+                        <i class="fas fa-plus"></i> Create GameStep
+                    </a>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <h4 class="text-muted"><i class="fas fa-plus-circle"></i> No GameSteps Yet</h4>
+                    <p class="text-muted mb-4">This game doesn't have any steps yet. Create the first GameStep to get started.</p>
+                    <a href="/admin/aigames/gamestep/add/?ai_game={{ game.id }}" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-plus"></i> Create First GameStep
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.border-dashed {
+    border: 2px dashed #dee2e6 !important;
+}
+
+.instruction-panel {
+    min-height: 200px;
+    transition: all 0.3s ease;
+}
+
+.instruction-panels-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.student-instructions {
+    background-color: #f8fff9;
+    border-right: 1px solid #dee2e6;
+}
+
+.teacher-instructions {
+    background-color: #f8fafe;
+}
+
+/* Enhanced side-by-side styling */
+body.both-view .student-instructions {
+    border-right: 3px solid #28a745;
+    position: relative;
+}
+
+body.both-view .teacher-instructions {
+    border-left: 3px solid #007bff;
+    position: relative;
+}
+
+body.both-view .student-instructions::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(to bottom, #28a745, #20c997);
+    z-index: 1;
+}
+
+body.both-view .teacher-instructions::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(to bottom, #007bff, #0dcaf0);
+    z-index: 1;
+}
+
+.instruction-item {
+    background-color: #f8f9fa;
+    transition: background-color 0.3s ease;
+}
+
+/* Orphaned instruction styling */
+.instruction-item.orphaned-instruction {
+    background-color: #ffeaa7 !important;
+    border: 1px solid #fdcb6e !important;
+    position: relative;
+}
+
+.instruction-item.orphaned-instruction::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 193, 7, 0.1) 25%, transparent 25%), 
+                linear-gradient(-45deg, rgba(255, 193, 7, 0.1) 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, rgba(255, 193, 7, 0.1) 75%), 
+                linear-gradient(-45deg, transparent 75%, rgba(255, 193, 7, 0.1) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    pointer-events: none;
+    border-radius: 0.375rem;
+}
+
+.game-step-card .card-header {
+    background-color: #e9ecef;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.student-instructions .instruction-item {
+    border-left: 3px solid #28a745 !important;
+}
+
+.teacher-instructions .instruction-item {
+    border-left: 3px solid #007bff !important;
+}
+
+.btn-xs {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.75rem;
+}
+
+/* Role toggle functionality */
+.teacher-instructions {
+    display: block;
+}
+
+.student-instructions {
+    display: block;
+}
+
+/* Side-by-side layout improvements */
+body.both-view .row.g-0 {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+body.both-view .student-instructions {
+    border-right: 2px solid #28a745;
+    background-color: #f8fff9;
+}
+
+body.both-view .teacher-instructions {
+    border-left: 2px solid #007bff;
+    background-color: #f8fafe;
+}
+
+/* Hide/show based on role selection */
+body.student-view .teacher-instructions {
+    display: none !important;
+}
+
+body.student-view .student-instructions .col-md-6 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+body.teacher-view .student-instructions {
+    display: none !important;
+}
+
+body.teacher-view .teacher-instructions .col-md-6 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+/* Add instruction buttons styling */
+.add-instruction-after {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.instruction-item:hover .add-instruction-after {
+    opacity: 1;
+}
+
+/* Modal styling */
+.modal-backdrop.show {
+    opacity: 0.7;
+}
+
+/* Split instruction modal */
+.split-instruction-modal .form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin instructions page loaded');
+    
+    // Handle role toggle
+    const roleToggles = document.querySelectorAll('input[name="roleToggle"]');
+    const body = document.body;
+    const studentPanels = document.querySelectorAll('.student-instructions');
+    const teacherPanels = document.querySelectorAll('.teacher-instructions');
+    
+    console.log('Found role toggles:', roleToggles.length);
+    console.log('Found student panels:', studentPanels.length);
+    console.log('Found teacher panels:', teacherPanels.length);
+    
+    function updateVisibility() {
+        const checkedToggle = document.querySelector('input[name="roleToggle"]:checked');
+        if (!checkedToggle) {
+            console.log('No toggle checked');
+            return;
+        }
+        
+        console.log('Active toggle:', checkedToggle.id);
+        
+        // Remove all view classes
+        body.classList.remove('student-view', 'teacher-view', 'both-view');
+        
+        // Show/hide panels based on selection
+        if (checkedToggle.id === 'studentView') {
+            body.classList.add('student-view');
+            studentPanels.forEach(panel => {
+                panel.style.display = 'block';
+                // Make student panel full width
+                const parentCol = panel.closest('.col-md-6');
+                if (parentCol) {
+                    parentCol.style.flex = '0 0 100%';
+                    parentCol.style.maxWidth = '100%';
+                }
+            });
+            teacherPanels.forEach(panel => {
+                panel.style.display = 'none';
+            });
+            console.log('Student view activated - full width');
+        } else if (checkedToggle.id === 'teacherView') {
+            body.classList.add('teacher-view');
+            teacherPanels.forEach(panel => {
+                panel.style.display = 'block';
+                // Make teacher panel full width
+                const parentCol = panel.closest('.col-md-6');
+                if (parentCol) {
+                    parentCol.style.flex = '0 0 100%';
+                    parentCol.style.maxWidth = '100%';
+                }
+            });
+            studentPanels.forEach(panel => {
+                panel.style.display = 'none';
+            });
+            console.log('Teacher view activated - full width');
+        } else if (checkedToggle.id === 'bothView') {
+            body.classList.add('both-view');
+            // Reset to side-by-side layout
+            studentPanels.forEach(panel => {
+                panel.style.display = 'block';
+                const parentCol = panel.closest('.col-md-6');
+                if (parentCol) {
+                    parentCol.style.flex = '0 0 50%';
+                    parentCol.style.maxWidth = '50%';
+                }
+            });
+            teacherPanels.forEach(panel => {
+                panel.style.display = 'block';
+                const parentCol = panel.closest('.col-md-6');
+                if (parentCol) {
+                    parentCol.style.flex = '0 0 50%';
+                    parentCol.style.maxWidth = '50%';
+                }
+            });
+            console.log('Side-by-side view activated');
+        }
+    }
+    
+    roleToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            console.log('Toggle changed to:', this.id);
+            updateVisibility();
+        });
+    });
+    
+    // Set initial state to "Both View" and trigger update
+    const bothViewToggle = document.getElementById('bothView');
+    if (bothViewToggle) {
+        bothViewToggle.checked = true;
+        updateVisibility();
+        console.log('Initial state set to Both View');
+    }
+    
+    // Handle Add Instruction buttons
+    document.querySelectorAll('.add-instruction-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const stepId = this.getAttribute('data-step-id');
+            const role = this.getAttribute('data-role');
+            const afterInstructionId = this.getAttribute('data-after-instruction-id');
+            
+            // Build URL with parameters
+            let url = `/admin/aigames/instructionstep/add/?game_step=${stepId}&role=${role}`;
+            if (afterInstructionId) {
+                url += `&after_instruction=${afterInstructionId}`;
+            }
+            
+            // Open in new window
+            window.open(url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        });
+    });
+    
+    // Handle Split Instruction buttons
+    document.querySelectorAll('.split-instruction-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const instructionId = this.getAttribute('data-instruction-id');
+            const stepId = this.getAttribute('data-step-id');
+            const role = this.getAttribute('data-role');
+            
+            showSplitInstructionModal(instructionId, stepId, role);
+        });
+    });
+    
+    // Function to show split instruction modal
+    function showSplitInstructionModal(instructionId, stepId, role) {
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('splitInstructionModal');
+        if (!modal) {
+            const modalHtml = `
+                <div class="modal fade split-instruction-modal" id="splitInstructionModal" tabindex="-1" aria-labelledby="splitInstructionModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="splitInstructionModalLabel">
+                                    <i class="fas fa-cut"></i> Split Instruction
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted mb-4">Split this instruction into two separate instructions. The content below will be divided between them.</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="firstInstructionTitle" class="form-label">First Instruction Title</label>
+                                            <input type="text" class="form-control" id="firstInstructionTitle" placeholder="Enter title for first part">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="firstInstructionContent" class="form-label">First Instruction Content</label>
+                                            <textarea class="form-control" id="firstInstructionContent" rows="6" placeholder="Enter content for first part"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="secondInstructionTitle" class="form-label">Second Instruction Title</label>
+                                            <input type="text" class="form-control" id="secondInstructionTitle" placeholder="Enter title for second part">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="secondInstructionContent" class="form-label">Second Instruction Content</label>
+                                            <textarea class="form-control" id="secondInstructionContent" rows="6" placeholder="Enter content for second part"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Note:</strong> The original instruction will be replaced with these two new instructions. 
+                                    They will be automatically linked in sequence.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-warning" id="confirmSplit">
+                                    <i class="fas fa-cut"></i> Split Instruction
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            modal = document.getElementById('splitInstructionModal');
+        }
+        
+        // Store data for the split operation
+        modal.setAttribute('data-instruction-id', instructionId);
+        modal.setAttribute('data-step-id', stepId);
+        modal.setAttribute('data-role', role);
+        
+        // Get original instruction content (from the visible instruction on the page)
+        const instructionElement = document.querySelector(`[data-instruction-id="${instructionId}"]`).closest('.instruction-item');
+        const originalTitle = instructionElement.querySelector('h6').textContent.trim();
+        const originalContent = instructionElement.querySelector('.instruction-content').textContent.trim();
+        
+        // Pre-populate the form
+        document.getElementById('firstInstructionTitle').value = originalTitle + ' (Part 1)';
+        document.getElementById('secondInstructionTitle').value = originalTitle + ' (Part 2)';
+        document.getElementById('firstInstructionContent').value = originalContent.substring(0, Math.floor(originalContent.length / 2));
+        document.getElementById('secondInstructionContent').value = originalContent.substring(Math.floor(originalContent.length / 2));
+        
+        // Show modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    }
+    
+    // Handle split confirmation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'confirmSplit') {
+            const modal = document.getElementById('splitInstructionModal');
+            const instructionId = modal.getAttribute('data-instruction-id');
+            const stepId = modal.getAttribute('data-step-id');
+            const role = modal.getAttribute('data-role');
+            
+            const firstTitle = document.getElementById('firstInstructionTitle').value.trim();
+            const firstContent = document.getElementById('firstInstructionContent').value.trim();
+            const secondTitle = document.getElementById('secondInstructionTitle').value.trim();
+            const secondContent = document.getElementById('secondInstructionContent').value.trim();
+            
+            if (!firstTitle || !firstContent || !secondTitle || !secondContent) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // For now, open two admin pages to create the instructions manually
+            // In a full implementation, this would make AJAX calls to a custom endpoint
+            alert('Split functionality will open two admin pages for creating the new instructions. The original instruction should be deleted manually after creating the new ones.');
+            
+            const url1 = `/admin/aigames/instructionstep/add/?game_step=${stepId}&role=${role}&title=${encodeURIComponent(firstTitle)}&content=${encodeURIComponent(firstContent)}`;
+            const url2 = `/admin/aigames/instructionstep/add/?game_step=${stepId}&role=${role}&title=${encodeURIComponent(secondTitle)}&content=${encodeURIComponent(secondContent)}`;
+            
+            window.open(url1, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            setTimeout(() => {
+                window.open(url2, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            }, 500);
+            
+            // Hide modal
+            bootstrap.Modal.getInstance(modal).hide();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Syllabus Manager</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'syllabus/images/favicon.svg' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'syllabus/images/favicon.svg' %}">
+    <link href="{% static 'syllabus/css/bootstrap.min.css' %}" rel="stylesheet">
+    <script src="{% static 'syllabus/js/bootstrap.bundle.min.js' %}"></script>
+    
+    {% if navbar_color %}
+    <style>
+        .navbar.navbar-dark.bg-primary {
+            background-color: {{ navbar_color }} !important;
+        }
+        .navbar.navbar-dark.bg-primary .navbar-brand,
+        .navbar.navbar-dark.bg-primary .nav-link {
+            color: white !important;
+        }
+        .navbar.navbar-dark.bg-primary .nav-link:hover {
+            color: rgba(255, 255, 255, 0.75) !important;
+        }
+    </style>
+    {% endif %}
+    
+    {% if primary_button_color %}
+    <style>
+        .btn-primary {
+            background-color: {{ primary_button_color }} !important;
+            border-color: {{ primary_button_color }} !important;
+        }
+        .btn-primary:hover {
+            background-color: {{ primary_button_color }}dd !important;
+            border-color: {{ primary_button_color }}dd !important;
+        }
+        .btn-primary:focus,
+        .btn-primary.focus {
+            background-color: {{ primary_button_color }}dd !important;
+            border-color: {{ primary_button_color }}dd !important;
+            box-shadow: 0 0 0 0.2rem {{ primary_button_color }}40 !important;
+        }
+        .btn-primary:active,
+        .btn-primary.active {
+            background-color: {{ primary_button_color }}cc !important;
+            border-color: {{ primary_button_color }}cc !important;
+        }
+        .btn-outline-primary {
+            color: {{ primary_button_color }} !important;
+            border-color: {{ primary_button_color }} !important;
+        }
+        .btn-outline-primary:hover {
+            background-color: {{ primary_button_color }} !important;
+            border-color: {{ primary_button_color }} !important;
+            color: white !important;
+        }
+        .badge.bg-primary {
+            background-color: {{ primary_button_color }} !important;
+        }
+        .bg-primary {
+            background-color: {{ primary_button_color }} !important;
+        }
+        .text-primary {
+            color: {{ primary_button_color }} !important;
+        }
+        .card-header.bg-primary {
+            background-color: {{ primary_button_color }} !important;
+        }
+        .offcanvas-header {
+            background: linear-gradient(135deg, {{ primary_button_color }}, {{ primary_button_color }}dd) !important;
+        }
+    </style>
+    {% endif %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            {% if user.is_authenticated %}
+                <a class="navbar-brand d-flex align-items-center" href="{% if user_role == 'student' %}{% url 'student_dashboard' %}{% else %}{% url 'curriculum_list' %}{% endif %}">
+                    {% if school_logo %}
+                        <img src="{{ school_logo }}" alt="{{ school_name }} Logo" height="40">
+                    {% else %}
+                        📚 Aiducator
+                    {% endif %}
+                </a>
+            {% else %}
+                <a class="navbar-brand" href="{% url 'landing_page' %}">📚 Aiducator</a>
+            {% endif %}
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                {% if user.is_authenticated %}
+                    <ul class="navbar-nav me-auto">
+                        {% if user_role == 'student' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'student_dashboard' %}">
+                                    <i class="bi bi-house-door"></i> My Games
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'list_teams' %}">
+                                    <i class="bi bi-people"></i> Teams
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'curriculum_list' %}">
+                                    <i class="bi bi-book"></i> Curricula
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'team_management_dashboard' %}">
+                                    <i class="bi bi-controller"></i> Team Management
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'game_matchups_list' %}">
+                                    <i class="bi bi-trophy"></i> Matchups
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'list_teams' %}">
+                                    <i class="bi bi-people"></i> Teams
+                                </a>
+                            </li>
+                            {% if can_modify_syllabus %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'provider_list' %}">
+                                        <i class="bi bi-building"></i> Providers
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    </ul>
+                {% endif %}
+                
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                {{ user.username }}
+                                {% if user_role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif user_role == 'teacher' %}
+                                    <span class="badge bg-warning text-dark">Teacher</span>
+                                {% elif user_role == 'student' %}
+                                    <span class="badge bg-info">Student</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% if can_modify_syllabus %}
+                                    <li><a class="dropdown-item" href="{% url 'create_curriculum' %}">➕ Create Curriculum</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'school_list' %}">🏢 Manage Schools</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'manage_user_roles' %}">👥 Manage User Roles</a></li>
+                                    <li><a class="dropdown-item" href="/admin/">🔧 Admin Panel</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                {% if can_create_teams %}
+                                    <li><a class="dropdown-item" href="{% url 'team_management_dashboard' %}">📊 Team Management</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'create_team' %}">👥 Create Team</a></li>
+                                {% endif %}
+                                {% if can_create_teams %}
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">Logout</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/accounts/login/">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb Navigation -->
+    {% block breadcrumb %}{% endblock %}
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

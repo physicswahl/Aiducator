@@ -1,0 +1,4 @@
+Django>=3.2
+PyPDF2
+django-crispy-forms
+django-widget-tweaks

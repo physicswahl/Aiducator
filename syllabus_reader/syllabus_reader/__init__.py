@@ -1,0 +1,2 @@
+# syllabus_reader/syllabus_reader/syllabus_reader/__init__.py
+# This file is intentionally left blank.
