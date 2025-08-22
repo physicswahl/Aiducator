@@ -20,9 +20,9 @@ def login_redirect_view(request):
     if hasattr(user, 'profile'):
         role = user.profile.role
         if role == 'student':
-            return redirect('student_dashboard')
+            return redirect('aigames:student_dashboard')
         elif role == 'teacher':
-            return redirect('team_management_dashboard')
+            return redirect('aigames:team_management_dashboard')
         elif role == 'admin':
             return redirect('/syllabus/curricula/')  # Keep this as path since it's in syllabus app
     
@@ -34,8 +34,9 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('login-redirect/', login_redirect_view, name='login_redirect'),
     path('syllabus/', include('syllabus.urls')),
-    path('aigames/', include('aigames.urls')),
+    path('aigames/', include('aigames.urls', namespace='aigames')),
     path('phoneme-density/', include('phoneme_density.urls')),
+    path('detector/', include('detector.urls')),
     path('favicon.ico', favicon_view, name='favicon'),
     path('', RedirectView.as_view(url='/syllabus/', permanent=False)),
 ]

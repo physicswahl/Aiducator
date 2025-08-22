@@ -1,0 +1,87 @@
+{% extends 'syllabus/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="bi bi-controller"></i> Edit {{ instruction_type|title }} Instructions</h1>
+                    <p class="text-muted">Select a game to edit {{ instruction_type }} instructions</p>
+                </div>
+                <a href="{% url 'aigames:curriculum_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Curricula
+                </a>
+            </div>
+
+            <!-- Games Grid -->
+            {% if games %}
+                <div class="row">
+                    {% for game in games %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="bi bi-controller"></i> {{ game.title }}
+                                    </h5>
+                                    <p class="card-text text-muted">
+                                        {{ game.description|default:"No description available"|truncatewords:20 }}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <small class="text-muted">
+                                            <i class="bi bi-step-forward"></i> 
+                                            {{ game.get_ordered_steps.count }} step{{ game.get_ordered_steps.count|pluralize }}
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock"></i> 
+                                            {{ game.get_total_estimated_duration }} min
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    {% if instruction_type == 'student' %}
+                                        <a href="{% url 'aigames:edit_student_instructions_for_game' game.id %}" class="btn btn-primary w-100">
+                                            <i class="bi bi-person-check"></i> Edit Student Instructions
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'aigames:edit_teacher_instructions_for_game' game.id %}" class="btn btn-primary w-100">
+                                            <i class="bi bi-person-gear"></i> Edit Teacher Instructions
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-controller fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Games Available</h4>
+                        <p class="text-muted">There are no games configured yet. Create a game first to add instructions.</p>
+                        <a href="/admin/" class="btn btn-primary">
+                            <i class="bi bi-gear"></i> Go to Admin Panel
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-footer {
+    border-top: 1px solid #dee2e6;
+}
+</style>
+{% endblock %}

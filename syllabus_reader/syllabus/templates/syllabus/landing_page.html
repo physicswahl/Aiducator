@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Games - Welcome</title>
+    <title>AIductor - Welcome</title>
     <link href="{% static 'syllabus/css/bootstrap.min.css' %}" rel="stylesheet">
     <script src="{% static 'syllabus/js/bootstrap.bundle.min.js' %}"></script>
     <style>
@@ -24,56 +24,34 @@
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'landing_page' %}">🎮 AI Games</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'login' %}">Login</a>
-            </div>
-        </div>
-    </nav>
 
     <!-- Hero Section -->
     <section class="hero-section text-center">
         <div class="container">
-            <h1 class="display-4 fw-bold mb-4">🎮 Welcome to AI Games</h1>
+            <h1 class="display-4 fw-bold mb-4">Welcome to AIducator</h1>
             <p class="lead mb-5">Engage in interactive AI-powered educational games and team-based learning</p>
             <div class="row justify-content-center">
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <p class="fs-5 mb-4">A comprehensive platform for team-based AI learning games that enhance education through interactive, competitive experiences.</p>
-                    <a href="{% url 'login' %}" class="btn btn-light btn-lg me-3">🔐 Login to Explore</a>
-                    <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Statistics Section -->
-    <section class="stats-section">
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-md-3 mb-4">
-                    <div class="card border-0 bg-transparent">
+                    
+                    <!-- Login Form -->
+                    <div class="card bg-white bg-opacity-90 shadow">
                         <div class="card-body">
-                            <h2 class="text-primary fw-bold">{{ total_curricula }}</h2>
-                            <p class="text-muted">Curricula Available</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-4">
-                    <div class="card border-0 bg-transparent">
-                        <div class="card-body">
-                            <h2 class="text-success fw-bold">{{ total_syllabi }}</h2>
-                            <p class="text-muted">Syllabi Created</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-4">
-                    <div class="card border-0 bg-transparent">
-                        <div class="card-body">
-                            <h2 class="text-warning fw-bold">{{ total_units }}</h2>
-                            <p class="text-muted">Learning Units</p>
+                            <h3 class="card-title text-dark mb-3">🔐 Login to Explore</h3>
+                            <form method="post" action="{% url 'login' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="id_username" class="form-label text-dark">Username</label>
+                                    <input type="text" class="form-control" name="username" id="id_username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="id_password" class="form-label text-dark">Password</label>
+                                    <input type="password" class="form-control" name="password" id="id_password" required>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -123,49 +101,6 @@
         </div>
     </section>
 
-    <!-- User Types Section -->
-    <section class="py-5 bg-light">
-        <div class="container">
-            <h2 class="text-center mb-5">👥 User Access Levels</h2>
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100 border-primary">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">🔧 Administrator Access</h5>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-unstyled">
-                                <li>✅ View all content</li>
-                                <li>✅ Create new curricula and syllabi</li>
-                                <li>✅ Add units with AI games</li>
-                                <li>✅ Create and link AI games</li>
-                                <li>✅ Edit existing content</li>
-                                <li>✅ Manage user permissions</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100 border-info">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">👁️ User Access</h5>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-unstyled">
-                                <li>✅ Browse all curricula and syllabi</li>
-                                <li>✅ Navigate through units</li>
-                                <li>✅ Access linked AI learning games</li>
-                                <li>✅ View detailed content</li>
-                                <li>❌ Cannot create new content</li>
-                                <li>❌ Cannot edit existing content</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Call to Action -->
     <section class="py-5 bg-primary text-white text-center">
         <div class="container">
@@ -178,7 +113,7 @@
     <!-- Footer -->
     <footer class="bg-dark text-white py-4">
         <div class="container text-center">
-            <p class="mb-0">&copy; 2025 AI Games. Enhancing education through interactive AI-powered learning experiences.</p>
+            <p class="mb-0">&copy; 2025 AI Games</p>
         </div>
     </footer>
 </body>

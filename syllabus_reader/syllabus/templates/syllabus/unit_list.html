@@ -70,13 +70,13 @@
                                 {% if can_create_teams %}
                                     <!-- Teacher View: Setup and Management -->
                                     <div class="btn-group-vertical d-grid gap-1" role="group">
-                                        <a href="{% url 'teacher_game_instructions' unit.ai_game.id %}" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-chalkboard-teacher"></i> Teacher Instructions
+                                        <a href="{% url 'aigames:teacher_game_instructions' unit.ai_game.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-chalkboard-teacher"></i> Teachers Instructions
                                         </a>
-                                        <a href="{% url 'team_management_dashboard' %}" class="btn btn-info btn-sm">
+                                        <a href="{% url 'aigames:team_management_dashboard' %}" class="btn btn-info btn-sm">
                                             <i class="fas fa-users-cog"></i> Manage Teams
                                         </a>
-                                        <a href="{% url 'create_game_matchup' %}?game={{ unit.ai_game.id }}" class="btn btn-warning btn-sm">
+                                        <a href="{% url 'aigames:create_game_matchup' %}?game={{ unit.ai_game.id }}" class="btn btn-warning btn-sm">
                                             <i class="fas fa-handshake"></i> Setup Matchup
                                         </a>
                                     </div>

@@ -28,7 +28,7 @@ def landing_page(request):
         try:
             from aigames.models import UserProfile
             if hasattr(request.user, 'profile') and request.user.profile.is_student:
-                return redirect('student_dashboard')
+                return redirect('aigames:student_dashboard')
             else:
                 return redirect('curriculum_list')
         except (UserProfile.DoesNotExist, AttributeError):

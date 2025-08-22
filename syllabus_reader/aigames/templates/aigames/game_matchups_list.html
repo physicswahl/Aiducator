@@ -12,10 +12,10 @@
                     <p class="text-muted">{{ user_school.name }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'team_management_dashboard' %}" class="btn btn-outline-secondary me-2">
+                    <a href="{% url 'aigames:team_management_dashboard' %}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left"></i> Back to Dashboard
                     </a>
-                    <a href="{% url 'create_game_matchup' %}" class="btn btn-primary">
+                    <a href="{% url 'aigames:create_game_matchup' %}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Create Matchup
                     </a>
                 </div>
@@ -111,7 +111,7 @@
                                     <td>{{ matchup.created_by.get_full_name|default:matchup.created_by.username }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'game_matchup_detail' matchup.id %}" class="btn btn-sm btn-outline-primary">
+                                            <a href="{% url 'aigames:game_matchup_detail' matchup.id %}" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-eye"></i> View
                                             </a>
                                             {% if matchup.status != 'completed' and matchup.status != 'cancelled' %}
@@ -122,7 +122,7 @@
                                                 <ul class="dropdown-menu">
                                                     {% if matchup.status != 'in_progress' %}
                                                     <li>
-                                                        <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                                        <form method="post" action="{% url 'aigames:update_matchup_status' matchup.id %}" class="d-inline">
                                                             {% csrf_token %}
                                                             <input type="hidden" name="status" value="in_progress">
                                                             <button type="submit" class="dropdown-item">
@@ -133,7 +133,7 @@
                                                     {% endif %}
                                                     {% if matchup.status != 'completed' %}
                                                     <li>
-                                                        <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                                        <form method="post" action="{% url 'aigames:update_matchup_status' matchup.id %}" class="d-inline">
                                                             {% csrf_token %}
                                                             <input type="hidden" name="status" value="completed">
                                                             <button type="submit" class="dropdown-item">
@@ -143,7 +143,7 @@
                                                     </li>
                                                     {% endif %}
                                                     <li>
-                                                        <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                                        <form method="post" action="{% url 'aigames:update_matchup_status' matchup.id %}" class="d-inline">
                                                             {% csrf_token %}
                                                             <input type="hidden" name="status" value="cancelled">
                                                             <button type="submit" class="dropdown-item">
@@ -173,7 +173,7 @@
                     <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
                     <h4>No Matchups Yet</h4>
                     <p class="text-muted">Create matchups between teams to start competitive gaming sessions.</p>
-                    <a href="{% url 'create_game_matchup' %}" class="btn btn-primary">
+                    <a href="{% url 'aigames:create_game_matchup' %}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Create First Matchup
                     </a>
                 </div>

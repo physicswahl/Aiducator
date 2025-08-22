@@ -1,0 +1,418 @@
+{% extends 'syllabus/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="bi bi-{% if instruction_type == 'student' %}person-check{% else %}person-gear{% endif %}"></i> Edit {{ instruction_type|title }} Instructions</h1>
+                    <p class="text-muted">Edit {{ instruction_type }} instructions for all games and steps</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'aigames:curriculum_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Curricula
+                    </a>
+                    <button type="button" class="btn btn-success" onclick="saveAllInstructions()">
+                        <i class="fas fa-save"></i> Save All Changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form for all instructions -->
+            <form id="instructions-form" method="post">
+                {% csrf_token %}
+                
+                <!-- Games and Instructions -->
+                {% for game_data in games_data %}
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h3 class="mb-0">
+                                <i class="bi bi-controller"></i> {{ game_data.game.title }}
+                            </h3>
+                            {% if game_data.game.description %}
+                                <small class="text-light">{{ game_data.game.description }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% for step_data in game_data.game_steps %}
+                                <div class="step-section mb-4 p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="text-secondary mb-0">
+                                            <i class="fas fa-step-forward"></i> 
+                                            Step {{ step_data.step.step_number }}: {{ step_data.step.title|default:"Untitled Step" }}
+                                        </h5>
+                                        <button type="button" class="btn btn-success btn-sm" 
+                                                onclick="addNewInstruction({{ step_data.step.id }}, '{{ instruction_type }}')">
+                                            <i class="bi bi-plus-circle"></i> Add Instruction
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="instructions-container" data-step-id="{{ step_data.step.id }}">
+                                        {% if instruction_type == 'student' %}
+                                            {% for instruction in step_data.student_instructions %}
+                                                <div class="instruction-card mb-3 p-3 border rounded bg-light" data-instruction-id="{{ instruction.id }}">
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-bold">Title:</label>
+                                                            <input type="text" class="form-control instruction-title" 
+                                                                   name="instruction_{{ instruction.id }}_title" 
+                                                                   value="{{ instruction.title }}" 
+                                                                   placeholder="Enter instruction title">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-bold">Content:</label>
+                                                            <textarea class="form-control instruction-content" 
+                                                                      name="instruction_{{ instruction.id }}_content" 
+                                                                      rows="3" 
+                                                                      placeholder="Enter instruction content">{{ instruction.content }}</textarea>
+                                                        </div>
+                                                        <div class="col-md-2 d-flex align-items-end">
+                                                            <input type="hidden" name="instruction_{{ instruction.id }}_role" value="student">
+                                                            <input type="hidden" name="instruction_{{ instruction.id }}_step_id" value="{{ step_data.step.id }}">
+                                                            <button type="button" class="btn btn-outline-danger btn-sm w-100" 
+                                                                    onclick="removeInstruction({{ instruction.id }})" 
+                                                                    title="Remove this instruction">
+                                                                <i class="bi bi-trash"></i> Remove
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <small class="text-muted">ID: {{ instruction.id }}</small>
+                                                    </div>
+                                                </div>
+                                            {% empty %}
+                                                <div class="no-instructions-message text-center py-3 text-muted">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    No student instructions for this step. Click "Add Instruction" to create one.
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            {% for instruction in step_data.teacher_instructions %}
+                                                <div class="instruction-card mb-3 p-3 border rounded bg-light" data-instruction-id="{{ instruction.id }}">
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-bold">Title:</label>
+                                                            <input type="text" class="form-control instruction-title" 
+                                                                   name="instruction_{{ instruction.id }}_title" 
+                                                                   value="{{ instruction.title }}" 
+                                                                   placeholder="Enter instruction title">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-bold">Content:</label>
+                                                            <textarea class="form-control instruction-content" 
+                                                                      name="instruction_{{ instruction.id }}_content" 
+                                                                      rows="3" 
+                                                                      placeholder="Enter instruction content">{{ instruction.content }}</textarea>
+                                                        </div>
+                                                        <div class="col-md-2 d-flex align-items-end">
+                                                            <input type="hidden" name="instruction_{{ instruction.id }}_role" value="teacher">
+                                                            <input type="hidden" name="instruction_{{ instruction.id }}_step_id" value="{{ step_data.step.id }}">
+                                                            <button type="button" class="btn btn-outline-danger btn-sm w-100" 
+                                                                    onclick="removeInstruction({{ instruction.id }})" 
+                                                                    title="Remove this instruction">
+                                                                <i class="bi bi-trash"></i> Remove
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <small class="text-muted">ID: {{ instruction.id }}</small>
+                                                    </div>
+                                                </div>
+                                            {% empty %}
+                                                <div class="no-instructions-message text-center py-3 text-muted">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    No teacher instructions for this step. Click "Add Instruction" to create one.
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="text-center py-4">
+                                    <i class="bi bi-info-circle fa-2x text-muted mb-3"></i>
+                                    <h6 class="text-muted">No steps configured for this game</h6>
+                                    <p class="text-muted">Configure game steps in the admin panel first.</p>
+                                    <a href="/admin/" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-cog"></i> Go to Admin
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No games available</h4>
+                            <p class="text-muted">Create games in the admin panel to start adding instructions.</p>
+                            <a href="/admin/" class="btn btn-primary">
+                                <i class="fas fa-cog"></i> Go to Admin
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mb-0">Saving instructions...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.instruction-card {
+    border-left: 4px solid #007bff !important;
+    transition: box-shadow 0.2s;
+}
+
+.instruction-card:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.instruction-card.being-removed {
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+.step-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745 !important;
+}
+
+.new-instruction {
+    border-left-color: #ffc107 !important;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+}
+
+.no-instructions-message {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.375rem;
+    background-color: #f8f9fa;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-resize textareas
+    document.querySelectorAll('.instruction-content').forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+        // Initial resize
+        textarea.style.height = textarea.scrollHeight + 'px';
+    });
+});
+
+let newInstructionCounter = 1000; // Start with high number to avoid conflicts
+
+function addNewInstruction(stepId, role) {
+    const container = document.querySelector(`[data-step-id="${stepId}"]`);
+    const noInstructionsMessage = container.querySelector('.no-instructions-message');
+    
+    // Hide "no instructions" message if it exists
+    if (noInstructionsMessage) {
+        noInstructionsMessage.style.display = 'none';
+    }
+    
+    const newId = `new_${newInstructionCounter++}`;
+    const instructionCard = document.createElement('div');
+    instructionCard.className = 'instruction-card new-instruction mb-3 p-3 border rounded bg-light';
+    instructionCard.setAttribute('data-instruction-id', newId);
+    
+    instructionCard.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Title:</label>
+                <input type="text" class="form-control instruction-title" 
+                       name="instruction_${newId}_title" 
+                       value="" 
+                       placeholder="Enter instruction title">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Content:</label>
+                <textarea class="form-control instruction-content" 
+                          name="instruction_${newId}_content" 
+                          rows="3" 
+                          placeholder="Enter instruction content"></textarea>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <input type="hidden" name="instruction_${newId}_role" value="${role}">
+                <input type="hidden" name="instruction_${newId}_step_id" value="${stepId}">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" 
+                        onclick="removeInstruction('${newId}')" 
+                        title="Remove this instruction">
+                    <i class="bi bi-trash"></i> Remove
+                </button>
+            </div>
+        </div>
+        <div class="mt-2">
+            <small class="text-muted">New instruction</small>
+        </div>
+    `;
+    
+    // Insert before the last element (before the container ends)
+    container.appendChild(instructionCard);
+    
+    // Focus on the title input
+    const titleInput = instructionCard.querySelector('.instruction-title');
+    titleInput.focus();
+    
+    // Add auto-resize to the new textarea
+    const textarea = instructionCard.querySelector('.instruction-content');
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+}
+
+function removeInstruction(instructionId) {
+    const instructionCard = document.querySelector(`[data-instruction-id="${instructionId}"]`);
+    if (instructionCard) {
+        instructionCard.classList.add('being-removed');
+        setTimeout(() => {
+            instructionCard.remove();
+            
+            // Check if this was the last instruction in the container
+            const container = instructionCard.closest('.instructions-container');
+            const remainingCards = container.querySelectorAll('.instruction-card');
+            const noInstructionsMessage = container.querySelector('.no-instructions-message');
+            
+            if (remainingCards.length === 0 && noInstructionsMessage) {
+                noInstructionsMessage.style.display = 'block';
+            }
+        }, 300);
+    }
+}
+
+function saveAllInstructions() {
+    const form = document.getElementById('instructions-form');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    // Show loading modal
+    loadingModal.show();
+    
+    // Create FormData object
+    const formData = new FormData(form);
+    
+    // Send AJAX request
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        
+        if (data.success) {
+            // Show success message
+            showToast('Instructions saved successfully!', 'success');
+            
+            // Update instruction IDs for new instructions
+            if (data.instruction_mappings) {
+                Object.entries(data.instruction_mappings).forEach(([oldId, newId]) => {
+                    const card = document.querySelector(`[data-instruction-id="${oldId}"]`);
+                    if (card) {
+                        card.setAttribute('data-instruction-id', newId);
+                        card.classList.remove('new-instruction');
+                        
+                        // Update form field names
+                        const inputs = card.querySelectorAll('input, textarea');
+                        inputs.forEach(input => {
+                            if (input.name.includes(oldId)) {
+                                input.name = input.name.replace(oldId, newId);
+                            }
+                        });
+                        
+                        // Update the "New instruction" text
+                        const idLabel = card.querySelector('small');
+                        if (idLabel && idLabel.textContent === 'New instruction') {
+                            idLabel.textContent = `ID: ${newId}`;
+                        }
+                    }
+                });
+            }
+        } else {
+            showToast('Error saving instructions: ' + (data.error || 'Unknown error'), 'danger');
+        }
+    })
+    .catch(error => {
+        loadingModal.hide();
+        showToast('Error saving instructions: ' + error.message, 'danger');
+    });
+}
+
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remove toast after it's hidden
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Auto-save functionality (save changes every 2 minutes)
+setInterval(() => {
+    const hasChanges = document.querySelectorAll('.instruction-title, .instruction-content').length > 0;
+    if (hasChanges) {
+        saveAllInstructions();
+    }
+}, 120000);
+</script>
+{% endblock %}

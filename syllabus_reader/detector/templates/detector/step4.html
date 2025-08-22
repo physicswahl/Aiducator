@@ -1,0 +1,310 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'detector/css/steps.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Instructions Button -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas">
+            <i class="fas fa-question-circle"></i> Instructions
+        </button>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card step-card">
+                <div class="card-header">
+                    <h4>{{ ai_game.title }} - {{ step_name }}</h4>
+                    <div class="matchup-info">
+                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-light">Step {{ current_step }} of {{ total_steps }}</small>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Step Progress Indicator -->
+                    <div class="step-indicator">
+                        {% for step_num in "1234"|make_list %}
+                            {% if not forloop.first %}
+                                <div class="step-connector {% if step_num|add:0 <= current_step %}completed{% endif %}"></div>
+                            {% endif %}
+                            <div class="step 
+                                {% if step_num|add:0 < current_step %}completed
+                                {% elif step_num|add:0 == current_step %}current
+                                {% else %}pending{% endif %}">
+                                {% if step_num|add:0 < current_step %}
+                                    <i class="fas fa-check"></i>
+                                {% else %}
+                                    {{ step_num }}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Step 4 Specific Content -->
+                    <div class="detector-form-section">
+                        <h5><i class="fas fa-flag-checkered me-2"></i>Results & Validation</h5>
+                        <p class="text-muted">Review, validate, and finalize your detection results.</p>
+                        
+                        <form method="post" id="step4Form">
+                            {% csrf_token %}
+                            
+                            <!-- Results Summary -->
+                            <div class="results-summary">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <i class="fas fa-search fa-3x text-primary mb-2"></i>
+                                            <h4 class="text-primary">24</h4>
+                                            <p class="text-muted">Total Detections</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                                            <h4 class="text-success">18</h4>
+                                            <p class="text-muted">Valid Detections</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <i class="fas fa-times-circle fa-3x text-danger mb-2"></i>
+                                            <h4 class="text-danger">6</h4>
+                                            <p class="text-muted">False Positives</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <i class="fas fa-percentage fa-3x text-info mb-2"></i>
+                                            <h4 class="text-info">75%</h4>
+                                            <p class="text-muted">Accuracy Rate</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Validation Section -->
+                            <div class="row mt-4">
+                                <div class="col-md-8">
+                                    <div class="detector-form-section">
+                                        <h6><i class="fas fa-clipboard-check me-2"></i>Validation Checklist</h6>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="check1" name="validations" value="data_quality">
+                                            <label class="form-check-label" for="check1">
+                                                Data quality has been verified
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="check2" name="validations" value="algorithm_accuracy">
+                                            <label class="form-check-label" for="check2">
+                                                Algorithm accuracy meets requirements
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="check3" name="validations" value="false_positives">
+                                            <label class="form-check-label" for="check3">
+                                                False positives have been reviewed
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="check4" name="validations" value="documentation">
+                                            <label class="form-check-label" for="check4">
+                                                Results have been documented
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="final_notes" class="form-label">Final Notes & Observations</label>
+                                            <textarea class="form-control" id="final_notes" name="final_notes" 
+                                                      rows="4" placeholder="Enter any final observations, recommendations, or notes about the detection process..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="detector-form-section">
+                                        <h6><i class="fas fa-download me-2"></i>Export Results</h6>
+                                        <p class="small text-muted">Download your detection results in various formats.</p>
+                                        
+                                        <div class="d-grid gap-2">
+                                            <button type="button" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-file-csv me-1"></i>Export as CSV
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success btn-sm">
+                                                <i class="fas fa-file-excel me-1"></i>Export as Excel
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info btn-sm">
+                                                <i class="fas fa-file-pdf me-1"></i>Export as PDF Report
+                                            </button>
+                                            <button type="button" class="btn btn-outline-dark btn-sm">
+                                                <i class="fas fa-file-code me-1"></i>Export as JSON
+                                            </button>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        <h6><i class="fas fa-share me-2"></i>Share Results</h6>
+                                        <div class="d-grid gap-2">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-envelope me-1"></i>Email Report
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-link me-1"></i>Generate Share Link
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Completion Controls -->
+                            <div class="detection-result success mt-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6><i class="fas fa-trophy me-2"></i>Detection Process Complete!</h6>
+                                        <p class="mb-0">Review the results above and complete your validation checklist.</p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Save Final Results
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="completeStep(4)" id="completeBtn">
+                                            <i class="fas fa-flag-checkered me-1"></i>Complete Game
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="step-navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'detector:step3' matchup.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Previous Step
+                            </a>
+                        </div>
+                        <div>
+                            <span class="text-muted">Step {{ current_step }} of {{ total_steps }} (Final Step)</span>
+                        </div>
+                        <div>
+                            <a href="{% url 'aigames:student_dashboard' %}" class="btn btn-outline-success">
+                                <i class="fas fa-home me-1"></i>Return to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Offcanvas -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                Step {{ current_step }} Instructions
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if instructions %}
+                {% for instruction in instructions %}
+                    <div class="instruction-item mb-3">
+                        <h6>{{ instruction.title }}</h6>
+                        <div class="instruction-content">{{ instruction.content|linebreaks }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <h6>Results & Validation</h6>
+                    <p>In this final step, you will:</p>
+                    <ul>
+                        <li>Review detection results and statistics</li>
+                        <li>Validate the accuracy of your findings</li>
+                        <li>Complete the validation checklist</li>
+                        <li>Export and share your results</li>
+                        <li>Document final observations</li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function completeStep(stepNumber) {
+    // Check if validation checklist is complete
+    const checkboxes = document.querySelectorAll('input[name="validations"]:checked');
+    const finalNotes = document.getElementById('final_notes').value.trim();
+    
+    if (checkboxes.length < 4) {
+        alert('Please complete all validation checklist items before finishing the game.');
+        return;
+    }
+    
+    if (!finalNotes) {
+        if (!confirm('No final notes were entered. Are you sure you want to complete the game without adding observations?')) {
+            return;
+        }
+    }
+    
+    if (confirm('Are you sure you want to complete the detector game? This will finalize all your results.')) {
+        fetch(`{% url 'detector:complete_step' matchup.id 0 %}`.replace('0', stepNumber), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Congratulations! You have successfully completed the Detector game!');
+                window.location.href = `{% url 'aigames:student_dashboard' %}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error completing the step. Please try again.');
+        });
+    }
+}
+
+// Enable/disable complete button based on validation checklist
+function checkValidation() {
+    const checkboxes = document.querySelectorAll('input[name="validations"]:checked');
+    const completeBtn = document.getElementById('completeBtn');
+    
+    if (checkboxes.length >= 3) {  // At least 3 out of 4 validations
+        completeBtn.disabled = false;
+    } else {
+        completeBtn.disabled = true;
+    }
+}
+
+// Add event listeners to validation checkboxes
+document.querySelectorAll('input[name="validations"]').forEach(checkbox => {
+    checkbox.addEventListener('change', checkValidation);
+});
+
+// Initial check
+checkValidation();
+</script>
+{% endblock %}

@@ -73,10 +73,11 @@
 </head>
 <body>
     <!-- Navigation Bar -->
+    {% block navbar %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             {% if user.is_authenticated %}
-                <a class="navbar-brand d-flex align-items-center" href="{% if user_role == 'student' %}{% url 'student_dashboard' %}{% else %}{% url 'curriculum_list' %}{% endif %}">
+                <a class="navbar-brand d-flex align-items-center" href="{% if user_role == 'student' %}{% url 'aigames:student_dashboard' %}{% else %}{% url 'curriculum_list' %}{% endif %}">
                     {% if school_logo %}
                         <img src="{{ school_logo }}" alt="{{ school_name }} Logo" height="40">
                     {% else %}
@@ -96,12 +97,12 @@
                     <ul class="navbar-nav me-auto">
                         {% if user_role == 'student' %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'student_dashboard' %}">
+                                <a class="nav-link" href="{% url 'aigames:student_dashboard' %}">
                                     <i class="bi bi-house-door"></i> My Games
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'list_teams' %}">
+                                <a class="nav-link" href="{% url 'aigames:list_teams' %}">
                                     <i class="bi bi-people"></i> Teams
                                 </a>
                             </li>
@@ -112,17 +113,17 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'team_management_dashboard' %}">
+                                <a class="nav-link" href="{% url 'aigames:team_management_dashboard' %}">
                                     <i class="bi bi-controller"></i> Team Management
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'game_matchups_list' %}">
+                                <a class="nav-link" href="{% url 'aigames:game_matchups_list' %}">
                                     <i class="bi bi-trophy"></i> Matchups
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'list_teams' %}">
+                                <a class="nav-link" href="{% url 'aigames:list_teams' %}">
                                     <i class="bi bi-people"></i> Teams
                                 </a>
                             </li>
@@ -131,6 +132,19 @@
                                     <a class="nav-link" href="{% url 'provider_list' %}">
                                         <i class="bi bi-building"></i> Providers
                                     </a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="gamesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-controller"></i> Games
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="gamesDropdown">
+                                        <li><a class="dropdown-item" href="{% url 'aigames:edit_student_instructions' %}">
+                                            <i class="bi bi-person-check"></i> Edit Student Instructions
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{% url 'aigames:edit_teacher_instructions' %}">
+                                            <i class="bi bi-person-gear"></i> Edit Teacher Instructions
+                                        </a></li>
+                                    </ul>
                                 </li>
                             {% endif %}
                         {% endif %}
@@ -155,14 +169,14 @@
                             <ul class="dropdown-menu">
                                 {% if can_modify_syllabus %}
                                     <li><a class="dropdown-item" href="{% url 'create_curriculum' %}">➕ Create Curriculum</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'school_list' %}">🏢 Manage Schools</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'manage_user_roles' %}">👥 Manage User Roles</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'aigames:school_list' %}">🏢 Manage Schools</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'aigames:manage_user_roles' %}">👥 Manage User Roles</a></li>
                                     <li><a class="dropdown-item" href="/admin/">🔧 Admin Panel</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                 {% endif %}
                                 {% if can_create_teams %}
-                                    <li><a class="dropdown-item" href="{% url 'team_management_dashboard' %}">📊 Team Management</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'create_team' %}">👥 Create Team</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'aigames:team_management_dashboard' %}">📊 Team Management</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'aigames:create_team' %}">👥 Create Team</a></li>
                                 {% endif %}
                                 {% if can_create_teams %}
                                     <li><hr class="dropdown-divider"></li>
@@ -184,6 +198,7 @@
             </div>
         </div>
     </nav>
+    {% endblock %}
 
     <!-- Breadcrumb Navigation -->
     {% block breadcrumb %}{% endblock %}

@@ -1,0 +1,230 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'detector/css/steps.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Instructions Button -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas">
+            <i class="fas fa-question-circle"></i> Instructions
+        </button>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card step-card">
+                <div class="card-header">
+                    <h4>{{ ai_game.title }} - {{ step_name }}</h4>
+                    <div class="matchup-info">
+                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-light">Step {{ current_step }} of {{ total_steps }}</small>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Step Progress Indicator -->
+                    <div class="step-indicator">
+                        {% for step_num in "1234"|make_list %}
+                            {% if not forloop.first %}
+                                <div class="step-connector {% if step_num|add:0 <= current_step %}completed{% endif %}"></div>
+                            {% endif %}
+                            <div class="step 
+                                {% if step_num|add:0 < current_step %}completed
+                                {% elif step_num|add:0 == current_step %}current
+                                {% else %}pending{% endif %}">
+                                {% if step_num|add:0 < current_step %}
+                                    <i class="fas fa-check"></i>
+                                {% else %}
+                                    {{ step_num }}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Step 2 Specific Content -->
+                    <div class="detector-form-section">
+                        <h5><i class="fas fa-database me-2"></i>Data Collection</h5>
+                        <p class="text-muted">Gather and organize data for the detection analysis.</p>
+                        
+                        <form method="post" id="step2Form">
+                            {% csrf_token %}
+                            
+                            <div class="data-collection-grid">
+                                <div class="data-item">
+                                    <h6><i class="fas fa-upload me-2"></i>Upload Data</h6>
+                                    <div class="detection-area">
+                                        <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                        <p>Drag and drop files here or click to browse</p>
+                                        <input type="file" class="form-control mt-2" multiple accept=".csv,.txt,.json">
+                                    </div>
+                                </div>
+                                
+                                <div class="data-item">
+                                    <h6><i class="fas fa-keyboard me-2"></i>Manual Entry</h6>
+                                    <textarea class="form-control" name="manual_data" rows="4" 
+                                              placeholder="Enter data manually..."></textarea>
+                                    <small class="text-muted">Format: one entry per line</small>
+                                </div>
+                                
+                                <div class="data-item">
+                                    <h6><i class="fas fa-link me-2"></i>External Source</h6>
+                                    <input type="url" class="form-control mb-2" name="data_url" 
+                                           placeholder="https://api.example.com/data">
+                                    <button type="button" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-download me-1"></i>Fetch Data
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="data_format" class="form-label">Data Format</label>
+                                        <select class="form-select" id="data_format" name="data_format">
+                                            <option value="text">Plain Text</option>
+                                            <option value="csv">CSV</option>
+                                            <option value="json">JSON</option>
+                                            <option value="xml">XML</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="sample_size" class="form-label">Sample Size</label>
+                                        <input type="number" class="form-control" id="sample_size" name="sample_size" 
+                                               min="1" max="10000" value="100">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="detection-result">
+                                <h6><i class="fas fa-chart-bar me-2"></i>Data Preview</h6>
+                                <div id="dataPreview" class="mt-2">
+                                    <em class="text-muted">No data loaded yet. Add data above to see preview.</em>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Save Data
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="completeStep(2)" id="completeBtn" disabled>
+                                    <i class="fas fa-check me-1"></i>Complete Step 2
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="step-navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'detector:step1' matchup.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Previous Step
+                            </a>
+                        </div>
+                        <div>
+                            <span class="text-muted">Step {{ current_step }} of {{ total_steps }}</span>
+                        </div>
+                        <div>
+                            {% if has_next_step %}
+                                {% if next_step_accessible %}
+                                    <a href="{% url 'detector:step3' matchup.id %}" class="btn btn-outline-primary">
+                                        Next Step <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-outline-secondary" disabled>
+                                        Complete this step to continue <i class="fas fa-lock ms-1"></i>
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Offcanvas -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                Step {{ current_step }} Instructions
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if instructions %}
+                {% for instruction in instructions %}
+                    <div class="instruction-item mb-3">
+                        <h6>{{ instruction.title }}</h6>
+                        <div class="instruction-content">{{ instruction.content|linebreaks }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <h6>Data Collection</h6>
+                    <p>In this step, you will gather data for analysis:</p>
+                    <ul>
+                        <li>Upload data files</li>
+                        <li>Enter data manually</li>
+                        <li>Connect to external sources</li>
+                        <li>Preview and validate data</li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function completeStep(stepNumber) {
+    if (confirm('Are you sure you want to complete this step?')) {
+        fetch(`{% url 'detector:complete_step' matchup.id 0 %}`.replace('0', stepNumber), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = `{% url 'detector:step3' matchup.id %}`;
+            }
+        });
+    }
+}
+
+// Enable complete button when data is added
+function checkDataCompletion() {
+    const manualData = document.querySelector('[name="manual_data"]').value;
+    const fileInput = document.querySelector('input[type="file"]').files.length;
+    const urlInput = document.querySelector('[name="data_url"]').value;
+    
+    if (manualData.trim() || fileInput > 0 || urlInput.trim()) {
+        document.getElementById('completeBtn').disabled = false;
+    } else {
+        document.getElementById('completeBtn').disabled = true;
+    }
+}
+
+// Add event listeners
+document.querySelector('[name="manual_data"]').addEventListener('input', checkDataCompletion);
+document.querySelector('input[type="file"]').addEventListener('change', checkDataCompletion);
+document.querySelector('[name="data_url"]').addEventListener('input', checkDataCompletion);
+</script>
+{% endblock %}

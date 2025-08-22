@@ -143,12 +143,28 @@ class GameMatchupForm(forms.ModelForm):
         cleaned_data = super().clean()
         team1 = cleaned_data.get('team1')
         team2 = cleaned_data.get('team2')
+        ai_game = cleaned_data.get('ai_game')
         
         if team1 and team2:
             if team1 == team2:
                 raise forms.ValidationError("A team cannot play against itself.")
             if team1.school != team2.school:
                 raise forms.ValidationError("Teams must be from the same school.")
+            
+            # Check for existing active matchups (not cancelled or completed)
+            if ai_game:
+                existing_matchups = GameMatchup.objects.filter(
+                    ai_game=ai_game,
+                    team1=team1,
+                    team2=team2,
+                    status__in=['scheduled', 'in_progress']  # Only active statuses
+                )
+                
+                if existing_matchups.exists():
+                    raise forms.ValidationError(
+                        f"An active matchup already exists between {team1.name} and {team2.name} "
+                        f"for {ai_game.title}. Please complete or cancel the existing matchup first."
+                    )
         
         return cleaned_data
 

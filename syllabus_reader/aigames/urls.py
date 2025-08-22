@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'aigames'
+
 urlpatterns = [
     # Student Dashboard
     path('dashboard/', views.student_dashboard, name='student_dashboard'),
@@ -45,6 +47,12 @@ urlpatterns = [
     path('schools/', views.school_list, name='school_list'),
     path('schools/create/', views.create_school, name='create_school'),
     path('schools/<int:school_id>/edit/', views.edit_school, name='edit_school'),
+    
+    # Admin Game Instruction Management
+    path('admin/edit-student-instructions/', views.edit_student_instructions, name='edit_student_instructions'),
+    path('admin/edit-teacher-instructions/', views.edit_teacher_instructions, name='edit_teacher_instructions'),
+    path('admin/edit-student-instructions/<int:game_id>/', views.edit_student_instructions_for_game, name='edit_student_instructions_for_game'),
+    path('admin/edit-teacher-instructions/<int:game_id>/', views.edit_teacher_instructions_for_game, name='edit_teacher_instructions_for_game'),
     
     # Instruction Management URLs (KEPT - needed for creating teacher/student instructions)
     path('manage-games/<int:game_id>/steps/<int:step_id>/instructions/', views.manage_step_instructions, name='manage_step_instructions'),

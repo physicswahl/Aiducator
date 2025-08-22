@@ -145,7 +145,8 @@ class AiGame(models.Model):
         """Get the URL for the first step of this game"""
         first_step = self.get_step_by_number(1)
         if first_step:
-            return first_step.get_url(matchup_id)
+            url = first_step.get_url(matchup_id)
+            return url
         return None
 
     class Meta:
@@ -176,12 +177,14 @@ class GameStep(models.Model):
         from django.urls import reverse, NoReverseMatch
         try:
             # Try to reverse the URL pattern with the matchup_id
-            return reverse(self.url_pattern, kwargs={'matchup_id': matchup_id})
-        except NoReverseMatch:
+            url = reverse(self.url_pattern, kwargs={'matchup_id': matchup_id})
+            return url
+        except NoReverseMatch as e:
             # Fallback: construct a simple URL pattern
             app_name = self.url_pattern.split(':')[0] if ':' in self.url_pattern else ''
             view_name = self.url_pattern.split(':')[1] if ':' in self.url_pattern else self.url_pattern
-            return f"/{app_name}/{matchup_id}/{view_name}/" if app_name else f"/{matchup_id}/{view_name}/"
+            fallback_url = f"/{app_name}/{matchup_id}/{view_name}/" if app_name else f"/{matchup_id}/{view_name}/"
+            return fallback_url
     
     def get_instruction_chain_for_role(self, role):
         """Get the linked chain of instructions for a specific role in this step"""
@@ -526,7 +529,7 @@ class GameMatchup(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        unique_together = ['ai_game', 'team1', 'team2']  # Prevent duplicate matchups
+        # Removed unique_together constraint to allow new matchups when previous ones are cancelled
 
 class GameResource(models.Model):
     """Resources uploaded by team members for their team in a specific game"""

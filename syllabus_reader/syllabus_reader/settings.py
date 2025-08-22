@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'syllabus',
     'aigames',
     'phoneme_density',
+    'detector',
 ]
 
 MIDDLEWARE = [

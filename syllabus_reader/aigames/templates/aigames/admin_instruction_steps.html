@@ -13,10 +13,10 @@
                     <p class="text-muted">{{ game.title }} - Administrative View</p>
                 </div>
                 <div>
-                    <a href="{% url 'game_instructions' game.id %}" class="btn btn-outline-secondary me-2">
+                    <a href="{% url 'aigames:game_instructions' game.id %}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-eye"></i> View Instructions
                     </a>
-                    <a href="{% url 'problematic_steps_dashboard' %}" class="btn btn-outline-warning me-2">
+                    <a href="{% url 'aigames:problematic_steps_dashboard' %}" class="btn btn-outline-warning me-2">
                         <i class="fas fa-exclamation-triangle"></i> Problematic Steps Dashboard
                     </a>
                     <a href="{% url 'admin:aigames_instructionstep_add' %}?ai_game={{ game.id }}" class="btn btn-primary">
@@ -176,7 +176,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'instruction_step_detail' data.step.id %}" 
+                                            <a href="{% url 'aigames:instruction_step_detail' data.step.id %}" 
                                                class="btn btn-sm btn-outline-primary" 
                                                title="View Step">
                                                 <i class="fas fa-eye"></i>

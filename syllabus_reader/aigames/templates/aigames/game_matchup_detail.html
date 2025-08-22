@@ -12,7 +12,7 @@
                     <p class="text-muted">{{ matchup.team1.name }} vs {{ matchup.team2.name }} - {{ user_school.name }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'game_matchups_list' %}" class="btn btn-outline-secondary me-2">
+                    <a href="{% url 'aigames:game_matchups_list' %}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left"></i> Back to Matchups
                     </a>
                     {% if matchup.status != 'completed' and matchup.status != 'cancelled' %}
@@ -23,7 +23,7 @@
                         <ul class="dropdown-menu">
                             {% if matchup.status != 'in_progress' %}
                             <li>
-                                <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                <form method="post" action="{% url 'aigames:update_matchup_status' matchup.id %}" class="d-inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="status" value="in_progress">
                                     <button type="submit" class="dropdown-item">
@@ -34,7 +34,7 @@
                             {% endif %}
                             {% if matchup.status != 'completed' %}
                             <li>
-                                <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                <form method="post" action="{% url 'aigames:update_matchup_status' matchup.id %}" class="d-inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="status" value="completed">
                                     <button type="submit" class="dropdown-item">
@@ -44,7 +44,7 @@
                             </li>
                             {% endif %}
                             <li>
-                                <form method="post" action="{% url 'update_matchup_status' matchup.id %}" class="d-inline">
+                                <form method="post" action="{% url 'aigames:update_matchup_status' matchup.id %}" class="d-inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="status" value="cancelled">
                                     <button type="submit" class="dropdown-item">
@@ -192,7 +192,7 @@
                     {% endif %}
 
                     <div class="d-grid gap-2">
-                        <a href="{% url 'teacher_game_instructions' matchup.ai_game.id %}" class="btn btn-outline-primary btn-sm">
+                        <a href="{% url 'aigames:teacher_game_instructions' matchup.ai_game.id %}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-chalkboard-teacher"></i> View Instructions
                         </a>
                         {% if not matchup.ai_game.has_multiple_steps %}
@@ -252,73 +252,31 @@
                                     
                                     <div class="mt-2">
                                         {% if step.is_current %}
-                                            {% if step.step_number == 1 %}
-                                                <a href="{% url 'phoneme_density:step1' matchup_id=matchup.id %}" 
+                                            {% if step.step_url %}
+                                                <a href="{{ step.step_url }}" 
                                                    class="btn btn-primary btn-sm w-100">
                                                     <i class="fas fa-play me-1"></i>Open Step
                                                 </a>
-                                            {% elif step.step_number == 2 %}
-                                                <a href="{% url 'phoneme_density:step2' matchup_id=matchup.id %}" 
-                                                   class="btn btn-primary btn-sm w-100">
-                                                    <i class="fas fa-play me-1"></i>Open Step
-                                                </a>
-                                            {% elif step.step_number == 3 %}
-                                                <a href="{% url 'phoneme_density:step3' matchup_id=matchup.id %}" 
-                                                   class="btn btn-primary btn-sm w-100">
-                                                    <i class="fas fa-play me-1"></i>Open Step
-                                                </a>
-                                            {% elif step.step_number == 4 %}
-                                                <a href="{% url 'phoneme_density:step4' matchup_id=matchup.id %}" 
-                                                   class="btn btn-primary btn-sm w-100">
-                                                    <i class="fas fa-play me-1"></i>Open Step
-                                                </a>
-                                            {% elif step.step_number == 5 %}
-                                                <a href="{% url 'phoneme_density:step5' matchup_id=matchup.id %}" 
-                                                   class="btn btn-primary btn-sm w-100">
-                                                    <i class="fas fa-play me-1"></i>Open Step
-                                                </a>
-                                            {% elif step.step_number == 6 %}
-                                                <a href="{% url 'phoneme_density:step6' matchup_id=matchup.id %}" 
-                                                   class="btn btn-primary btn-sm w-100">
-                                                    <i class="fas fa-play me-1"></i>Open Step
-                                                </a>
+                                            {% else %}
+                                                <span class="btn btn-secondary btn-sm w-100 disabled">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>URL Not Available
+                                                </span>
                                             {% endif %}
                                         {% elif step.is_completed %}
-                                            {% if step.step_number == 1 %}
-                                                <a href="{% url 'phoneme_density:step1' matchup_id=matchup.id %}" 
+                                            {% if step.step_url %}
+                                                <a href="{{ step.step_url }}" 
                                                    class="btn btn-outline-success btn-sm w-100">
                                                     <i class="fas fa-eye me-1"></i>Review
                                                 </a>
-                                            {% elif step.step_number == 2 %}
-                                                <a href="{% url 'phoneme_density:step2' matchup_id=matchup.id %}" 
-                                                   class="btn btn-outline-success btn-sm w-100">
-                                                    <i class="fas fa-eye me-1"></i>Review
-                                                </a>
-                                            {% elif step.step_number == 3 %}
-                                                <a href="{% url 'phoneme_density:step3' matchup_id=matchup.id %}" 
-                                                   class="btn btn-outline-success btn-sm w-100">
-                                                    <i class="fas fa-eye me-1"></i>Review
-                                                </a>
-                                            {% elif step.step_number == 4 %}
-                                                <a href="{% url 'phoneme_density:step4' matchup_id=matchup.id %}" 
-                                                   class="btn btn-outline-success btn-sm w-100">
-                                                    <i class="fas fa-eye me-1"></i>Review
-                                                </a>
-                                            {% elif step.step_number == 5 %}
-                                                <a href="{% url 'phoneme_density:step5' matchup_id=matchup.id %}" 
-                                                   class="btn btn-outline-success btn-sm w-100">
-                                                    <i class="fas fa-eye me-1"></i>Review
-                                                </a>
-                                            {% elif step.step_number == 6 %}
-                                                <a href="{% url 'phoneme_density:step6' matchup_id=matchup.id %}" 
-                                                   class="btn btn-outline-success btn-sm w-100">
-                                                    <i class="fas fa-eye me-1"></i>Review
-                                                </a>
+                                            {% else %}
+                                                <span class="btn btn-outline-secondary btn-sm w-100 disabled">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>URL Not Available
+                                                </span>
                                             {% endif %}
                                         {% endif %}
                                         
                                         {% if step.can_complete %}
-                                            <form method="post" action="{% url 'complete_matchup_step_from_detail' matchup_id=matchup.id step_number=step.step_number %}" class="mt-1">
+                                            <form method="post" action="{% url 'aigames:complete_matchup_step_from_detail' matchup_id=matchup.id step_number=step.step_number %}" class="mt-1">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-success btn-sm w-100" 
                                                         onclick="return confirm('Mark Step {{ step.step_number }} as completed?')">

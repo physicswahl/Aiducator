@@ -13,7 +13,7 @@
                     <p class="text-muted">Manage GameSteps and InstructionSteps for this game</p>
                 </div>
                 <div>
-                    <a href="{% url 'team_management_dashboard' %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'aigames:team_management_dashboard' %}" class="btn btn-outline-secondary">
                         ← Back to Dashboard
                     </a>
                 </div>
@@ -454,26 +454,17 @@ body.teacher-view .teacher-instructions .col-md-6 {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Admin instructions page loaded');
-    
     // Handle role toggle
     const roleToggles = document.querySelectorAll('input[name="roleToggle"]');
     const body = document.body;
     const studentPanels = document.querySelectorAll('.student-instructions');
     const teacherPanels = document.querySelectorAll('.teacher-instructions');
     
-    console.log('Found role toggles:', roleToggles.length);
-    console.log('Found student panels:', studentPanels.length);
-    console.log('Found teacher panels:', teacherPanels.length);
-    
     function updateVisibility() {
         const checkedToggle = document.querySelector('input[name="roleToggle"]:checked');
         if (!checkedToggle) {
-            console.log('No toggle checked');
             return;
         }
-        
-        console.log('Active toggle:', checkedToggle.id);
         
         // Remove all view classes
         body.classList.remove('student-view', 'teacher-view', 'both-view');
@@ -493,7 +484,6 @@ document.addEventListener('DOMContentLoaded', function() {
             teacherPanels.forEach(panel => {
                 panel.style.display = 'none';
             });
-            console.log('Student view activated - full width');
         } else if (checkedToggle.id === 'teacherView') {
             body.classList.add('teacher-view');
             teacherPanels.forEach(panel => {
@@ -508,7 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
             studentPanels.forEach(panel => {
                 panel.style.display = 'none';
             });
-            console.log('Teacher view activated - full width');
         } else if (checkedToggle.id === 'bothView') {
             body.classList.add('both-view');
             // Reset to side-by-side layout
@@ -528,13 +517,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     parentCol.style.maxWidth = '50%';
                 }
             });
-            console.log('Side-by-side view activated');
         }
     }
     
     roleToggles.forEach(toggle => {
         toggle.addEventListener('change', function() {
-            console.log('Toggle changed to:', this.id);
             updateVisibility();
         });
     });
@@ -544,7 +531,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bothViewToggle) {
         bothViewToggle.checked = true;
         updateVisibility();
-        console.log('Initial state set to Both View');
     }
     
     // Handle Add Instruction buttons

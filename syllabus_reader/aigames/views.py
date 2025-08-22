@@ -116,7 +116,7 @@ def student_dashboard(request):
                 if total_steps > 0:
                     progress_percentage = int((completed_steps / total_steps) * 100)
                 
-                # Debug: If we have no current step but the game has steps, something is wrong
+                # If we have no current step but the game has steps, try to get the first step
                 if not current_step and total_steps > 0:
                     # Try to get the first step explicitly
                     first_step = game.get_ordered_steps().first()
@@ -130,6 +130,7 @@ def student_dashboard(request):
                 'participation': participation,
                 'current_step': current_step,
                 'current_step_url': team.get_current_step_url(game),
+                'first_step_url': None,  # No matchup available for participation-based games
                 'current_step_instructions': current_step_instructions,
                 'progress': progress,
                 'progress_percentage': progress_percentage,
@@ -219,7 +220,7 @@ def student_dashboard(request):
                         progress_percentage = 0
                     current_step_url = team.get_current_step_url(game)
                 
-                # Debug: If we have no current step but the game has steps, something is wrong
+                # If we have no current step but the game has steps, try to get the first step
                 if not current_step and total_steps > 0:
                     # Try to get the first step explicitly
                     first_step = game.get_ordered_steps().first()
@@ -227,12 +228,18 @@ def student_dashboard(request):
                         current_step = first_step
                         current_step_instructions = current_step.get_instructions_for_user(user)
             
+            # Calculate first_step_url
+            first_step_url = None
+            if game:
+                first_step_url = game.get_first_step_url(matchup.id)
+            
             assigned_games.append({
                 'game': game,
                 'team': team,
                 'matchup': matchup,
                 'current_step': current_step,
                 'current_step_url': current_step_url,
+                'first_step_url': first_step_url,
                 'current_step_instructions': current_step_instructions,
                 'progress': progress,
                 'progress_percentage': progress_percentage,
@@ -262,7 +269,7 @@ def student_dashboard(request):
 def create_team(request):
     if not can_create_teams(request.user):
         messages.error(request, 'Only teachers and admins can create teams.')
-        return redirect('list_teams')
+        return redirect('aigames:list_teams')
     
     if request.method == 'POST':
         form = TeamForm(request.POST)
@@ -274,7 +281,7 @@ def create_team(request):
                 team.school = request.user.profile.school
             else:
                 messages.error(request, 'You must be associated with a school to create teams.')
-                return redirect('list_teams')
+                return redirect('aigames:list_teams')
             team.save()
             
             # Add creator as team admin
@@ -285,7 +292,7 @@ def create_team(request):
             )
             
             messages.success(request, f'Team "{team.name}" created successfully!')
-            return redirect('team_detail', team_id=team.id)
+            return redirect('aigames:team_detail', team_id=team.id)
     else:
         form = TeamForm()
     return render(request, 'aigames/create_team.html', {'form': form})
@@ -338,7 +345,7 @@ def team_detail(request, team_id):
     
     if not user_can_access:
         messages.error(request, 'You do not have permission to view this team.')
-        return redirect('list_teams')
+        return redirect('aigames:list_teams')
     
     # Get games with current step URLs
     games_with_urls = []
@@ -368,7 +375,7 @@ def manage_user_roles(request):
     """View for admins to manage user roles"""
     if not can_modify_syllabus(request.user):
         messages.error(request, 'Only admins can manage user roles.')
-        return redirect('team_management_dashboard')
+        return redirect('aigames:team_management_dashboard')
     
     from django.contrib.auth.models import User
     from .role_forms import BulkUserRoleForm
@@ -387,7 +394,7 @@ def manage_user_roles(request):
                 updated_count += 1
             
             messages.success(request, f'Updated {updated_count} user(s) to {role} role.')
-            return redirect('manage_user_roles')
+            return redirect('aigames:manage_user_roles')
     else:
         form = BulkUserRoleForm()
     
@@ -427,7 +434,7 @@ def create_school(request):
         if form.is_valid():
             school = form.save()
             messages.success(request, f'School "{school.name}" created successfully!')
-            return redirect('school_list')
+            return redirect('aigames:school_list')
     else:
         form = SchoolForm()
     
@@ -444,7 +451,7 @@ def edit_school(request, school_id):
         if form.is_valid():
             school = form.save()
             messages.success(request, f'School "{school.name}" updated successfully!')
-            return redirect('school_list')
+            return redirect('aigames:school_list')
     else:
         form = SchoolForm(instance=school)
     
@@ -554,7 +561,7 @@ def create_school_team(request):
             team.created_by = request.user
             team.save()
             messages.success(request, f'Team "{team.name}" created successfully!')
-            return redirect('school_teams_list')
+            return redirect('aigames:school_teams_list')
     else:
         form = SchoolTeamForm(school=user_school)
     
@@ -590,7 +597,7 @@ def edit_school_team(request, team_id):
                 role=role
             )
             messages.success(request, f'Added {user_to_add.username} to team "{team.name}" as {role}!')
-            return redirect('edit_school_team', team_id=team.id)
+            return redirect('aigames:edit_school_team', team_id=team.id)
         # If form is invalid, member_form will contain errors for display
     
     # Handle member removal
@@ -606,7 +613,7 @@ def edit_school_team(request, team_id):
                 username = membership.user.username
                 membership.delete()
                 messages.success(request, f'Removed {username} from team "{team.name}"!')
-                return redirect('edit_school_team', team_id=team.id)
+                return redirect('aigames:edit_school_team', team_id=team.id)
             except TeamMembership.DoesNotExist:
                 messages.error(request, 'Member not found in this team.')
         # Reset member form after removal attempt
@@ -618,7 +625,7 @@ def edit_school_team(request, team_id):
         if form.is_valid():
             form.save()
             messages.success(request, f'Team "{team.name}" updated successfully!')
-            return redirect('edit_school_team', team_id=team.id)
+            return redirect('aigames:edit_school_team', team_id=team.id)
         # If form is invalid, form will contain errors for display
         # Reset member form since team form was submitted
         member_form = TeamMemberForm(team=team, school=user_school)
@@ -659,9 +666,9 @@ def delete_school_team(request, team_id):
                 team.is_active = False
                 team.save()
                 messages.success(request, f'Team "{team.name}" has been deactivated.')
-            return redirect('school_teams_list')
+            return redirect('aigames:school_teams_list')
         else:
-            return redirect('school_teams_list')
+            return redirect('aigames:school_teams_list')
     
     # Get team statistics for confirmation dialog
     member_count = team.members.count()
@@ -729,7 +736,7 @@ def create_game_matchup(request):
             matchup.created_by = request.user
             matchup.save()
             messages.success(request, f'Matchup created: {matchup.team1.name} vs {matchup.team2.name} for {matchup.ai_game.title}')
-            return redirect('game_matchups_list')
+            return redirect('aigames:game_matchups_list')
     else:
         form = GameMatchupForm(user=request.user, initial_game=initial_game)
     
@@ -774,23 +781,38 @@ def game_matchup_detail(request, matchup_id):
     current_step_number = 1
     step_progress_info = []
     
-    # Check if this is a phoneme density or similar game with matchup-level step tracking
-    if hasattr(matchup, 'get_current_step'):
-        try:
-            current_step = matchup.get_current_step()
-            if current_step and hasattr(current_step, 'step_number'):
-                current_step_number = current_step.step_number
-            else:
+    # Get all GameSteps for this game
+    game_steps = matchup.ai_game.get_ordered_steps()
+    
+    if game_steps.exists():
+        # Check if this is a game with matchup-level step tracking
+        if hasattr(matchup, 'get_current_step'):
+            try:
+                current_step = matchup.get_current_step()
+                if current_step and hasattr(current_step, 'step_number'):
+                    current_step_number = current_step.step_number
+                else:
+                    current_step_number = 1
+            except:
                 current_step_number = 1
-        except:
-            current_step_number = 1
+                
+        # Get progress for all steps using actual GameStep data
+        for game_step in game_steps:
+            step_num = game_step.step_number
             
-        # Get progress for all steps (assuming 6 steps for phoneme density)
-        for step_num in range(1, 7):
-            progress = matchup.get_progress_for_step(step_num)
+            # Get progress for this step if the matchup supports it
+            progress = None
+            if hasattr(matchup, 'get_progress_for_step'):
+                try:
+                    progress = matchup.get_progress_for_step(step_num)
+                except:
+                    pass
+            
             step_info = {
                 'step_number': step_num,
-                'is_completed': progress and progress.is_completed,
+                'game_step': game_step,  # Include the actual GameStep object
+                'step_url': game_step.get_url(matchup.id),  # Generate the dynamic URL
+                'is_completed': progress and progress.is_completed if progress else False,
                 'is_current': step_num == current_step_number,
                 'completed_at': progress.completed_at if progress and progress.is_completed else None,
                 'can_complete': is_teacher and step_num == current_step_number and (not progress or not progress.is_completed),
@@ -831,7 +853,7 @@ def update_matchup_status(request, matchup_id):
             matchup.save()
             messages.success(request, f'Matchup status updated to {matchup.get_status_display()}')
         
-        return redirect('game_matchup_detail', matchup_id=matchup.id)
+        return redirect('aigames:game_matchup_detail', matchup_id=matchup.id)
 
 @login_required
 @user_passes_test(can_create_teams)
@@ -844,7 +866,7 @@ def complete_matchup_step_from_detail(request, matchup_id, step_number):
     # Only teachers can complete steps
     if not (hasattr(request.user, 'profile') and (request.user.profile.is_teacher or request.user.profile.is_admin)):
         messages.error(request, "Only teachers can mark steps as completed.")
-        return redirect('game_matchup_detail', matchup_id=matchup_id)
+        return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
     
     # Complete the step
     try:
@@ -856,9 +878,7 @@ def complete_matchup_step_from_detail(request, matchup_id, step_number):
     except Exception as e:
         messages.error(request, f"Error completing step: {str(e)}")
     
-    return redirect('game_matchup_detail', matchup_id=matchup_id)
-    
-    return redirect('game_matchups_list')
+    return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
 
 @login_required
 @user_passes_test(can_create_teams)
@@ -866,6 +886,10 @@ def teacher_game_instructions(request, game_id):
     """Show teacher-specific instructions for a game"""
     game = get_object_or_404(AiGame, id=game_id)
     user_school = request.user.profile.school
+    
+    # Get the unit that has this game associated
+    from syllabus.models import Unit
+    unit = Unit.objects.filter(ai_game=game).first()
     
     # Get teams from teacher's school that could play this game
     school_teams = Team.objects.filter(school=user_school, is_active=True)
@@ -876,11 +900,28 @@ def teacher_game_instructions(request, game_id):
         school=user_school
     ).order_by('-created_at')[:5]
     
+    # Get game steps with teacher instructions
+    game_steps_data = []
+    game_steps = GameStep.objects.filter(ai_game=game).order_by('step_number')
+    
+    for step in game_steps:
+        teacher_instructions = step.instruction_steps.filter(
+            role='teacher', 
+            is_active=True
+        ).order_by('id')
+        
+        game_steps_data.append({
+            'step': step,
+            'teacher_instructions': teacher_instructions
+        })
+    
     context = {
         'game': game,
+        'unit': unit,  # Add unit to context
         'user_school': user_school,
         'school_teams': school_teams,
         'existing_matchups': existing_matchups,
+        'game_steps': game_steps_data,
     }
     return render(request, 'aigames/teacher_game_instructions.html', context)
 
@@ -1134,7 +1175,7 @@ def admin_instruction_steps(request, game_id):
     """Admin view for managing instruction steps - redirects to enhanced admin view"""
     # Redirect to the enhanced admin interface
     from django.shortcuts import redirect
-    return redirect('game_instructions', game_id=game_id)
+    return redirect('aigames:game_instructions', game_id=game_id)
 
 @login_required
 @user_passes_test(lambda u: u.profile.is_admin if hasattr(u, 'profile') else False)
@@ -1241,7 +1282,7 @@ def create_instruction(request, game_id, step_id):
             instruction.created_by = request.user
             instruction.save()
             messages.success(request, f'Instruction "{instruction.title}" created successfully!')
-            return redirect('manage_step_instructions', game_id=game.id, step_id=step.id)
+            return redirect('aigames:manage_step_instructions', game_id=game.id, step_id=step.id)
     else:
         form = InstructionStepForm()
     
@@ -1266,7 +1307,7 @@ def edit_instruction(request, game_id, step_id, instruction_id):
         if form.is_valid():
             instruction = form.save()
             messages.success(request, f'Instruction "{instruction.title}" updated successfully!')
-            return redirect('manage_step_instructions', game_id=game.id, step_id=step.id)
+            return redirect('aigames:manage_step_instructions', game_id=game.id, step_id=step.id)
     else:
         form = InstructionStepForm(instance=instruction)
     
@@ -1291,7 +1332,7 @@ def delete_instruction(request, game_id, step_id, instruction_id):
         instruction_title = instruction.title
         instruction.delete()
         messages.success(request, f'Instruction "{instruction_title}" deleted successfully!')
-        return redirect('manage_step_instructions', game_id=game.id, step_id=step.id)
+        return redirect('aigames:manage_step_instructions', game_id=game.id, step_id=step.id)
     
     context = {
         'game': game,
@@ -1299,3 +1340,469 @@ def delete_instruction(request, game_id, step_id, instruction_id):
         'instruction': instruction
     }
     return render(request, 'aigames/confirm_delete_instruction.html', context)
+
+
+# Admin Instruction Management Views
+
+@login_required
+def edit_student_instructions(request):
+    """Admin view to edit student instructions for selected game"""
+    if not request.user.profile.can_modify_syllabus:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('curriculum_list')
+    
+    # Get selected game from URL parameter or form
+    selected_game_id = request.GET.get('game') or request.POST.get('selected_game')
+    selected_game = None
+    
+    if selected_game_id:
+        try:
+            selected_game = AiGame.objects.get(id=selected_game_id)
+        except AiGame.DoesNotExist:
+            selected_game = None
+    
+    # Handle POST request (save instructions)
+    if request.method == 'POST' and selected_game:
+        from django.http import JsonResponse
+        import json
+        
+        try:
+            instruction_mappings = {}
+            
+            # Process form data
+            for key, value in request.POST.items():
+                if key.startswith('instruction_') and '_title' in key:
+                    # Extract instruction ID and field type
+                    parts = key.split('_')
+                    instruction_id = '_'.join(parts[1:-1])  # Handle IDs like "new_1000"
+                    
+                    # Get title and content
+                    title = value.strip()
+                    content_key = f"instruction_{instruction_id}_content"
+                    content = request.POST.get(content_key, '').strip()
+                    role_key = f"instruction_{instruction_id}_role"
+                    role = request.POST.get(role_key, 'student')
+                    step_id_key = f"instruction_{instruction_id}_step_id"
+                    step_id = request.POST.get(step_id_key)
+                    
+                    if not step_id:
+                        continue
+                    
+                    try:
+                        step = GameStep.objects.get(id=step_id, ai_game=selected_game)
+                    except GameStep.DoesNotExist:
+                        continue
+                    
+                    # Check if this is a new instruction
+                    if instruction_id.startswith('new_'):
+                        # Create new instruction if title or content is provided
+                        if title or content:
+                            new_instruction = InstructionStep.objects.create(
+                                game_step=step,
+                                title=title or "Untitled Instruction",
+                                content=content,
+                                role=role,
+                                created_by=request.user
+                            )
+                            instruction_mappings[instruction_id] = new_instruction.id
+                    else:
+                        # Update existing instruction
+                        try:
+                            instruction = InstructionStep.objects.get(id=instruction_id, game_step__ai_game=selected_game)
+                            instruction.title = title or instruction.title
+                            instruction.content = content
+                            instruction.save()
+                        except InstructionStep.DoesNotExist:
+                            continue
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'instruction_mappings': instruction_mappings,
+                    'message': 'Instructions saved successfully!'
+                })
+            else:
+                messages.success(request, 'Instructions saved successfully!')
+                from django.urls import reverse
+                return redirect(reverse('aigames:edit_student_instructions') + f'?game={selected_game.id}')
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in edit_student_instructions: {str(e)}", exc_info=True)
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+            else:
+                messages.error(request, f'Error saving instructions: {str(e)}')
+    
+    # GET request - display game selection and instructions
+    all_games = AiGame.objects.all().order_by('title')
+    game_data = None
+    
+    if selected_game:
+        game_steps_data = []
+        game_steps = GameStep.objects.filter(ai_game=selected_game).order_by('step_number')
+        
+        for step in game_steps:
+            student_instructions = step.instruction_steps.filter(
+                role='student', 
+                is_active=True
+            ).order_by('id')
+            
+            game_steps_data.append({
+                'step': step,
+                'student_instructions': student_instructions
+            })
+        
+        if game_steps_data:  # Only include if game has steps
+            game_data = {
+                'game': selected_game,
+                'game_steps': game_steps_data
+            }
+    
+    context = {
+        'all_games': all_games,
+        'selected_game': selected_game,
+        'game_data': game_data,
+        'instruction_type': 'student'
+    }
+    return render(request, 'aigames/edit_selected_instructions.html', context)
+
+
+@login_required
+def edit_teacher_instructions(request):
+    """Admin view to edit teacher instructions for selected game"""
+    if not request.user.profile.can_modify_syllabus:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('curriculum_list')
+    
+    # Get selected game from URL parameter or form
+    selected_game_id = request.GET.get('game') or request.POST.get('selected_game')
+    selected_game = None
+    
+    if selected_game_id:
+        try:
+            selected_game = AiGame.objects.get(id=selected_game_id)
+        except AiGame.DoesNotExist:
+            selected_game = None
+    
+    # Handle POST request (save instructions)
+    if request.method == 'POST' and selected_game:
+        from django.http import JsonResponse
+        import json
+        
+        try:
+            instruction_mappings = {}
+            
+            # Process form data
+            for key, value in request.POST.items():
+                if key.startswith('instruction_') and '_title' in key:
+                    # Extract instruction ID and field type
+                    parts = key.split('_')
+                    instruction_id = '_'.join(parts[1:-1])  # Handle IDs like "new_1000"
+                    
+                    # Get title and content
+                    title = value.strip()
+                    content_key = f"instruction_{instruction_id}_content"
+                    content = request.POST.get(content_key, '').strip()
+                    role_key = f"instruction_{instruction_id}_role"
+                    role = request.POST.get(role_key, 'teacher')
+                    step_id_key = f"instruction_{instruction_id}_step_id"
+                    step_id = request.POST.get(step_id_key)
+                    
+                    if not step_id:
+                        continue
+                    
+                    try:
+                        step = GameStep.objects.get(id=step_id, ai_game=selected_game)
+                    except GameStep.DoesNotExist:
+                        continue
+                    
+                    # Check if this is a new instruction
+                    if instruction_id.startswith('new_'):
+                        # Create new instruction if title or content is provided
+                        if title or content:
+                            new_instruction = InstructionStep.objects.create(
+                                game_step=step,
+                                title=title or "Untitled Instruction",
+                                content=content,
+                                role=role,
+                                created_by=request.user
+                            )
+                            instruction_mappings[instruction_id] = new_instruction.id
+                    else:
+                        # Update existing instruction
+                        try:
+                            instruction = InstructionStep.objects.get(id=instruction_id, game_step__ai_game=selected_game)
+                            instruction.title = title or instruction.title
+                            instruction.content = content
+                            instruction.save()
+                        except InstructionStep.DoesNotExist:
+                            continue
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'instruction_mappings': instruction_mappings,
+                    'message': 'Instructions saved successfully!'
+                })
+            else:
+                messages.success(request, 'Instructions saved successfully!')
+                from django.urls import reverse
+                return redirect(reverse('aigames:edit_teacher_instructions') + f'?game={selected_game.id}')
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in edit_teacher_instructions: {str(e)}", exc_info=True)
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+            else:
+                messages.error(request, f'Error saving instructions: {str(e)}')
+    
+    # GET request - display game selection and instructions
+    all_games = AiGame.objects.all().order_by('title')
+    game_data = None
+    
+    if selected_game:
+        game_steps_data = []
+        game_steps = GameStep.objects.filter(ai_game=selected_game).order_by('step_number')
+        
+        for step in game_steps:
+            teacher_instructions = step.instruction_steps.filter(
+                role='teacher', 
+                is_active=True
+            ).order_by('id')
+            
+            game_steps_data.append({
+                'step': step,
+                'teacher_instructions': teacher_instructions
+            })
+        
+        if game_steps_data:  # Only include if game has steps
+            game_data = {
+                'game': selected_game,
+                'game_steps': game_steps_data
+            }
+    
+    context = {
+        'all_games': all_games,
+        'selected_game': selected_game,
+        'game_data': game_data,
+        'instruction_type': 'teacher'
+    }
+    return render(request, 'aigames/edit_selected_instructions.html', context)
+
+
+@login_required
+def edit_student_instructions_for_game(request, game_id):
+    """Admin view to edit student instructions for a specific game with carousel"""
+    if not request.user.profile.can_modify_syllabus:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('curriculum_list')
+    
+    game = get_object_or_404(AiGame, id=game_id)
+    
+    # Handle POST request (save instructions)
+    if request.method == 'POST':
+        from django.http import JsonResponse
+        import json
+        
+        try:
+            instruction_mappings = {}
+            
+            # Process form data
+            for key, value in request.POST.items():
+                if key.startswith('instruction_') and '_title' in key:
+                    # Extract instruction ID and field type
+                    parts = key.split('_')
+                    instruction_id = '_'.join(parts[1:-1])  # Handle IDs like "new_1000"
+                    
+                    # Get title and content
+                    title = value.strip()
+                    content_key = f"instruction_{instruction_id}_content"
+                    content = request.POST.get(content_key, '').strip()
+                    role_key = f"instruction_{instruction_id}_role"
+                    role = request.POST.get(role_key, 'student')
+                    step_id_key = f"instruction_{instruction_id}_step_id"
+                    step_id = request.POST.get(step_id_key)
+                    
+                    if not step_id:
+                        continue
+                        
+                    step = get_object_or_404(GameStep, id=step_id, ai_game=game)
+                    
+                    # Check if this is a new instruction
+                    if instruction_id.startswith('new_'):
+                        # Create new instruction if title or content is provided
+                        if title or content:
+                            new_instruction = InstructionStep.objects.create(
+                                game_step=step,
+                                title=title or "Untitled Instruction",
+                                content=content,
+                                role=role,
+                                created_by=request.user
+                            )
+                            instruction_mappings[instruction_id] = new_instruction.id
+                    else:
+                        # Update existing instruction
+                        try:
+                            instruction = InstructionStep.objects.get(id=instruction_id, game_step__ai_game=game)
+                            instruction.title = title or instruction.title
+                            instruction.content = content
+                            instruction.save()
+                        except InstructionStep.DoesNotExist:
+                            continue
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'instruction_mappings': instruction_mappings,
+                    'message': 'Instructions saved successfully!'
+                })
+            else:
+                messages.success(request, 'Instructions saved successfully!')
+                return redirect('aigames:edit_student_instructions_for_game', game_id=game.id)
+                
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+            else:
+                messages.error(request, f'Error saving instructions: {str(e)}')
+    
+    # GET request - display the form
+    # Get game steps with student instructions
+    game_steps_data = []
+    game_steps = GameStep.objects.filter(ai_game=game).order_by('step_number')
+    
+    for step in game_steps:
+        student_instructions = step.instruction_steps.filter(
+            role='student', 
+            is_active=True
+        ).order_by('id')
+        
+        game_steps_data.append({
+            'step': step,
+            'student_instructions': student_instructions
+        })
+    
+    context = {
+        'game': game,
+        'game_steps': game_steps_data,
+        'instruction_type': 'student'
+    }
+    return render(request, 'aigames/edit_instructions_carousel.html', context)
+
+
+@login_required
+def edit_teacher_instructions_for_game(request, game_id):
+    """Admin view to edit teacher instructions for a specific game with carousel"""
+    if not request.user.profile.can_modify_syllabus:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('curriculum_list')
+    
+    game = get_object_or_404(AiGame, id=game_id)
+    
+    # Handle POST request (save instructions)
+    if request.method == 'POST':
+        from django.http import JsonResponse
+        import json
+        
+        try:
+            instruction_mappings = {}
+            
+            # Process form data
+            for key, value in request.POST.items():
+                if key.startswith('instruction_') and '_title' in key:
+                    # Extract instruction ID and field type
+                    parts = key.split('_')
+                    instruction_id = '_'.join(parts[1:-1])  # Handle IDs like "new_1000"
+                    
+                    # Get title and content
+                    title = value.strip()
+                    content_key = f"instruction_{instruction_id}_content"
+                    content = request.POST.get(content_key, '').strip()
+                    role_key = f"instruction_{instruction_id}_role"
+                    role = request.POST.get(role_key, 'teacher')
+                    step_id_key = f"instruction_{instruction_id}_step_id"
+                    step_id = request.POST.get(step_id_key)
+                    
+                    if not step_id:
+                        continue
+                        
+                    step = get_object_or_404(GameStep, id=step_id, ai_game=game)
+                    
+                    # Check if this is a new instruction
+                    if instruction_id.startswith('new_'):
+                        # Create new instruction if title or content is provided
+                        if title or content:
+                            new_instruction = InstructionStep.objects.create(
+                                game_step=step,
+                                title=title or "Untitled Instruction",
+                                content=content,
+                                role=role,
+                                created_by=request.user
+                            )
+                            instruction_mappings[instruction_id] = new_instruction.id
+                    else:
+                        # Update existing instruction
+                        try:
+                            instruction = InstructionStep.objects.get(id=instruction_id, game_step__ai_game=game)
+                            instruction.title = title or instruction.title
+                            instruction.content = content
+                            instruction.save()
+                        except InstructionStep.DoesNotExist:
+                            continue
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'instruction_mappings': instruction_mappings,
+                    'message': 'Instructions saved successfully!'
+                })
+            else:
+                messages.success(request, 'Instructions saved successfully!')
+                return redirect('aigames:edit_teacher_instructions_for_game', game_id=game.id)
+                
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+            else:
+                messages.error(request, f'Error saving instructions: {str(e)}')
+    
+    # GET request - display the form
+    # Get game steps with teacher instructions
+    game_steps_data = []
+    game_steps = GameStep.objects.filter(ai_game=game).order_by('step_number')
+    
+    for step in game_steps:
+        teacher_instructions = step.instruction_steps.filter(
+            role='teacher', 
+            is_active=True
+        ).order_by('id')
+        
+        game_steps_data.append({
+            'step': step,
+            'teacher_instructions': teacher_instructions
+        })
+    
+    context = {
+        'game': game,
+        'game_steps': game_steps_data,
+        'instruction_type': 'teacher'
+    }
+    return render(request, 'aigames/edit_instructions_carousel.html', context)

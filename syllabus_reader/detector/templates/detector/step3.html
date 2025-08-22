@@ -1,0 +1,312 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'detector/css/steps.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Instructions Button -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas">
+            <i class="fas fa-question-circle"></i> Instructions
+        </button>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card step-card">
+                <div class="card-header">
+                    <h4>{{ ai_game.title }} - {{ step_name }}</h4>
+                    <div class="matchup-info">
+                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-light">Step {{ current_step }} of {{ total_steps }}</small>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Step Progress Indicator -->
+                    <div class="step-indicator">
+                        {% for step_num in "1234"|make_list %}
+                            {% if not forloop.first %}
+                                <div class="step-connector {% if step_num|add:0 <= current_step %}completed{% endif %}"></div>
+                            {% endif %}
+                            <div class="step 
+                                {% if step_num|add:0 < current_step %}completed
+                                {% elif step_num|add:0 == current_step %}current
+                                {% else %}pending{% endif %}">
+                                {% if step_num|add:0 < current_step %}
+                                    <i class="fas fa-check"></i>
+                                {% else %}
+                                    {{ step_num }}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Step 3 Specific Content -->
+                    <div class="detector-form-section">
+                        <h5><i class="fas fa-search me-2"></i>Analysis & Detection</h5>
+                        <p class="text-muted">Run detection algorithms and analyze the results.</p>
+                        
+                        <form method="post" id="step3Form">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="analysis-panel">
+                                        <h6><i class="fas fa-cogs me-2"></i>Analysis Configuration</h6>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="algorithm" class="form-label">Detection Algorithm</label>
+                                                    <select class="form-select" id="algorithm" name="algorithm" required>
+                                                        <option value="">Choose algorithm...</option>
+                                                        <option value="pattern_matching">Pattern Matching</option>
+                                                        <option value="statistical">Statistical Analysis</option>
+                                                        <option value="machine_learning">Machine Learning</option>
+                                                        <option value="hybrid">Hybrid Approach</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="threshold" class="form-label">Detection Threshold</label>
+                                                    <input type="range" class="form-range" id="threshold" name="threshold" 
+                                                           min="0.1" max="1.0" step="0.1" value="0.5" 
+                                                           oninput="updateThresholdValue(this.value)">
+                                                    <small class="text-muted">Current: <span id="thresholdValue">0.5</span></small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="parameters" class="form-label">Additional Parameters</label>
+                                            <textarea class="form-control" id="parameters" name="parameters" 
+                                                      rows="3" placeholder="Enter additional analysis parameters..."></textarea>
+                                        </div>
+                                        
+                                        <button type="button" class="btn btn-primary" onclick="runAnalysis()">
+                                            <i class="fas fa-play me-1"></i>Run Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="analysis-panel">
+                                        <h6><i class="fas fa-tachometer-alt me-2"></i>Progress</h6>
+                                        <div class="progress mb-3" style="height: 25px;">
+                                            <div class="progress-bar" id="analysisProgress" role="progressbar" 
+                                                 style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                                0%
+                                            </div>
+                                        </div>
+                                        <div class="small text-muted" id="analysisStatus">
+                                            Ready to start analysis
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="detection-result mt-4" id="analysisResults" style="display: none;">
+                                <h6><i class="fas fa-chart-line me-2"></i>Analysis Results</h6>
+                                <div id="resultsContent">
+                                    <!-- Results will be populated here -->
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <h6>Confidence Level</h6>
+                                            <div class="confidence-meter">
+                                                <div class="confidence-bar confidence-high" id="confidenceBar" style="width: 0%"></div>
+                                            </div>
+                                            <small class="text-muted" id="confidenceText">0%</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <h6>Detections Found</h6>
+                                            <div class="display-6 text-primary" id="detectionsCount">0</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <h6>Accuracy Score</h6>
+                                            <div class="display-6 text-success" id="accuracyScore">0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Save Analysis
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="completeStep(3)" id="completeBtn" disabled>
+                                    <i class="fas fa-check me-1"></i>Complete Step 3
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="step-navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'detector:step2' matchup.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Previous Step
+                            </a>
+                        </div>
+                        <div>
+                            <span class="text-muted">Step {{ current_step }} of {{ total_steps }}</span>
+                        </div>
+                        <div>
+                            {% if has_next_step %}
+                                {% if next_step_accessible %}
+                                    <a href="{% url 'detector:step4' matchup.id %}" class="btn btn-outline-primary">
+                                        Next Step <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-outline-secondary" disabled>
+                                        Complete this step to continue <i class="fas fa-lock ms-1"></i>
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Offcanvas -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                Step {{ current_step }} Instructions
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if instructions %}
+                {% for instruction in instructions %}
+                    <div class="instruction-item mb-3">
+                        <h6>{{ instruction.title }}</h6>
+                        <div class="instruction-content">{{ instruction.content|linebreaks }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <h6>Analysis & Detection</h6>
+                    <p>In this step, you will analyze the data:</p>
+                    <ul>
+                        <li>Choose detection algorithms</li>
+                        <li>Set analysis parameters</li>
+                        <li>Run the detection process</li>
+                        <li>Review confidence levels and results</li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function updateThresholdValue(value) {
+    document.getElementById('thresholdValue').textContent = value;
+}
+
+function runAnalysis() {
+    const algorithm = document.getElementById('algorithm').value;
+    if (!algorithm) {
+        alert('Please select a detection algorithm first.');
+        return;
+    }
+    
+    // Simulate analysis process
+    const progressBar = document.getElementById('analysisProgress');
+    const statusText = document.getElementById('analysisStatus');
+    const resultsDiv = document.getElementById('analysisResults');
+    
+    let progress = 0;
+    statusText.textContent = 'Initializing analysis...';
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 100) progress = 100;
+        
+        progressBar.style.width = progress + '%';
+        progressBar.textContent = Math.round(progress) + '%';
+        
+        if (progress < 30) {
+            statusText.textContent = 'Processing data...';
+        } else if (progress < 70) {
+            statusText.textContent = 'Running detection algorithms...';
+        } else if (progress < 95) {
+            statusText.textContent = 'Analyzing results...';
+        } else {
+            statusText.textContent = 'Analysis complete!';
+            clearInterval(interval);
+            showResults();
+        }
+    }, 500);
+}
+
+function showResults() {
+    // Simulate analysis results
+    const confidence = Math.random() * 100;
+    const detections = Math.floor(Math.random() * 50) + 1;
+    const accuracy = Math.random() * 100;
+    
+    document.getElementById('confidenceBar').style.width = confidence + '%';
+    document.getElementById('confidenceText').textContent = Math.round(confidence) + '%';
+    document.getElementById('detectionsCount').textContent = detections;
+    document.getElementById('accuracyScore').textContent = Math.round(accuracy) + '%';
+    
+    // Update confidence bar color based on level
+    const confidenceBar = document.getElementById('confidenceBar');
+    confidenceBar.className = 'confidence-bar ' + 
+        (confidence > 70 ? 'confidence-high' : 
+         confidence > 40 ? 'confidence-medium' : 'confidence-low');
+    
+    document.getElementById('resultsContent').innerHTML = `
+        <p><strong>Algorithm:</strong> ${document.getElementById('algorithm').value}</p>
+        <p><strong>Threshold:</strong> ${document.getElementById('threshold').value}</p>
+        <p><strong>Status:</strong> <span class="text-success">Analysis completed successfully</span></p>
+    `;
+    
+    document.getElementById('analysisResults').style.display = 'block';
+    document.getElementById('completeBtn').disabled = false;
+}
+
+function completeStep(stepNumber) {
+    if (confirm('Are you sure you want to complete this step?')) {
+        fetch(`{% url 'detector:complete_step' matchup.id 0 %}`.replace('0', stepNumber), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = `{% url 'detector:step4' matchup.id %}`;
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
