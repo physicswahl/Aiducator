@@ -7,9 +7,7 @@
 <link rel="stylesheet" href="{% static 'detector/css/steps.css' %}">
 {% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'detector/js/co2_simulation.js' %}"></script>
-{% endblock %}
+
 
 {% block content %}
 <div class="container-fluid">
@@ -18,8 +16,9 @@
         <button class="btn btn-primary" 
                 type="button" 
                 data-bs-toggle="offcanvas" 
-                data-bs-target="#instructionsOffcanvas">
-            <i class="fas fa-question-circle"></i> Instructions
+                data-bs-target="#instructionsOffcanvas"
+                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
+            Instructions
         </button>
     </div>
 
@@ -32,36 +31,13 @@
                     <div class="matchup-info">
                         <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
                     </div>
-                    <div class="mt-2">
-                        <small class="text-light">Step {{ current_step }} of {{ total_steps }}</small>
-                    </div>
                 </div>
                 
                 <div class="card-body">
-                    <!-- Step Progress Indicator -->
-                    <div class="step-indicator">
-                        {% for step_num in "1234"|make_list %}
-                            {% if not forloop.first %}
-                                <div class="step-connector {% if step_num|add:0 <= current_step %}completed{% endif %}"></div>
-                            {% endif %}
-                            <div class="step 
-                                {% if step_num|add:0 < current_step %}completed
-                                {% elif step_num|add:0 == current_step %}current
-                                {% else %}pending{% endif %}">
-                                {% if step_num|add:0 < current_step %}
-                                    <i class="fas fa-check"></i>
-                                {% else %}
-                                    {{ step_num }}
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
 
                     <!-- Step 1 Specific Content -->
                     <div class="detector-form-section">
-                        <h5><i class="fas fa-cog me-2"></i>CO₂ Detector Setup & Simulation</h5>
-                        <p class="text-muted">Configure your CO₂ detection parameters and observe classroom air quality simulation.</p>
-                        
+
                         <!-- CO2 Simulation Container -->
                         <div class="co2-simulation-container">
                             <div class="co2-simulation-header">
@@ -70,13 +46,13 @@
                             </div>
                             
                             <div class="co2-chart-container">
-                                <canvas id="co2Chart"></canvas>
+                                <canvas id="co2Chart" style="width: 100%; height: 500px; border: 1px solid #ccc; background-color: #f8f9fa;"></canvas>
                             </div>
                             
                             <div class="row">
-                                <div class="col-lg-8">
+ 
                                     <div class="co2-controls">
-                                        <button type="button" class="btn btn-success" id="startBtn" onclick="co2Simulator.start()">
+                                        <button type="button" class="btn btn-success" id="startBtn">
                                             <i class="fas fa-play me-1"></i>Start Monitoring
                                         </button>
                                         <button type="button" class="btn btn-warning" id="pauseBtn" onclick="co2Simulator.pause()" disabled>
@@ -92,81 +68,10 @@
                                             <i class="fas fa-exclamation-triangle me-1"></i>Trigger Spike
                                         </button>
                                     </div>
-                                </div>
-                                <div class="col-lg-4">
-                                    <div class="co2-info-panel">
-                                        <h6><i class="fas fa-info-circle me-1"></i>Simulation Info</h6>
-                                        <div class="info-item">
-                                            <span class="info-label">Baseline PPM:</span>
-                                            <span class="info-value ppm-indicator ppm-normal">400</span>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">Target PPM:</span>
-                                            <span class="info-value ppm-indicator ppm-elevated">700</span>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">Spike PPM:</span>
-                                            <span class="info-value ppm-indicator ppm-high">900</span>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">Duration:</span>
-                                            <span class="info-value">30 minutes</span>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">Speed:</span>
-                                            <span class="info-value">60x accelerated</span>
-                                        </div>
-                                    </div>
-                                </div>
+
                             </div>
                         </div>
                         
-                        <form method="post" id="step1Form">
-                            {% csrf_token %}
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="detection_mode" class="form-label">CO₂ Detection Mode</label>
-                                        <select class="form-select" id="detection_mode" name="detection_mode" required>
-                                            <option value="">Choose detection mode...</option>
-                                            <option value="continuous">Continuous Monitoring</option>
-                                            <option value="interval">Interval Sampling</option>
-                                            <option value="threshold">Threshold Alert</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="sensitivity" class="form-label">Sensitivity Level (PPM threshold)</label>
-                                        <input type="range" class="form-range" id="sensitivity" name="sensitivity" 
-                                               min="400" max="1000" value="700" step="50" oninput="updateSensitivityValue(this.value)">
-                                        <small class="text-muted">Alert threshold: <span id="sensitivityValue">700</span> PPM</small>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="target_parameters" class="form-label">Monitoring Objectives</label>
-                                <textarea class="form-control" id="target_parameters" name="target_parameters" 
-                                          rows="3" placeholder="Describe your monitoring objectives (e.g., track air quality during class sessions, identify ventilation issues, monitor occupancy effects...)"></textarea>
-                            </div>
-                            
-                            <div class="detection-area">
-                                <i class="fas fa-wind fa-3x text-muted mb-3"></i>
-                                <h6>CO₂ Detection System Ready</h6>
-                                <p class="text-muted">Configure your parameters above and run the simulation to initialize the detection system.</p>
-                            </div>
-                            
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i>Save Configuration
-                                </button>
-                                <button type="button" class="btn btn-success" onclick="completeStep(1)" id="completeBtn" disabled>
-                                    <i class="fas fa-check me-1"></i>Complete Step 1
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
                 
@@ -196,46 +101,42 @@
     </div>
 
     <!-- Instructions Offcanvas -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas">
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title">
-                <i class="fas fa-info-circle text-primary me-2"></i>
-                Step {{ current_step }} Instructions
+            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+                <i class="fas fa-clipboard-list me-2"></i>Step 1 Instructions
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
             {% if instructions %}
                 {% for instruction in instructions %}
-                    <div class="instruction-item mb-3">
-                        <h6>{{ instruction.title }}</h6>
-                        <div class="instruction-content">{{ instruction.content|linebreaks }}</div>
+                    <div class="instruction-step mb-4">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-circle-check me-2"></i>{{ instruction.title }}
+                        </h6>
+                        <div class="instruction-content">
+                            {{ instruction.content|safe }}
+                        </div>
                     </div>
                 {% endfor %}
             {% else %}
                 <div class="alert alert-info">
-                    <h6><i class="fas fa-wind me-2"></i>CO₂ Detector Setup & Simulation</h6>
-                    <p>In this step, you will learn about CO₂ detection in classroom environments:</p>
+                    <h6>Setup & Configuration</h6>
+                    <p>In this step, you will configure the detection system parameters:</p>
                     <ul>
-                        <li><strong>Run the simulation:</strong> Start the CO₂ monitoring simulation to see how levels change over 30 minutes</li>
-                        <li><strong>Observe patterns:</strong> Watch how CO₂ gradually increases from 400 PPM to 700 PPM as a classroom fills up</li>
-                        <li><strong>Test spike detection:</strong> Use the "Trigger Spike" button to simulate sudden CO₂ increases (e.g., when many people enter)</li>
-                        <li><strong>Configure monitoring:</strong> Choose detection mode and set alert thresholds</li>
-                        <li><strong>Define objectives:</strong> Specify what you want to monitor and why</li>
+                        <li>Choose your detection mode</li>
+                        <li>Set sensitivity levels</li>
+                        <li>Define target parameters</li>
+                        <li>Initialize the detection system</li>
                     </ul>
-                    <div class="mt-3">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            <strong>Tip:</strong> Normal outdoor CO₂ is ~400 PPM. Indoor levels of 700-800 PPM indicate poor ventilation, 
-                            while levels above 1000 PPM can cause drowsiness and reduced cognitive function.
-                        </small>
-                    </div>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
+<script src="{% static 'detector/js/co2_simulation.js' %}?v=2"></script>
 <script>
 function updateSensitivityValue(value) {
     document.getElementById('sensitivityValue').textContent = value;
@@ -243,9 +144,17 @@ function updateSensitivityValue(value) {
 }
 
 function checkFormCompletion() {
-    const mode = document.getElementById('detection_mode').value;
-    const parameters = document.getElementById('target_parameters').value;
+    const modeElement = document.getElementById('detection_mode');
+    const parametersElement = document.getElementById('target_parameters');
     const completeBtn = document.getElementById('completeBtn');
+    
+    // If form elements don't exist, this step might not require form completion
+    if (!modeElement || !parametersElement || !completeBtn) {
+        return;
+    }
+    
+    const mode = modeElement.value;
+    const parameters = parametersElement.value;
     
     // Check if simulation has been run (at least started once)
     const simulationRun = co2Simulator && (co2Simulator.data.length > 0 || co2Simulator.isRunning);
@@ -292,20 +201,46 @@ if (typeof CO2Simulator !== 'undefined') {
         // Wait for simulator to be initialized
         setTimeout(() => {
             if (co2Simulator) {
+                console.log('Initializing with baselinePPM:', co2Simulator.baselinePPM);
+                // Add initial baseline data point so chart is visible from start
+                co2Simulator.data = [{ time: 0, ppm: co2Simulator.baselinePPM }];
+                co2Simulator.parkData = [{ time: 0, ppm: co2Simulator.baselinePPM }];
+                co2Simulator.currentPPM = co2Simulator.baselinePPM;
+                co2Simulator.currentParkPPM = co2Simulator.baselinePPM;
+                console.log('Initial data:', co2Simulator.data, 'Park data:', co2Simulator.parkData);
+                co2Simulator.drawGraph();
+                
                 const originalUpdateButtonStates = co2Simulator.updateButtonStates;
                 co2Simulator.updateButtonStates = function() {
                     originalUpdateButtonStates.call(this);
                     checkFormCompletion();
                 };
+                
+                // Add click event listener to start button
+                const startBtn = document.getElementById('startBtn');
+                if (startBtn) {
+                    startBtn.addEventListener('click', function() {
+                        if (co2Simulator) {
+                            co2Simulator.start();
+                        }
+                    });
+                }
             }
-        }, 100);
+        }, 500);
     });
 }
 
 // Add event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('detection_mode').addEventListener('change', checkFormCompletion);
-    document.getElementById('target_parameters').addEventListener('input', checkFormCompletion);
+    const modeElement = document.getElementById('detection_mode');
+    const parametersElement = document.getElementById('target_parameters');
+    
+    if (modeElement) {
+        modeElement.addEventListener('change', checkFormCompletion);
+    }
+    if (parametersElement) {
+        parametersElement.addEventListener('input', checkFormCompletion);
+    }
     
     // Initial check
     checkFormCompletion();

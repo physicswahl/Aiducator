@@ -14,8 +14,9 @@
         <button class="btn btn-primary" 
                 type="button" 
                 data-bs-toggle="offcanvas" 
-                data-bs-target="#instructionsOffcanvas">
-            <i class="fas fa-question-circle"></i> Instructions
+                data-bs-target="#instructionsOffcanvas"
+                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
+            Instructions
         </button>
     </div>
 
@@ -192,20 +193,23 @@
     </div>
 
     <!-- Instructions Offcanvas -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas">
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title">
-                <i class="fas fa-info-circle text-primary me-2"></i>
-                Step {{ current_step }} Instructions
+            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+                <i class="fas fa-clipboard-list me-2"></i>Step 3 Instructions
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
             {% if instructions %}
                 {% for instruction in instructions %}
-                    <div class="instruction-item mb-3">
-                        <h6>{{ instruction.title }}</h6>
-                        <div class="instruction-content">{{ instruction.content|linebreaks }}</div>
+                    <div class="instruction-step mb-4">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-circle-check me-2"></i>{{ instruction.title }}
+                        </h6>
+                        <div class="instruction-content">
+                            {{ instruction.content|safe }}
+                        </div>
                     </div>
                 {% endfor %}
             {% else %}

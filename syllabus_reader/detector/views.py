@@ -82,14 +82,19 @@ def step1(request, matchup_id):
         team_data.setup_data = setup_data
         team_data.save()
         
-        messages.success(request, "CO₂ detector configuration saved successfully!")
+        messages.success(request, "Step 1 configuration saved successfully!")
         return redirect('detector:step1', matchup_id=matchup.id)
     
-    # Get instructions for step 1
-    instructions = InstructionStep.objects.filter(
+    # Get instructions for step 1 - filter by user role
+    all_instructions = InstructionStep.objects.filter(
         game_step__ai_game=matchup.ai_game,
-        game_step__step_number=1
+        game_step__step_number=1,
+        is_active=True
     )
+    
+    # Filter instructions based on user role
+    instructions = [instruction for instruction in all_instructions 
+                   if instruction.is_visible_to_user(request.user)]
     
     context = {
         'matchup': matchup,
@@ -143,11 +148,16 @@ def step2(request, matchup_id):
         messages.success(request, "Step 2 data collection saved successfully!")
         return redirect('detector:step2', matchup_id=matchup.id)
     
-    # Get instructions for step 2
-    instructions = InstructionStep.objects.filter(
+    # Get instructions for step 2 - filter by user role
+    all_instructions = InstructionStep.objects.filter(
         game_step__ai_game=matchup.ai_game,
-        game_step__step_number=2
+        game_step__step_number=2,
+        is_active=True
     )
+    
+    # Filter instructions based on user role
+    instructions = [instruction for instruction in all_instructions 
+                   if instruction.is_visible_to_user(request.user)]
     
     context = {
         'matchup': matchup,
@@ -202,11 +212,16 @@ def step3(request, matchup_id):
         messages.success(request, "Step 3 analysis saved successfully!")
         return redirect('detector:step3', matchup_id=matchup.id)
     
-    # Get instructions for step 3
-    instructions = InstructionStep.objects.filter(
+    # Get instructions for step 3 - filter by user role
+    all_instructions = InstructionStep.objects.filter(
         game_step__ai_game=matchup.ai_game,
-        game_step__step_number=3
+        game_step__step_number=3,
+        is_active=True
     )
+    
+    # Filter instructions based on user role
+    instructions = [instruction for instruction in all_instructions 
+                   if instruction.is_visible_to_user(request.user)]
     
     context = {
         'matchup': matchup,
@@ -261,11 +276,16 @@ def step4(request, matchup_id):
         messages.success(request, "Step 4 results saved successfully!")
         return redirect('detector:step4', matchup_id=matchup.id)
     
-    # Get instructions for step 4
-    instructions = InstructionStep.objects.filter(
+    # Get instructions for step 4 - filter by user role
+    all_instructions = InstructionStep.objects.filter(
         game_step__ai_game=matchup.ai_game,
-        game_step__step_number=4
+        game_step__step_number=4,
+        is_active=True
     )
+    
+    # Filter instructions based on user role
+    instructions = [instruction for instruction in all_instructions 
+                   if instruction.is_visible_to_user(request.user)]
     
     context = {
         'matchup': matchup,

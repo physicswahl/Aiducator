@@ -3,18 +3,21 @@ class CO2Simulator {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.canvas.width = 800;
-        this.canvas.height = 400;
+        this.canvas.height = 500;
         
         // Simulation parameters
         this.isRunning = false;
         this.isPaused = false;
         this.data = [];
+        this.parkData = [];
         this.currentTime = 0;
         this.maxTime = 30 * 60; // 30 minutes in seconds
         this.simulationSpeed = 60; // 1 minute of data per second
-        this.baselinePPM = 400;
-        this.targetPPM = 700;
+        this.baselinePPM = 460; // Start both at 460ppm
+        this.targetPPM = 700; // Classroom target
+        this.parkTargetPPM = 430; // Park target
         this.currentPPM = this.baselinePPM;
+        this.currentParkPPM = this.baselinePPM;
         this.spikeActive = false;
         this.spikeStartTime = 0;
         this.spikeDuration = 120; // 2 minutes
@@ -46,7 +49,7 @@ class CO2Simulator {
         
         // Reset dimensions after scaling
         this.canvas.width = 800;
-        this.canvas.height = 400;
+        this.canvas.height = 500;
     }
     
     start() {
@@ -55,12 +58,15 @@ class CO2Simulator {
         this.isRunning = true;
         this.isPaused = false;
         this.data = [];
+        this.parkData = [];
         this.currentTime = 0;
         this.currentPPM = this.baselinePPM;
+        this.currentParkPPM = this.baselinePPM;
         this.spikeActive = false;
         
-        // Add initial data point
+        // Add initial data points for both environments
         this.data.push({ time: 0, ppm: this.baselinePPM });
+        this.parkData.push({ time: 0, ppm: this.baselinePPM });
         
         this.animate();
         this.updateButtonStates();
@@ -87,8 +93,10 @@ class CO2Simulator {
     reset() {
         this.stop();
         this.data = [];
+        this.parkData = [];
         this.currentTime = 0;
         this.currentPPM = this.baselinePPM;
+        this.currentParkPPM = this.baselinePPM;
         this.spikeActive = false;
         this.drawGraph();
         this.updateButtonStates();
@@ -120,6 +128,10 @@ class CO2Simulator {
                 time: this.currentTime,
                 ppm: Math.round(this.currentPPM * 10) / 10
             });
+            this.parkData.push({
+                time: this.currentTime,
+                ppm: Math.round(this.currentParkPPM * 10) / 10
+            });
         }
         
         this.drawGraph();
@@ -132,15 +144,20 @@ class CO2Simulator {
     updatePPM() {
         const timeProgress = this.currentTime / this.maxTime;
         
-        // Base trend: gradual increase from 400 to 700 over 30 minutes
-        const baseTrend = this.baselinePPM + (this.targetPPM - this.baselinePPM) * timeProgress;
+        // CLASSROOM: gradual increase from 460 to 700 over 30 minutes
+        const classroomTrend = this.baselinePPM + (this.targetPPM - this.baselinePPM) * timeProgress;
         
-        // Add some natural variation
+        // PARK: gradual decrease from 460 to 430 over 30 minutes
+        const parkTrend = this.baselinePPM + (this.parkTargetPPM - this.baselinePPM) * timeProgress;
+        
+        // Add some natural variation to both
         const variation = Math.sin(this.currentTime / 300) * 10 + Math.random() * 5 - 2.5;
+        const parkVariation = Math.sin(this.currentTime / 400) * 5 + Math.random() * 3 - 1.5;
         
-        let targetPPM = baseTrend + variation;
+        let targetClassroomPPM = classroomTrend + variation;
+        let targetParkPPM = parkTrend + parkVariation;
         
-        // Handle spike if active
+        // Handle spike if active (only affects classroom)
         if (this.spikeActive) {
             const spikeElapsed = this.currentTime - this.spikeStartTime;
             
@@ -157,15 +174,16 @@ class CO2Simulator {
                     spikeFactor = 1 - ((spikeProgress - 0.3) / 0.7);
                 }
                 
-                const spikeAmount = (this.spikePeakPPM - baseTrend) * spikeFactor;
-                targetPPM = baseTrend + spikeAmount;
+                const spikeAmount = (this.spikePeakPPM - classroomTrend) * spikeFactor;
+                targetClassroomPPM = classroomTrend + spikeAmount;
             } else {
                 this.spikeActive = false;
             }
         }
         
-        // Smooth transition to target PPM
-        this.currentPPM += (targetPPM - this.currentPPM) * 0.1;
+        // Smooth transition to target PPM for both environments
+        this.currentPPM += (targetClassroomPPM - this.currentPPM) * 0.1;
+        this.currentParkPPM += (targetParkPPM - this.currentParkPPM) * 0.1;
     }
     
     drawGraph() {
@@ -188,6 +206,9 @@ class CO2Simulator {
         
         // Draw data
         this.drawData();
+        
+        // Draw legend
+        this.drawLegend();
         
         // Draw current value indicator
         this.drawCurrentValue();
@@ -265,37 +286,105 @@ class CO2Simulator {
     }
     
     drawData() {
-        if (this.data.length < 2) return;
-        
-        this.ctx.strokeStyle = '#007bff';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        
-        for (let i = 0; i < this.data.length; i++) {
-            const point = this.data[i];
-            const x = this.margin.left + (point.time / this.maxTime) * this.graphWidth;
-            const y = this.margin.top + this.graphHeight - ((point.ppm - 300) / 700) * this.graphHeight;
+        // Draw classroom line (brown)
+        if (this.data.length >= 2) {
+            this.ctx.strokeStyle = '#8B4513'; // Brown color
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
             
-            if (i === 0) {
-                this.ctx.moveTo(x, y);
-            } else {
-                this.ctx.lineTo(x, y);
+            for (let i = 0; i < this.data.length; i++) {
+                const point = this.data[i];
+                const x = this.margin.left + (point.time / this.maxTime) * this.graphWidth;
+                const y = this.margin.top + this.graphHeight - ((point.ppm - 300) / 700) * this.graphHeight;
+                
+                if (i === 0) {
+                    this.ctx.moveTo(x, y);
+                } else {
+                    this.ctx.lineTo(x, y);
+                }
+            }
+            
+            this.ctx.stroke();
+            
+            // Draw classroom data points
+            this.ctx.fillStyle = '#8B4513';
+            for (let i = 0; i < this.data.length; i++) {
+                const point = this.data[i];
+                const x = this.margin.left + (point.time / this.maxTime) * this.graphWidth;
+                const y = this.margin.top + this.graphHeight - ((point.ppm - 300) / 700) * this.graphHeight;
+                
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                this.ctx.fill();
             }
         }
         
+        // Draw park line (green)
+        if (this.parkData.length >= 2) {
+            this.ctx.strokeStyle = '#228B22'; // Forest green color
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            
+            for (let i = 0; i < this.parkData.length; i++) {
+                const point = this.parkData[i];
+                const x = this.margin.left + (point.time / this.maxTime) * this.graphWidth;
+                const y = this.margin.top + this.graphHeight - ((point.ppm - 300) / 700) * this.graphHeight;
+                
+                if (i === 0) {
+                    this.ctx.moveTo(x, y);
+                } else {
+                    this.ctx.lineTo(x, y);
+                }
+            }
+            
+            this.ctx.stroke();
+            
+            // Draw park data points
+            this.ctx.fillStyle = '#228B22';
+            for (let i = 0; i < this.parkData.length; i++) {
+                const point = this.parkData[i];
+                const x = this.margin.left + (point.time / this.maxTime) * this.graphWidth;
+                const y = this.margin.top + this.graphHeight - ((point.ppm - 300) / 700) * this.graphHeight;
+                
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                this.ctx.fill();
+            }
+        }
+    }
+    
+    drawLegend() {
+        const legendX = this.margin.left + this.graphWidth - 150;
+        const legendY = this.margin.top + 20;
+        
+        // Legend background
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        this.ctx.fillRect(legendX - 10, legendY - 10, 140, 60);
+        this.ctx.strokeStyle = '#dee2e6';
+        this.ctx.strokeRect(legendX - 10, legendY - 10, 140, 60);
+        
+        // Classroom legend
+        this.ctx.strokeStyle = '#8B4513';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(legendX, legendY + 5);
+        this.ctx.lineTo(legendX + 20, legendY + 5);
         this.ctx.stroke();
         
-        // Draw data points
-        this.ctx.fillStyle = '#007bff';
-        for (let i = 0; i < this.data.length; i++) {
-            const point = this.data[i];
-            const x = this.margin.left + (point.time / this.maxTime) * this.graphWidth;
-            const y = this.margin.top + this.graphHeight - ((point.ppm - 300) / 700) * this.graphHeight;
-            
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, 3, 0, 2 * Math.PI);
-            this.ctx.fill();
-        }
+        this.ctx.fillStyle = '#333';
+        this.ctx.font = '12px Arial';
+        this.ctx.fillText('Classroom', legendX + 25, legendY + 9);
+        
+        // Park legend
+        this.ctx.strokeStyle = '#228B22';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(legendX, legendY + 25);
+        this.ctx.lineTo(legendX + 20, legendY + 25);
+        this.ctx.stroke();
+        
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillText('Park', legendX + 25, legendY + 29);
     }
     
     drawCurrentValue() {
