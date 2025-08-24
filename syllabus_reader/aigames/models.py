@@ -160,6 +160,7 @@ class GameStep(models.Model):
     description = models.TextField(blank=True, help_text="Brief description of what happens in this step")
     url_pattern = models.CharField(max_length=500, default='placeholder:step', help_text="URL pattern for this step (e.g., 'phoneme_density:step1_analysis')")
     estimated_duration_minutes = models.PositiveIntegerField(default=1, help_text="Estimated time to complete this step in minutes")
+    requires_validation = models.BooleanField(default=False, help_text="Whether this step requires teacher validation before students can proceed")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -340,7 +341,6 @@ class InstructionStep(models.Model):
             reasons.append("Recent negative feedback (last 7 days)")
             
         return reasons
-
 
 class InstructionStepFeedback(models.Model):
     """User feedback on instruction steps (thumbs up/down)"""

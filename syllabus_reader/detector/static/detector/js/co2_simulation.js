@@ -2,8 +2,8 @@ class CO2Simulator {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 800;
-        this.canvas.height = 500;
+        this.canvas.width = 900;
+        this.canvas.height = 600;
         
         // Simulation parameters
         this.isRunning = false;
@@ -27,8 +27,8 @@ class CO2Simulator {
         this.animationId = null;
         this.lastTimestamp = 0;
         
-        // Graph styling
-        this.margin = { top: 20, right: 80, bottom: 60, left: 80 };
+        // Graph styling (increased margins for better spacing)
+        this.margin = { top: 30, right: 100, bottom: 80, left: 100 };
         this.graphWidth = this.canvas.width - this.margin.left - this.margin.right;
         this.graphHeight = this.canvas.height - this.margin.top - this.margin.bottom;
         
@@ -48,8 +48,8 @@ class CO2Simulator {
         this.canvas.style.height = rect.height + 'px';
         
         // Reset dimensions after scaling
-        this.canvas.width = 800;
-        this.canvas.height = 500;
+        this.canvas.width = 900;
+        this.canvas.height = 600;
     }
     
     start() {
@@ -122,8 +122,8 @@ class CO2Simulator {
         // Calculate PPM based on time and any active spikes
         this.updatePPM();
         
-        // Add data point every "minute" of simulation
-        if (this.data.length === 0 || this.currentTime - this.data[this.data.length - 1].time >= 60) {
+        // Add data point every 30 seconds of simulation (doubled frequency)
+        if (this.data.length === 0 || this.currentTime - this.data[this.data.length - 1].time >= 30) {
             this.data.push({
                 time: this.currentTime,
                 ppm: Math.round(this.currentPPM * 10) / 10
@@ -354,37 +354,45 @@ class CO2Simulator {
     }
     
     drawLegend() {
-        const legendX = this.margin.left + this.graphWidth - 150;
-        const legendY = this.margin.top + 20;
+        const legendWidth = 140; // Same width as status box
+        const legendHeight = 50;
+        // Align with status box horizontally, position from bottom
+        const legendX = this.margin.left + this.graphWidth - 150; // Same as status box
+        const legendY = this.margin.top + this.graphHeight - 100;
+        
+        // Clear the legend area first to prevent duplicates
+        this.ctx.clearRect(legendX - 5, legendY - 5, legendWidth + 10, legendHeight + 10);
         
         // Legend background
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        this.ctx.fillRect(legendX - 10, legendY - 10, 140, 60);
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        this.ctx.fillRect(legendX, legendY, legendWidth, legendHeight);
         this.ctx.strokeStyle = '#dee2e6';
-        this.ctx.strokeRect(legendX - 10, legendY - 10, 140, 60);
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(legendX, legendY, legendWidth, legendHeight);
         
         // Classroom legend
         this.ctx.strokeStyle = '#8B4513';
         this.ctx.lineWidth = 3;
         this.ctx.beginPath();
-        this.ctx.moveTo(legendX, legendY + 5);
-        this.ctx.lineTo(legendX + 20, legendY + 5);
+        this.ctx.moveTo(legendX + 10, legendY + 15);
+        this.ctx.lineTo(legendX + 35, legendY + 15);
         this.ctx.stroke();
         
         this.ctx.fillStyle = '#333';
         this.ctx.font = '12px Arial';
-        this.ctx.fillText('Classroom', legendX + 25, legendY + 9);
+        this.ctx.textAlign = 'right'; // Right align the text
+        this.ctx.fillText('Classroom', legendX + legendWidth - 10, legendY + 19);
         
         // Park legend
         this.ctx.strokeStyle = '#228B22';
         this.ctx.lineWidth = 3;
         this.ctx.beginPath();
-        this.ctx.moveTo(legendX, legendY + 25);
-        this.ctx.lineTo(legendX + 20, legendY + 25);
+        this.ctx.moveTo(legendX + 10, legendY + 35);
+        this.ctx.lineTo(legendX + 35, legendY + 35);
         this.ctx.stroke();
         
         this.ctx.fillStyle = '#333';
-        this.ctx.fillText('Park', legendX + 25, legendY + 29);
+        this.ctx.fillText('Park', legendX + legendWidth - 10, legendY + 39);
     }
     
     drawCurrentValue() {
@@ -393,8 +401,8 @@ class CO2Simulator {
         const x = this.margin.left + (this.currentTime / this.maxTime) * this.graphWidth;
         const y = this.margin.top + this.graphHeight - ((this.currentPPM - 300) / 700) * this.graphHeight;
         
-        // Current point
-        this.ctx.fillStyle = '#dc3545';
+        // Current point (brown to match classroom line)
+        this.ctx.fillStyle = '#8B4513';
         this.ctx.beginPath();
         this.ctx.arc(x, y, 5, 0, 2 * Math.PI);
         this.ctx.fill();
@@ -402,23 +410,46 @@ class CO2Simulator {
         // Current value label
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fillRect(x + 10, y - 15, 80, 20);
-        this.ctx.strokeStyle = '#dc3545';
+        this.ctx.strokeStyle = '#8B4513';
         this.ctx.lineWidth = 1;
         this.ctx.strokeRect(x + 10, y - 15, 80, 20);
         
-        this.ctx.fillStyle = '#dc3545';
+        this.ctx.fillStyle = '#8B4513';
         this.ctx.font = '12px Arial';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(`${Math.round(this.currentPPM)} PPM`, x + 15, y - 2);
+        
+        // Add park indicator after 5th data point
+        if (this.data.length >= 5 && this.parkData.length > 0) {
+            const parkY = this.margin.top + this.graphHeight - ((this.currentParkPPM - 300) / 700) * this.graphHeight;
+            
+            // Park current point (green to match park line)
+            this.ctx.fillStyle = '#228B22';
+            this.ctx.beginPath();
+            this.ctx.arc(x, parkY, 5, 0, 2 * Math.PI);
+            this.ctx.fill();
+            
+            // Park value label
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(x + 10, parkY - 15, 80, 20);
+            this.ctx.strokeStyle = '#228B22';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(x + 10, parkY - 15, 80, 20);
+            
+            this.ctx.fillStyle = '#228B22';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`${Math.round(this.currentParkPPM)} PPM`, x + 15, parkY - 2);
+        }
     }
     
     drawStatus() {
-        // Status box
+        // Status box (reduced height from 80 to 65)
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        this.ctx.fillRect(this.margin.left + this.graphWidth - 150, this.margin.top + 10, 140, 80);
+        this.ctx.fillRect(this.margin.left + this.graphWidth - 150, this.margin.top + 10, 140, 65);
         this.ctx.strokeStyle = '#dee2e6';
         this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(this.margin.left + this.graphWidth - 150, this.margin.top + 10, 140, 80);
+        this.ctx.strokeRect(this.margin.left + this.graphWidth - 150, this.margin.top + 10, 140, 65);
         
         // Status text
         this.ctx.fillStyle = '#343a40';
@@ -430,11 +461,10 @@ class CO2Simulator {
         
         this.ctx.fillText(`Status: ${this.isRunning ? (this.isPaused ? 'Paused' : 'Running') : 'Stopped'}`, statusX, statusY);
         this.ctx.fillText(`Time: ${Math.floor(this.currentTime / 60)}:${String(Math.floor(this.currentTime % 60)).padStart(2, '0')}`, statusX, statusY + 15);
-        this.ctx.fillText(`Current: ${Math.round(this.currentPPM)} PPM`, statusX, statusY + 30);
         
         if (this.spikeActive) {
             this.ctx.fillStyle = '#dc3545';
-            this.ctx.fillText('SPIKE ACTIVE', statusX, statusY + 45);
+            this.ctx.fillText('SPIKE ACTIVE', statusX, statusY + 30);
         }
     }
     

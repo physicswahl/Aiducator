@@ -882,6 +882,43 @@ def complete_matchup_step_from_detail(request, matchup_id, step_number):
 
 @login_required
 @user_passes_test(can_create_teams)
+@require_POST
+def validate_team_step(request, matchup_id, step_number, team_id):
+    """Validate a specific team's completion of a step"""
+    user_school = request.user.profile.school
+    matchup = get_object_or_404(GameMatchup, id=matchup_id, school=user_school)
+    team = get_object_or_404(Team, id=team_id)
+    
+    # Only teachers can validate steps
+    if not (hasattr(request.user, 'profile') and (request.user.profile.is_teacher or request.user.profile.is_admin)):
+        messages.error(request, "Only teachers can validate team steps.")
+        return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
+    
+    # Verify the team is part of this matchup
+    if team not in [matchup.team1, matchup.team2]:
+        messages.error(request, "Team is not part of this matchup.")
+        return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
+    
+    # Mark the step as validated for this team
+    try:
+        # Check if both teams have now been validated for this step
+        other_team = matchup.team2 if team == matchup.team1 else matchup.team2
+        
+        # For now, we'll complete the step at the matchup level
+        # TODO: Implement team-specific validation tracking if needed
+        progress = matchup.complete_step(step_number)
+        
+        if progress:
+            messages.success(request, f"Step {step_number} validated for {team.name}!")
+        else:
+            messages.error(request, f"Could not validate step {step_number} for {team.name}.")
+    except Exception as e:
+        messages.error(request, f"Error validating step: {str(e)}")
+    
+    return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
+
+@login_required
+@user_passes_test(can_create_teams)
 def teacher_game_instructions(request, game_id):
     """Show teacher-specific instructions for a game"""
     game = get_object_or_404(AiGame, id=game_id)

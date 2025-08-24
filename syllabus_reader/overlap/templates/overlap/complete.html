@@ -1,0 +1,202 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}Game Complete - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .completion-banner {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 1rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .completion-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+    
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .result-card {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        text-align: center;
+        border-left: 5px solid #28a745;
+    }
+    
+    .result-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #28a745;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .timeline {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+    }
+    
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .timeline-item:last-child {
+        border-bottom: none;
+    }
+    
+    .timeline-step {
+        background-color: #28a745;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Completion Banner -->
+            <div class="completion-banner">
+                <div class="completion-icon">🎉</div>
+                <h1>Congratulations!</h1>
+                <h3>{{ team.name }} has completed the Overlap Game</h3>
+                <p class="lead">Your team successfully analyzed overlap patterns and reached valuable conclusions.</p>
+            </div>
+            
+            <!-- Results Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h4>Final Results Summary</h4>
+                </div>
+                <div class="card-body">
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <span class="result-value">{{ team_data.final_score|default:0 }}</span>
+                            <div class="result-label">Final Score</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <span class="result-value">{{ team_data.overlap_percentage|default:0 }}%</span>
+                            <div class="result-label">Overlap Detected</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <span class="result-value">{{ team_data.data_points_collected }}</span>
+                            <div class="result-label">Data Points Collected</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <span class="result-value">{{ completion_percentage|floatformat:0 }}%</span>
+                            <div class="result-label">Completion Rate</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Game Timeline -->
+                    <div class="timeline">
+                        <h5>Game Progress Timeline</h5>
+                        <div class="timeline-item">
+                            <div class="timeline-step">1</div>
+                            <div>
+                                <strong>Setup & Configuration</strong>
+                                <div class="small text-muted">
+                                    Sensitivity: {{ team_data.sensitivity_level }}, 
+                                    Threshold: {{ team_data.threshold_value }}, 
+                                    Mode: {{ team_data.overlap_mode|title }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-step">2</div>
+                            <div>
+                                <strong>Data Collection</strong>
+                                <div class="small text-muted">
+                                    {{ team_data.data_points_collected }} data points collected
+                                    {% if team_data.baseline_established %} | Baseline established{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-step">3</div>
+                            <div>
+                                <strong>Analysis & Comparison</strong>
+                                <div class="small text-muted">
+                                    {{ team_data.overlap_percentage|default:0 }}% overlap detected
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-step">4</div>
+                            <div>
+                                <strong>Results & Conclusion</strong>
+                                <div class="small text-muted">
+                                    Final score: {{ team_data.final_score|default:0 }}
+                                    {% if team_data.completed_at %} | Completed: {{ team_data.completed_at|date:"M d, Y H:i" }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conclusions Display -->
+                    {% if team_data.conclusions %}
+                    <div class="alert alert-info">
+                        <h6>Team Conclusions:</h6>
+                        <p class="mb-0">{{ team_data.conclusions|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <a href="{% url 'aigames:student_dashboard' %}" class="btn btn-primary btn-block">
+                        Return to Dashboard
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'overlap:step1' matchup.id %}" class="btn btn-info btn-block">
+                        Review Steps
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <form method="post" action="{% url 'overlap:reset_game' matchup.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="btn btn-warning btn-block"
+                                onclick="return confirm('Are you sure you want to reset the game? This will delete all progress.')">
+                            Reset Game
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

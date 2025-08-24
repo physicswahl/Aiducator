@@ -1,0 +1,209 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-progress {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-step {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        border-radius: 0.25rem;
+        border: 2px solid #dee2e6;
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .progress-step.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .progress-step.completed {
+        background-color: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+    
+    .results-summary {
+        background-color: #e8f5e8;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid #28a745;
+    }
+    
+    .score-display {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #28a745;
+        text-align: center;
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+        border: 3px solid #28a745;
+    }
+    
+    .analysis-summary {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>{{ matchup.ai_game.title }} - {{ step_name }}</h2>
+            <p class="text-muted">Team: {{ team.name }}</p>
+            
+            <!-- Progress Indicator -->
+            <div class="step-progress">
+                <h5>Progress</h5>
+                <div class="progress-steps">
+                    {% for i in "1234"|make_list %}
+                        <span class="progress-step {% if current_step == i|add:0 %}active{% endif %} {% if team_data.current_step > i|add:0 %}completed{% endif %}">
+                            Step {{ i }}
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Step 4 Content -->
+            <div class="card">
+                <div class="card-header">
+                    <h4>Results & Conclusion</h4>
+                    <p class="mb-0">Review your analysis results and draw final conclusions.</p>
+                </div>
+                <div class="card-body">
+                    <!-- Analysis Summary -->
+                    <div class="results-summary">
+                        <h5>Analysis Summary</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Data Points:</strong><br>
+                                {{ team_data.data_points_collected }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Overlap Found:</strong><br>
+                                {{ team_data.overlap_percentage|default:0 }}%
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Sensitivity:</strong><br>
+                                {{ team_data.sensitivity_level }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Threshold:</strong><br>
+                                {{ team_data.threshold_value }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Final Score -->
+                        <div class="analysis-summary">
+                            <h5>Final Score Calculation</h5>
+                            <p>Calculate your final score based on accuracy, methodology, and analysis quality.</p>
+                            
+                            <div class="score-display">
+                                <span id="score_display">{{ team_data.final_score|default:0 }}</span>
+                                <div class="small text-muted">Final Score</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="final_score">Final Score (0-100):</label>
+                                <input type="range" 
+                                       class="form-control-range" 
+                                       id="final_score" 
+                                       name="final_score" 
+                                       min="0" 
+                                       max="100" 
+                                       step="1"
+                                       value="{{ team_data.final_score|default:0 }}"
+                                       oninput="updateScoreDisplay(this.value)">
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>0</span>
+                                    <span>50</span>
+                                    <span>100</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="score_number" 
+                                       name="final_score" 
+                                       value="{{ team_data.final_score|default:0 }}"
+                                       min="0"
+                                       max="100"
+                                       step="1"
+                                       placeholder="Enter exact score"
+                                       oninput="updateFromScoreNumber(this.value)">
+                            </div>
+                        </div>
+                        
+                        <!-- Conclusions -->
+                        <div class="form-group">
+                            <label for="conclusions">Conclusions and Insights:</label>
+                            <textarea class="form-control" 
+                                      id="conclusions" 
+                                      name="conclusions" 
+                                      rows="6" 
+                                      placeholder="Summarize your findings, insights gained, methodology effectiveness, and overall conclusions from the overlap analysis...">{{ team_data.conclusions }}</textarea>
+                        </div>
+                        
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                Complete Overlap Game
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <a href="{% url 'overlap:step3' matchup.id %}" class="btn btn-secondary">
+                        ← Back to Step 3
+                    </a>
+                </div>
+                <div class="col-md-6 text-right">
+                    {% if team_data.step4_completed %}
+                        <a href="{% url 'overlap:complete_step' matchup.id %}" class="btn btn-success">
+                            View Completion →
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateScoreDisplay(value) {
+    document.getElementById('score_display').textContent = value;
+    document.getElementById('score_number').value = value;
+}
+
+function updateFromScoreNumber(value) {
+    document.getElementById('final_score').value = value;
+    document.getElementById('score_display').textContent = value;
+}
+</script>
+{% endblock %}

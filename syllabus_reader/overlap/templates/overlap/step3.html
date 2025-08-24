@@ -1,0 +1,478 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-card {
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .step-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+    
+    .matchup-info {
+        margin-top: 0.5rem;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .step-navigation {
+        background-color: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #dee2e6;
+        margin-top: 0;
+    }
+    
+    .placement-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .canvas-container {
+        text-align: center;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 0.5rem;
+    }
+    
+    .placement-instructions {
+        background-color: #e3f2fd;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #2196f3;
+        margin-bottom: 1rem;
+    }
+    
+    .submission-status {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .submission-status.submitted {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+    
+    .submission-status.validated {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+    
+    .position-display {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 2px solid #28a745;
+        margin-bottom: 1rem;
+    }
+    
+    .coordinate-info {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1rem;
+    }
+    
+    .coordinate-item {
+        text-align: center;
+    }
+    
+    .coordinate-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .coordinate-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    #placementCanvas {
+        transition: cursor 0.2s ease;
+    }
+    
+    #placementCanvas:hover {
+        cursor: crosshair;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Instructions Button -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas"
+                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
+            Instructions
+        </button>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card step-card">
+                <div class="card-header">
+                    <h4>{{ matchup.ai_game.title }} - {{ step_name }}</h4>
+                    <div class="matchup-info">
+                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Submission Status -->
+                    {% if team_data.circle_placement_submitted %}
+                        {% if next_step_accessible %}
+                            <div class="submission-status validated">
+                                <h6><i class="fas fa-check-circle me-2"></i>Ready to Proceed!</h6>
+                                <p class="mb-0">Both teams have submitted their circle placements and the teacher has validated them. You can now proceed to the next step.</p>
+                            </div>
+                        {% else %}
+                            <div class="submission-status submitted">
+                                <h6><i class="fas fa-clock me-2"></i>Waiting for Requirements</h6>
+                                <p class="mb-2">Your circle placement has been submitted. To proceed to the next step, the following conditions must be met:</p>
+                                <ul class="mb-0">
+                                    <li>
+                                        {% if current_team_ready %}
+                                            <i class="fas fa-check text-success me-1"></i>Your team's placement validated by teacher
+                                        {% else %}
+                                            <i class="fas fa-clock text-warning me-1"></i>Your team's placement awaiting teacher validation
+                                        {% endif %}
+                                    </li>
+                                    <li>
+                                        {% if other_team_data.circle_placement_submitted %}
+                                            <i class="fas fa-check text-success me-1"></i>{{ other_team.name }} has submitted their placement
+                                        {% else %}
+                                            <i class="fas fa-clock text-warning me-1"></i>{{ other_team.name }} needs to submit their placement
+                                        {% endif %}
+                                    </li>
+                                    <li>
+                                        {% if other_team_ready %}
+                                            <i class="fas fa-check text-success me-1"></i>{{ other_team.name }}'s placement validated by teacher
+                                        {% else %}
+                                            <i class="fas fa-clock text-warning me-1"></i>{{ other_team.name }}'s placement awaiting teacher validation
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="submission-status">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Placement Required</h6>
+                            <p class="mb-0">You need to place your circle and submit it for teacher validation before you can proceed.</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Circle Placement Interface -->
+                    <div class="placement-section">
+
+                        {% if not team_data.circle_placement_submitted %}
+                        <p>Click on the canvas to position your team's circle.</p>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="canvas-container">
+                                    <canvas id="placementCanvas" width="400" height="300" 
+                                            style="border: 2px solid #dee2e6; border-radius: 0.5rem; background-color: #f8f9fa;">
+                                    </canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <!-- Current Position Display -->
+                                <div class="position-display">
+                                    <h6 class="text-center">Circle Position</h6>
+                                    <div class="coordinate-info">
+                                        <div class="coordinate-item">
+                                            <div class="coordinate-value" id="xPosition">--</div>
+                                            <div class="coordinate-label">X Coordinate</div>
+                                        </div>
+                                        <div class="coordinate-item">
+                                            <div class="coordinate-value" id="yPosition">--</div>
+                                            <div class="coordinate-label">Y Coordinate</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <small class="text-muted" id="validPosition">Click to place circle</small>
+                                    </div>
+                                </div>
+                                
+                                {% if not is_teacher_viewing %}
+                                <!-- Placement Form -->
+                                <form method="post" id="placementForm">
+                                    {% csrf_token %}
+                                    <input type="hidden" id="circle_x" name="circle_x" value="{{ team_data.circle_x|default:'' }}">
+                                    <input type="hidden" id="circle_y" name="circle_y" value="{{ team_data.circle_y|default:'' }}">
+                                    
+                                    <div class="form-group">
+                                        <label for="placement_notes">Strategy Notes:</label>
+                                        <textarea class="form-control" 
+                                                  id="placement_notes" 
+                                                  name="placement_notes" 
+                                                  rows="4" 
+                                                  placeholder="Explain your circle placement strategy..."
+                                                  {% if team_data.circle_placement_submitted %}readonly{% endif %}>{{ team_data.placement_notes }}</textarea>
+                                    </div>
+                                    
+                                    {% if not team_data.circle_placement_submitted %}
+                                        <button type="submit" class="btn btn-primary btn-block" id="submitBtn" disabled>
+                                            <i class="fas fa-paper-plane me-1"></i> Submit Placement
+                                        </button>
+                                    {% else %}
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Placement submitted. Awaiting teacher validation.
+                                        </div>
+                                    {% endif %}
+                                </form>
+                                {% else %}
+                                <!-- Teacher Viewing Mode -->
+                                <div class="teacher-view-notice alert alert-info">
+                                    <i class="fas fa-eye me-1"></i>
+                                    Viewing {{ team.name }}'s work as teacher
+                                </div>
+                                {% if team_data.placement_notes %}
+                                    <div class="form-group">
+                                        <label><strong>Team's Strategy Notes:</strong></label>
+                                        <div class="alert alert-light">{{ team_data.placement_notes }}</div>
+                                    </div>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="step-navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">Step {{ current_step }} of {{ total_steps }}</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'overlap:step2' matchup.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Previous Step
+                            </a>
+                            {% if has_next_step %}
+                                {% if next_step_accessible %}
+                                    <a href="{% url 'overlap:step4' matchup.id %}" class="btn btn-outline-primary">
+                                        Next Step <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                {% else %}
+                                    {% if not team_data.circle_placement_submitted %}
+                                        <button class="btn btn-outline-secondary" disabled>
+                                            Submit placement first <i class="fas fa-lock ms-1"></i>
+                                        </button>
+                                    {% elif not other_team_data.circle_placement_submitted %}
+                                        <button class="btn btn-outline-secondary" disabled>
+                                            Waiting for {{ other_team.name }} to submit <i class="fas fa-lock ms-1"></i>
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-outline-secondary" disabled>
+                                            Awaiting teacher validation <i class="fas fa-lock ms-1"></i>
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instructions Offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+            <i class="fas fa-clipboard-list me-2"></i>Step 3 Instructions
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        {% if instructions %}
+            {% for instruction in instructions %}
+                <div class="instruction-step mb-4">
+                    <h6 class="fw-bold text-primary">
+                        <i class="fas fa-circle-check me-2"></i>{{ instruction.title }}
+                    </h6>
+                    <div class="instruction-content">
+                        {{ instruction.content|safe }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-light">
+                <i class="fas fa-info-circle me-2"></i>No instructions available for this step.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('placementCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Circle properties
+    const circleRadius = 40;
+    let circleX = null;
+    let circleY = null;
+    let isPlaced = false;
+    
+    // Check if there's already a saved position
+    const savedX = {% if team_data.circle_x %}{{ team_data.circle_x }}{% else %}null{% endif %};
+    const savedY = {% if team_data.circle_y %}{{ team_data.circle_y }}{% else %}null{% endif %};
+    
+    if (savedX !== null && savedY !== null) {
+        circleX = savedX;
+        circleY = savedY;
+        isPlaced = true;
+        updateDisplay();
+        drawCanvas();
+        updateSubmitButton();
+    } else {
+        drawCanvas();
+    }
+    
+    // Only allow placement if not already submitted and not teacher viewing
+    const isSubmitted = {% if team_data.circle_placement_submitted %}true{% else %}false{% endif %};
+    const isTeacherViewing = {% if is_teacher_viewing %}true{% else %}false{% endif %};
+    
+    if (!isSubmitted && !isTeacherViewing) {
+        canvas.addEventListener('click', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Check if circle would be fully within canvas
+            if (x >= circleRadius && x <= canvas.width - circleRadius &&
+                y >= circleRadius && y <= canvas.height - circleRadius) {
+                
+                circleX = x;
+                circleY = y;
+                isPlaced = true;
+                
+                updateDisplay();
+                drawCanvas();
+                updateSubmitButton();
+                updateFormFields();
+            } else {
+                alert('Circle must be fully within the canvas boundaries!');
+            }
+        });
+    }
+    
+    function drawCanvas() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw grid for reference
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        
+        // Vertical grid lines
+        for (let x = 50; x < canvas.width; x += 50) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+        
+        // Horizontal grid lines
+        for (let y = 50; y < canvas.height; y += 50) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        
+        // Draw canvas boundaries
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw valid placement area (inner rectangle)
+        ctx.strokeStyle = '#28a745';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(circleRadius, circleRadius, 
+                      canvas.width - 2 * circleRadius, 
+                      canvas.height - 2 * circleRadius);
+        ctx.setLineDash([]);
+        
+        // Draw placed circle if exists
+        if (isPlaced && circleX !== null && circleY !== null) {
+            ctx.beginPath();
+            ctx.arc(circleX, circleY, circleRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Add center point
+            ctx.beginPath();
+            ctx.arc(circleX, circleY, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+        }
+    }
+    
+    function updateDisplay() {
+        const xPos = document.getElementById('xPosition');
+        const yPos = document.getElementById('yPosition');
+        const validPos = document.getElementById('validPosition');
+        
+        if (isPlaced) {
+            xPos.textContent = Math.round(circleX);
+            yPos.textContent = Math.round(circleY);
+            validPos.textContent = 'Valid placement';
+            validPos.className = 'text-success';
+        } else {
+            xPos.textContent = '--';
+            yPos.textContent = '--';
+            validPos.textContent = 'Click to place circle';
+            validPos.className = 'text-muted';
+        }
+    }
+    
+    function updateSubmitButton() {
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = !isPlaced;
+        }
+    }
+    
+    function updateFormFields() {
+        if (isPlaced) {
+            document.getElementById('circle_x').value = circleX;
+            document.getElementById('circle_y').value = circleY;
+        }
+    }
+    
+    // Initial canvas draw
+    drawCanvas();
+});
+</script>
+{% endblock %}

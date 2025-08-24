@@ -26,6 +26,7 @@ urlpatterns = [
     path('matchups/<int:matchup_id>/', views.game_matchup_detail, name='game_matchup_detail'),
     path('matchups/<int:matchup_id>/update-status/', views.update_matchup_status, name='update_matchup_status'),
     path('matchups/<int:matchup_id>/complete-step/<int:step_number>/', views.complete_matchup_step_from_detail, name='complete_matchup_step_from_detail'),
+    path('matchups/<int:matchup_id>/validate-step/<int:step_number>/team/<int:team_id>/', views.validate_team_step, name='validate_team_step'),
     
     # Teacher Game Instructions
     path('games/<int:game_id>/teacher-instructions/', views.teacher_game_instructions, name='teacher_game_instructions'),

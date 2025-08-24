@@ -37,6 +37,7 @@ urlpatterns = [
     path('aigames/', include('aigames.urls', namespace='aigames')),
     path('phoneme-density/', include('phoneme_density.urls')),
     path('detector/', include('detector.urls')),
+    path('overlap/', include('overlap.urls')),
     path('favicon.ico', favicon_view, name='favicon'),
     path('', RedirectView.as_view(url='/syllabus/', permanent=False)),
 ]

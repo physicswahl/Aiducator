@@ -1,0 +1,789 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-card {
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .step-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+    
+    .matchup-info {
+        margin-top: 0.5rem;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .step-navigation {
+        background-color: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #dee2e6;
+        margin-top: 0;
+    }
+    
+    .step-progress {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-step {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        border-radius: 0.25rem;
+        border: 2px solid #dee2e6;
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .progress-step.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .progress-step.completed {
+        background-color: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+    
+    .config-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .range-display {
+        font-weight: bold;
+        color: #007bff;
+        margin-left: 0.5rem;
+    }
+    
+    .overlap-canvas-container {
+        text-align: center;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 0.5rem;
+    }
+    
+    .heatmap-canvas-container {
+        text-align: center;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 0.5rem;
+    }
+    
+    .overlap-display {
+        text-align: center;
+        padding: 1rem;
+        background-color: #e3f2fd;
+        border-radius: 0.5rem;
+        border: 2px solid #2196f3;
+    }
+    
+    .overlap-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #1976d2;
+        display: block;
+    }
+    
+    .overlap-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+    
+    .overlap-instructions {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        padding: 1rem;
+    }
+    
+    #overlapCanvas {
+        transition: cursor 0.2s ease;
+    }
+    
+    #overlapCanvas:active {
+        cursor: grabbing;
+    }
+    
+    .canvas-section {
+        margin-bottom: 2rem;
+    }
+    
+    .canvas-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .heatmap-legend {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1rem;
+        gap: 1rem;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Instructions Button -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas"
+                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
+            Instructions
+        </button>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card step-card">
+                <div class="card-header">
+                    <h4>{{ matchup.ai_game.title }} - {{ step_name }}</h4>
+                    <div class="matchup-info">
+                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Step 2 Specific Content -->
+                    <div class="overlap-form-section">
+                        <!-- Dual Canvas Visualization -->
+                        <div class="config-section">
+
+                            <div class="row">
+                                <!-- Left Canvas: Interactive Overlap -->
+                                <div class="col-md-6">
+                                    <div class="canvas-section">
+                                        <div class="canvas-title">Interactive Overlap Detection</div>
+                                        <div class="overlap-canvas-container">
+                                            <canvas id="overlapCanvas" width="400" height="300" style="border: 2px solid #dee2e6; border-radius: 0.5rem; background-color: #f8f9fa; cursor: grab;"></canvas>
+                                            <div class="overlap-info mt-3">
+                                                <div class="overlap-display">
+                                                    <span class="overlap-value" id="overlapPercentage">0%</span>
+                                                    <div class="overlap-label">Current Overlap Coverage</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Canvas: Heatmap/Cross-section -->
+                                <div class="col-md-6">
+                                    <div class="canvas-section">
+                                        <div class="canvas-title" id="rightCanvasTitle">Overlap Heatmap</div>
+                                        <div class="heatmap-canvas-container">
+                                            <canvas id="heatmapCanvas" width="400" height="300" style="border: 2px solid #dee2e6; border-radius: 0.5rem; background-color: #f8f9fa;"></canvas>
+                                            
+                                            <!-- View Mode Toggle -->
+                                            <div class="view-mode-toggle mt-3">
+                                                <div class="btn-group" role="group" aria-label="View mode selection">
+                                                    <input type="radio" class="btn-check" name="viewMode" id="heatmapMode" value="heatmap" checked>
+                                                    <label class="btn btn-outline-primary" for="heatmapMode">Heatmap</label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="viewMode" id="xSectionMode" value="x-section">
+                                                    <label class="btn btn-outline-primary" for="xSectionMode">X-Section</label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="viewMode" id="ySectionMode" value="y-section">
+                                                    <label class="btn btn-outline-primary" for="ySectionMode">Y-Section</label>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="step-navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">Step {{ current_step }} of {{ total_steps }}</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'overlap:step1' matchup.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Previous Step
+                            </a>
+                            {% if has_next_step %}
+                                {% if next_step_accessible %}
+                                    <a href="{% url 'overlap:step3' matchup.id %}" class="btn btn-outline-primary">
+                                        Next Step <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-outline-secondary" disabled>
+                                        Complete this step to continue <i class="fas fa-lock ms-1"></i>
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Instructions Offcanvas -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+                <i class="fas fa-clipboard-list me-2"></i>Step 2 Instructions
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if instructions %}
+                {% for instruction in instructions %}
+                    <div class="instruction-step mb-4">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-circle-check me-2"></i>{{ instruction.title }}
+                        </h6>
+                        <div class="instruction-content">
+                            {{ instruction.content|safe }}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-light">
+                    <i class="fas fa-info-circle me-2"></i>No instructions available for this step.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+<script>
+// Overlap Canvas Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('overlapCanvas');
+    const ctx = canvas.getContext('2d');
+    const heatmapCanvas = document.getElementById('heatmapCanvas');
+    const heatmapCtx = heatmapCanvas.getContext('2d');
+    
+    // Circle properties (scaled for smaller canvas)
+    const radius = 40;
+    const fixedCircle = { x: 150, y: 150, radius: radius }; // Fixed black circle
+    const movableCircle = { x: 250, y: 150, radius: radius }; // Movable blue circle
+    
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+    let currentViewMode = 'heatmap';
+    
+    // View mode toggle handlers
+    document.querySelectorAll('input[name="viewMode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            currentViewMode = this.value;
+            updateRightCanvasView();
+            updateTitle();
+            toggleLegend();
+            drawCircles(); // Redraw left canvas to show/hide section lines
+        });
+    });
+    
+    function updateTitle() {
+        const titleElement = document.getElementById('rightCanvasTitle');
+        const legendElement = document.getElementById('heatmapLegend');
+        
+        switch(currentViewMode) {
+            case 'heatmap':
+                titleElement.textContent = 'Overlap Heatmap';
+                break;
+            case 'x-section':
+                titleElement.textContent = 'X-Section: Overlap vs X-coordinate';
+                break;
+            case 'y-section':
+                titleElement.textContent = 'Y-Section: Overlap vs Y-coordinate';
+                break;
+        }
+    }
+    
+    function toggleLegend() {
+        const legendElement = document.getElementById('heatmapLegend');
+        if (currentViewMode === 'heatmap') {
+            legendElement.style.display = 'flex';
+        } else {
+            legendElement.style.display = 'none';
+        }
+    }
+    
+    function drawCircles() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw section line if in section mode
+        if (currentViewMode === 'x-section') {
+            // Horizontal line through center of fixed circle
+            ctx.beginPath();
+            ctx.moveTo(0, fixedCircle.y);
+            ctx.lineTo(canvas.width, fixedCircle.y);
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        } else if (currentViewMode === 'y-section') {
+            // Vertical line slightly off center (20 pixels to the right of center)
+            const lineX = fixedCircle.x + 20;
+            ctx.beginPath();
+            ctx.moveTo(lineX, 0);
+            ctx.lineTo(lineX, canvas.height);
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Draw fixed circle (black)
+        ctx.beginPath();
+        ctx.arc(fixedCircle.x, fixedCircle.y, fixedCircle.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#000000';
+        ctx.fill();
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Draw movable circle (blue with transparency)
+        ctx.beginPath();
+        ctx.arc(movableCircle.x, movableCircle.y, movableCircle.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(33, 150, 243, 0.7)';
+        ctx.fill();
+        ctx.strokeStyle = '#1976d2';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Calculate and display overlap
+        calculateOverlap();
+    }
+    
+    function calculateOverlap() {
+        const dx = movableCircle.x - fixedCircle.x;
+        const dy = movableCircle.y - fixedCircle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        let overlapPercentage = 0;
+        
+        if (distance < fixedCircle.radius + movableCircle.radius) {
+            // Circles are overlapping
+            if (distance <= Math.abs(fixedCircle.radius - movableCircle.radius)) {
+                // One circle is completely inside the other
+                overlapPercentage = 100;
+            } else {
+                // Partial overlap - calculate intersection area
+                const r1 = fixedCircle.radius;
+                const r2 = movableCircle.radius;
+                const d = distance;
+                
+                // Calculate intersection area using the lens formula
+                const part1 = r1 * r1 * Math.acos((d * d + r1 * r1 - r2 * r2) / (2 * d * r1));
+                const part2 = r2 * r2 * Math.acos((d * d + r2 * r2 - r1 * r1) / (2 * d * r2));
+                const part3 = 0.5 * Math.sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2));
+                
+                const intersectionArea = part1 + part2 - part3;
+                const fixedCircleArea = Math.PI * r1 * r1;
+                
+                overlapPercentage = (intersectionArea / fixedCircleArea) * 100;
+            }
+        }
+        
+        overlapPercentage = Math.max(0, Math.min(100, overlapPercentage));
+        document.getElementById('overlapPercentage').textContent = overlapPercentage.toFixed(1) + '%';
+    }
+    
+    function calculateOverlapForPosition(x, y) {
+        const dx = x - fixedCircle.x;
+        const dy = y - fixedCircle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        let overlapPercentage = 0;
+        
+        if (distance < fixedCircle.radius + radius) {
+            if (distance <= Math.abs(fixedCircle.radius - radius)) {
+                overlapPercentage = 100;
+            } else {
+                const r1 = fixedCircle.radius;
+                const r2 = radius;
+                const d = distance;
+                
+                const part1 = r1 * r1 * Math.acos((d * d + r1 * r1 - r2 * r2) / (2 * d * r1));
+                const part2 = r2 * r2 * Math.acos((d * d + r2 * r2 - r1 * r1) / (2 * d * r2));
+                const part3 = 0.5 * Math.sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2));
+                
+                const intersectionArea = part1 + part2 - part3;
+                const fixedCircleArea = Math.PI * r1 * r1;
+                
+                overlapPercentage = (intersectionArea / fixedCircleArea) * 100;
+            }
+        }
+        
+        return Math.max(0, Math.min(100, overlapPercentage));
+    }
+    
+    function getColorForOverlap(percentage) {
+        // Create color gradient from blue (0%) to red (100%)
+        const normalizedValue = percentage / 100;
+        
+        let r, g, b;
+        
+        if (normalizedValue <= 0.25) {
+            // Blue to cyan (0% to 25%)
+            const t = normalizedValue / 0.25;
+            r = 0;
+            g = Math.floor(128 * t);
+            b = Math.floor(128 + 127 * (1 - t));
+        } else if (normalizedValue <= 0.5) {
+            // Cyan to green (25% to 50%)
+            const t = (normalizedValue - 0.25) / 0.25;
+            r = 0;
+            g = Math.floor(128 + 127 * t);
+            b = Math.floor(128 * (1 - t));
+        } else if (normalizedValue <= 0.75) {
+            // Green to yellow (50% to 75%)
+            const t = (normalizedValue - 0.5) / 0.25;
+            r = Math.floor(255 * t);
+            g = 255;
+            b = 0;
+        } else {
+            // Yellow to red (75% to 100%)
+            const t = (normalizedValue - 0.75) / 0.25;
+            r = 255;
+            g = Math.floor(255 * (1 - t));
+            b = 0;
+        }
+        
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+    
+    function updateRightCanvasView() {
+        switch(currentViewMode) {
+            case 'heatmap':
+                drawHeatmap();
+                break;
+            case 'x-section':
+                drawXSection();
+                break;
+            case 'y-section':
+                drawYSection();
+                break;
+        }
+    }
+    
+    function drawHeatmap() {
+        // Clear heatmap canvas
+        heatmapCtx.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+        
+        // Create heatmap by sampling grid points
+        const resolution = 8; // Lower number = higher resolution (more computation)
+        
+        for (let x = radius; x < heatmapCanvas.width - radius; x += resolution) {
+            for (let y = radius; y < heatmapCanvas.height - radius; y += resolution) {
+                const overlapValue = calculateOverlapForPosition(x, y);
+                const color = getColorForOverlap(overlapValue);
+                
+                heatmapCtx.fillStyle = color;
+                heatmapCtx.fillRect(x - resolution/2, y - resolution/2, resolution, resolution);
+            }
+        }
+        
+        // Draw fixed circle outline for reference on top
+        heatmapCtx.beginPath();
+        heatmapCtx.arc(fixedCircle.x, fixedCircle.y, fixedCircle.radius, 0, 2 * Math.PI);
+        heatmapCtx.strokeStyle = '#000000';
+        heatmapCtx.lineWidth = 3;
+        heatmapCtx.stroke();
+        
+        // Add center point
+        heatmapCtx.beginPath();
+        heatmapCtx.arc(fixedCircle.x, fixedCircle.y, 3, 0, 2 * Math.PI);
+        heatmapCtx.fillStyle = '#000000';
+        heatmapCtx.fill();
+    }
+    
+    function drawXSection() {
+        // Clear canvas
+        heatmapCtx.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+        
+        // Set up graph area
+        const margin = 40;
+        const graphWidth = heatmapCanvas.width - 2 * margin;
+        const graphHeight = heatmapCanvas.height - 2 * margin;
+        
+        // Draw axes
+        heatmapCtx.strokeStyle = '#333333';
+        heatmapCtx.lineWidth = 2;
+        
+        // X-axis
+        heatmapCtx.beginPath();
+        heatmapCtx.moveTo(margin, heatmapCanvas.height - margin);
+        heatmapCtx.lineTo(heatmapCanvas.width - margin, heatmapCanvas.height - margin);
+        heatmapCtx.stroke();
+        
+        // Y-axis
+        heatmapCtx.beginPath();
+        heatmapCtx.moveTo(margin, margin);
+        heatmapCtx.lineTo(margin, heatmapCanvas.height - margin);
+        heatmapCtx.stroke();
+        
+        // Labels
+        heatmapCtx.fillStyle = '#333333';
+        heatmapCtx.font = '12px Arial';
+        heatmapCtx.textAlign = 'center';
+        heatmapCtx.fillText('X-coordinate', heatmapCanvas.width / 2, heatmapCanvas.height - 10);
+        
+        heatmapCtx.save();
+        heatmapCtx.translate(15, heatmapCanvas.height / 2);
+        heatmapCtx.rotate(-Math.PI / 2);
+        heatmapCtx.fillText('Overlap %', 0, 0);
+        heatmapCtx.restore();
+        
+        // Plot the line - horizontal section through center of fixed circle
+        heatmapCtx.strokeStyle = '#2196f3';
+        heatmapCtx.lineWidth = 3;
+        heatmapCtx.beginPath();
+        
+        let firstPoint = true;
+        for (let x = radius; x <= heatmapCanvas.width - radius; x += 2) {
+            const overlap = calculateOverlapForPosition(x, fixedCircle.y);
+            const plotX = margin + (x / heatmapCanvas.width) * graphWidth;
+            const plotY = heatmapCanvas.height - margin - (overlap / 100) * graphHeight;
+            
+            if (firstPoint) {
+                heatmapCtx.moveTo(plotX, plotY);
+                firstPoint = false;
+            } else {
+                heatmapCtx.lineTo(plotX, plotY);
+            }
+        }
+        heatmapCtx.stroke();
+        
+        // Add grid lines
+        heatmapCtx.strokeStyle = '#e0e0e0';
+        heatmapCtx.lineWidth = 1;
+        
+        // Horizontal grid lines (overlap percentages)
+        for (let i = 0; i <= 4; i++) {
+            const y = margin + (i / 4) * graphHeight;
+            heatmapCtx.beginPath();
+            heatmapCtx.moveTo(margin, y);
+            heatmapCtx.lineTo(heatmapCanvas.width - margin, y);
+            heatmapCtx.stroke();
+            
+            // Label
+            heatmapCtx.fillStyle = '#666666';
+            heatmapCtx.font = '10px Arial';
+            heatmapCtx.textAlign = 'right';
+            heatmapCtx.fillText((100 - i * 25) + '%', margin - 5, y + 3);
+        }
+    }
+    
+    function drawYSection() {
+        // Clear canvas
+        heatmapCtx.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+        
+        // Set up graph area
+        const margin = 40;
+        const graphWidth = heatmapCanvas.width - 2 * margin;
+        const graphHeight = heatmapCanvas.height - 2 * margin;
+        
+        // Draw axes
+        heatmapCtx.strokeStyle = '#333333';
+        heatmapCtx.lineWidth = 2;
+        
+        // X-axis
+        heatmapCtx.beginPath();
+        heatmapCtx.moveTo(margin, heatmapCanvas.height - margin);
+        heatmapCtx.lineTo(heatmapCanvas.width - margin, heatmapCanvas.height - margin);
+        heatmapCtx.stroke();
+        
+        // Y-axis
+        heatmapCtx.beginPath();
+        heatmapCtx.moveTo(margin, margin);
+        heatmapCtx.lineTo(margin, heatmapCanvas.height - margin);
+        heatmapCtx.stroke();
+        
+        // Labels
+        heatmapCtx.fillStyle = '#333333';
+        heatmapCtx.font = '12px Arial';
+        heatmapCtx.textAlign = 'center';
+        heatmapCtx.fillText('Y-coordinate', heatmapCanvas.width / 2, heatmapCanvas.height - 10);
+        
+        heatmapCtx.save();
+        heatmapCtx.translate(15, heatmapCanvas.height / 2);
+        heatmapCtx.rotate(-Math.PI / 2);
+        heatmapCtx.fillText('Overlap %', 0, 0);
+        heatmapCtx.restore();
+        
+        // Plot the line - vertical section slightly off center
+        const sectionX = fixedCircle.x + 20;
+        heatmapCtx.strokeStyle = '#2196f3';
+        heatmapCtx.lineWidth = 3;
+        heatmapCtx.beginPath();
+        
+        let firstPoint = true;
+        for (let y = radius; y <= heatmapCanvas.height - radius; y += 2) {
+            const overlap = calculateOverlapForPosition(sectionX, y);
+            const plotX = margin + (y / heatmapCanvas.height) * graphWidth;
+            const plotY = heatmapCanvas.height - margin - (overlap / 100) * graphHeight;
+            
+            if (firstPoint) {
+                heatmapCtx.moveTo(plotX, plotY);
+                firstPoint = false;
+            } else {
+                heatmapCtx.lineTo(plotX, plotY);
+            }
+        }
+        heatmapCtx.stroke();
+        
+        // Add grid lines
+        heatmapCtx.strokeStyle = '#e0e0e0';
+        heatmapCtx.lineWidth = 1;
+        
+        // Horizontal grid lines (overlap percentages)
+        for (let i = 0; i <= 4; i++) {
+            const y = margin + (i / 4) * graphHeight;
+            heatmapCtx.beginPath();
+            heatmapCtx.moveTo(margin, y);
+            heatmapCtx.lineTo(heatmapCanvas.width - margin, y);
+            heatmapCtx.stroke();
+            
+            // Label
+            heatmapCtx.fillStyle = '#666666';
+            heatmapCtx.font = '10px Arial';
+            heatmapCtx.textAlign = 'right';
+            heatmapCtx.fillText((100 - i * 25) + '%', margin - 5, y + 3);
+        }
+    }
+    
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    function isPointInCircle(point, circle) {
+        const dx = point.x - circle.x;
+        const dy = point.y - circle.y;
+        return (dx * dx + dy * dy) <= (circle.radius * circle.radius);
+    }
+    
+    // Mouse event handlers
+    canvas.addEventListener('mousedown', function(e) {
+        const mousePos = getMousePos(e);
+        
+        if (isPointInCircle(mousePos, movableCircle)) {
+            isDragging = true;
+            dragOffset.x = mousePos.x - movableCircle.x;
+            dragOffset.y = mousePos.y - movableCircle.y;
+            canvas.style.cursor = 'grabbing';
+        }
+    });
+    
+    canvas.addEventListener('mousemove', function(e) {
+        const mousePos = getMousePos(e);
+        
+        if (isDragging) {
+            // Update movable circle position, keeping it within canvas bounds
+            movableCircle.x = Math.max(radius, Math.min(canvas.width - radius, mousePos.x - dragOffset.x));
+            movableCircle.y = Math.max(radius, Math.min(canvas.height - radius, mousePos.y - dragOffset.y));
+            drawCircles();
+            // Update right canvas view if in section mode
+            if (currentViewMode !== 'heatmap') {
+                updateRightCanvasView();
+            }
+        } else {
+            // Change cursor when hovering over draggable circle
+            if (isPointInCircle(mousePos, movableCircle)) {
+                canvas.style.cursor = 'grab';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        }
+    });
+    
+    canvas.addEventListener('mouseup', function() {
+        isDragging = false;
+        canvas.style.cursor = 'default';
+    });
+    
+    canvas.addEventListener('mouseleave', function() {
+        isDragging = false;
+        canvas.style.cursor = 'default';
+    });
+    
+    // Touch events for mobile support
+    canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    });
+    
+    canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    });
+    
+    canvas.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        const mouseEvent = new MouseEvent('mouseup', {});
+        canvas.dispatchEvent(mouseEvent);
+    });
+    
+    // Initial draw
+    drawCircles();
+    updateRightCanvasView();
+    toggleLegend();
+});
+</script>
+{% endblock %}

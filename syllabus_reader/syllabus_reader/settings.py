@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'aigames',
     'phoneme_density',
     'detector',
+    'overlap',
 ]
 
 MIDDLEWARE = [
