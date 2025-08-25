@@ -831,6 +831,7 @@ def game_matchup_detail(request, matchup_id):
         'current_step_number': current_step_number,
         'step_progress_info': step_progress_info,
     }
+    
     return render(request, 'aigames/game_matchup_detail.html', context)
 
 @login_required

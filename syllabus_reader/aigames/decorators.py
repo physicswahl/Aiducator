@@ -17,44 +17,47 @@ def teacher_can_view_team(view_func):
     1. Checks if there's a 'team' parameter in the request
     2. Verifies the teacher has permission to view that team's work
     3. Sets up the request context for team-specific viewing
-    4. Allows the view to proceed with the team's data
+    4. For non-validation steps, allows teacher viewing without team parameter
+    5. Allows the view to proceed with the appropriate data
     """
     @wraps(view_func)
     def wrapper(request, matchup_id, *args, **kwargs):
-        print(f"[DEBUG] teacher_can_view_team decorator called for matchup {matchup_id}")
-        print(f"[DEBUG] Request GET params: {request.GET}")
-        print(f"[DEBUG] User: {request.user}")
-        
         matchup = get_object_or_404(GameMatchup, id=matchup_id)
         
-        # Debug user profile details
+        # Check permissions - only allow:
+        # 1. The teacher who created the matchup
+        # 2. Students who are members of the teams in the matchup
+        user_can_access = False
+        is_teacher = False
+        
         if hasattr(request.user, 'profile'):
-            profile = request.user.profile
-            print(f"[DEBUG] User has profile: {profile}")
-            print(f"[DEBUG] Profile role: {profile.role}")
-            print(f"[DEBUG] Profile school: {profile.school}")
-            print(f"[DEBUG] Matchup school: {matchup.school}")
-        else:
-            print(f"[DEBUG] User has NO profile!")
+            # Check if user is the teacher who created the matchup
+            if (request.user.profile.role in ['teacher', 'admin'] and 
+                matchup.created_by == request.user):
+                user_can_access = True
+                is_teacher = True
+            
+            # Check if user is a student in one of the teams
+            elif request.user.profile.role == 'student':
+                user_teams = request.user.profile.teams.all()
+                if matchup.team1 in user_teams or matchup.team2 in user_teams:
+                    user_can_access = True
+                    is_teacher = False
+        
+        if not user_can_access:
+            messages.error(request, "You don't have permission to access this matchup.")
+            return HttpResponseRedirect(reverse('aigames:game_matchups_list'))
         
         # Check if teacher is trying to view a specific team's work
         teacher_viewing_team_id = request.GET.get('team')
-        print(f"[DEBUG] teacher_viewing_team_id: {teacher_viewing_team_id}")
         
         if teacher_viewing_team_id:
-            print(f"[DEBUG] Teacher viewing mode detected for team {teacher_viewing_team_id}")
             # Verify user is a teacher for this game's school
-            if (hasattr(request.user, 'profile') and 
-                request.user.profile.role == 'teacher' and 
-                request.user.profile.school == matchup.school):
-                
-                print(f"[DEBUG] Teacher permissions verified")
+            if is_teacher:
                 viewing_team = get_object_or_404(Team, id=teacher_viewing_team_id)
-                print(f"[DEBUG] Viewing team: {viewing_team}")
                 
                 # Verify this team is part of the matchup
                 if viewing_team not in [matchup.team1, matchup.team2]:
-                    print(f"[DEBUG] Invalid team access - team not in matchup")
                     messages.error(request, "Invalid team access.")
                     return HttpResponseRedirect(reverse('aigames:game_matchup_detail', 
                                                       kwargs={'matchup_id': matchup_id}))
@@ -63,27 +66,22 @@ def teacher_can_view_team(view_func):
                 request.teacher_viewing_mode = True
                 request.viewing_team = viewing_team
                 request.is_teacher_viewing = True
-                print(f"[DEBUG] Teacher viewing context set up successfully")
                 
             else:
-                print(f"[DEBUG] Teacher permission denied")
-                if hasattr(request.user, 'profile'):
-                    print(f"[DEBUG] User role: {request.user.profile.role}")
-                    print(f"[DEBUG] User school: {request.user.profile.school}")
-                    print(f"[DEBUG] Matchup school: {matchup.school}")
-                else:
-                    print(f"[DEBUG] User has no profile")
                 messages.error(request, "You don't have permission to view team data.")
                 return HttpResponseRedirect(reverse('aigames:game_matchup_detail', 
                                                   kwargs={'matchup_id': matchup_id}))
+        elif is_teacher:
+            # Teacher accessing without team parameter (for non-validation steps)
+            request.teacher_viewing_mode = True
+            request.viewing_team = None  # No specific team
+            request.is_teacher_viewing = True
         else:
-            print(f"[DEBUG] Regular student access mode")
             # Regular student access - will be handled by the view
             request.teacher_viewing_mode = False
             request.viewing_team = None
             request.is_teacher_viewing = False
         
-        print(f"[DEBUG] Calling original view function: {view_func.__name__}")
         # Call the original view
         return view_func(request, matchup_id, *args, **kwargs)
     
@@ -95,21 +93,19 @@ def get_user_team_or_viewing_team(request, matchup):
     Helper function to get the appropriate team for the current request.
     
     If teacher is viewing a specific team, returns that team.
+    If teacher is viewing general content (non-validation steps), returns None.
     If student is accessing, returns their team.
     """
-    print(f"[DEBUG] get_user_team_or_viewing_team called")
-    print(f"[DEBUG] hasattr teacher_viewing_mode: {hasattr(request, 'teacher_viewing_mode')}")
-    
     if hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode:
-        print(f"[DEBUG] Teacher viewing mode - returning viewing_team: {request.viewing_team}")
-        return request.viewing_team
+        if request.viewing_team:
+            return request.viewing_team
+        else:
+            return None  # Teacher viewing general content (non-validation steps)
     
     # Regular student access - find their team
-    print(f"[DEBUG] Student access mode - finding user's team for user: {request.user}")
     user_team = (Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or 
                  Team.objects.filter(members=request.user, matchups_as_team2=matchup).first())
     
-    print(f"[DEBUG] Found user team: {user_team}")
     return user_team
 
 

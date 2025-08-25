@@ -20,18 +20,38 @@ def step1(request, matchup_id):
     
     # Get the appropriate team (user's team or teacher's viewing team)
     user_team = get_user_team_or_viewing_team(request, matchup)
-    if not user_team:
+    
+    # Check if this is a teacher viewing general content (non-validation step)
+    is_teacher_general_view = (hasattr(request, 'is_teacher_viewing') and 
+                              request.is_teacher_viewing and 
+                              user_team is None)
+    
+    if not user_team and not is_teacher_general_view:
         messages.error(request, "You are not part of a team for this game.")
         return redirect('aigames:student_dashboard')
-    
-    team_data, created = TeamOverlapData.objects.get_or_create(
-        team=user_team, 
-        matchup=matchup,
-        defaults={'current_step': 1}
-    )
-    
-    # Refresh from database to ensure we have the latest data
-    team_data.refresh_from_db()
+
+    # For teacher general viewing, create dummy data or use default values
+    if is_teacher_general_view:
+        team_data = None
+        step1_completed = False
+        # Show default configuration for teachers
+        sensitivity_level = 50
+        threshold_value = 0.75
+        overlap_mode = 'standard'
+    else:
+        team_data, created = TeamOverlapData.objects.get_or_create(
+            team=user_team, 
+            matchup=matchup,
+            defaults={'current_step': 1}
+        )
+        
+        # Refresh from database to ensure we have the latest data
+        team_data.refresh_from_db()
+        
+        # Use team's actual configuration
+        sensitivity_level = team_data.sensitivity_level
+        threshold_value = team_data.threshold_value
+        overlap_mode = team_data.overlap_mode
     
     # Check if step 1 is completed using MatchupStepProgress
     step1_progress = matchup.get_progress_for_step(1)
@@ -57,6 +77,10 @@ def step1(request, matchup_id):
         'mode_options': ['standard', 'enhanced', 'advanced'],
         'instructions': instructions,
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
+        'is_teacher_general_view': is_teacher_general_view,
+        'current_sensitivity': sensitivity_level,
+        'current_threshold': threshold_value,
+        'current_mode': overlap_mode,
     }
     
     return render(request, 'overlap/step1.html', context)
@@ -70,9 +94,39 @@ def step2(request, matchup_id):
     
     # Get the appropriate team (user's team or teacher's viewing team)
     user_team = get_user_team_or_viewing_team(request, matchup)
-    if not user_team:
+    
+    # Check if this is a teacher viewing general content (non-validation step)
+    is_teacher_general_view = (hasattr(request, 'is_teacher_viewing') and 
+                              request.is_teacher_viewing and 
+                              user_team is None)
+    
+    if not user_team and not is_teacher_general_view:
         messages.error(request, "You are not part of a team for this game.")
         return redirect('aigames:student_dashboard')
+
+    # For teacher general viewing, show example data
+    if is_teacher_general_view:
+        team_data = None
+        step2_completed = False
+        instructions = []
+        game_step = matchup.ai_game.get_step_by_number(2)
+        if game_step:
+            instructions = game_step.get_instructions_for_user(request.user)
+        
+        context = {
+            'matchup': matchup,
+            'team': None,
+            'team_data': None,
+            'step_name': STEP_NAMES['step2'],
+            'current_step': 2,
+            'total_steps': TOTAL_STEPS,
+            'has_next_step': True,
+            'next_step_accessible': True,  # Always allow teacher to navigate
+            'instructions': instructions,
+            'is_teacher_viewing': True,
+            'allow_form_submission': False,
+        }
+        return render(request, 'overlap/step2.html', context)
     
     team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
     
@@ -105,6 +159,7 @@ def step2(request, matchup_id):
         'next_step_accessible': step2_completed,
         'instructions': instructions,
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
+        'allow_form_submission': should_allow_form_submission(request),
     }
     
     return render(request, 'overlap/step2.html', context)
@@ -243,15 +298,38 @@ def step3(request, matchup_id):
 
 
 @login_required
+@teacher_can_view_team
 def step4(request, matchup_id):
     """Step 4: Final Results and Conclusions"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
     
-    user_team = Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or \
-                Team.objects.filter(members=request.user, matchups_as_team2=matchup).first()
-    if not user_team:
+    # Get the appropriate team (user's team or teacher's viewing team)
+    user_team = get_user_team_or_viewing_team(request, matchup)
+    
+    # Check if this is a teacher viewing general content (non-validation step)
+    is_teacher_general_view = (hasattr(request, 'is_teacher_viewing') and 
+                              request.is_teacher_viewing and 
+                              user_team is None)
+    
+    if not user_team and not is_teacher_general_view:
         messages.error(request, "You are not part of a team for this game.")
         return redirect('aigames:student_dashboard')
+
+    # For teacher general viewing, create dummy data or use default values
+    if is_teacher_general_view:
+        team_data = None
+        # Show example data for teachers
+        context = {
+            'matchup': matchup,
+            'team': None,
+            'team_data': None,
+            'step_name': STEP_NAMES['step4'],
+            'current_step': 4,
+            'total_steps': TOTAL_STEPS,
+            'is_teacher_viewing': True,
+            'allow_form_submission': False,
+        }
+        return render(request, 'overlap/step4.html', context)
     
     team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
     
@@ -259,7 +337,10 @@ def step4(request, matchup_id):
         messages.warning(request, "You must complete previous steps first.")
         return redirect('overlap:step3', matchup_id=matchup_id)
     
-    if request.method == 'POST':
+    # Check if form submission should be allowed (not for teachers viewing)
+    allow_form_submission = should_allow_form_submission(request)
+    
+    if request.method == 'POST' and allow_form_submission:
         # Handle final submission
         final_score = float(request.POST.get('final_score', 0))
         conclusions = request.POST.get('conclusions', '')
@@ -279,6 +360,8 @@ def step4(request, matchup_id):
         'step_name': STEP_NAMES['step4'],
         'current_step': 4,
         'total_steps': TOTAL_STEPS,
+        'is_teacher_viewing': hasattr(request, 'is_teacher_viewing') and request.is_teacher_viewing,
+        'allow_form_submission': allow_form_submission,
     }
     
     return render(request, 'overlap/step4.html', context)
