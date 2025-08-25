@@ -30,13 +30,11 @@
                     </h5>
                     <form method="get" class="d-flex gap-3 align-items-end">
                         <div class="flex-grow-1">
-                            <label for="gameSelect" class="form-label">Choose a game to edit:</label>
                             <select class="form-select" id="gameSelect" name="game" onchange="this.form.submit()">
                                 <option value="">-- Select a game --</option>
                                 {% for game in all_games %}
                                     <option value="{{ game.id }}" {% if selected_game and selected_game.id == game.id %}selected{% endif %}>
                                         {{ game.title }}
-                                        {% if game.description %} - {{ game.description|truncatewords:10 }}{% endif %}
                                     </option>
                                 {% endfor %}
                             </select>

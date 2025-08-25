@@ -11,7 +11,7 @@ class TeamOverlapData(models.Model):
     # Step progression tracking
     current_step = models.IntegerField(default=1)
     step1_completed = models.BooleanField(default=False)
-    step2_completed = models.BooleanField(default=False)
+    step2_completed =models.BooleanField(default=False)
     step3_completed = models.BooleanField(default=False)
     step4_completed = models.BooleanField(default=False)
     step5_completed = models.BooleanField(default=False)
