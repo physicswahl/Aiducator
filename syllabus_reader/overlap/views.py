@@ -7,10 +7,32 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 import json
 
-from aigames.models import Team, GameMatchup, MatchupStepProgress
+from aigames.models import Team, GameMatchup, MatchupStepProgress, GameStep
 from aigames.decorators import teacher_can_view_team, get_user_team_or_viewing_team, should_allow_form_submission
-from .models import TeamOverlapData, OverlapSubmission
-from .constants import *
+from .models import TeamOverlapData
+from .constants import DEFAULT_SENSITIVITY, DEFAULT_THRESHOLD, DEFAULT_MODE, DEFAULT_OVERLAP_PERCENTAGE
+
+
+def get_overlap_game_step_info(step_number):
+    """Get step information from the overlap game (game id 4) GameStep model"""
+    try:
+        game_step = GameStep.objects.get(ai_game_id=4, step_number=step_number)
+        return game_step.title
+    except GameStep.DoesNotExist:
+        # Fallback to default names if GameStep doesn't exist
+        fallback_names = {
+            1: 'Setup & Configuration',
+            2: 'Data Collection', 
+            3: 'Analysis & Comparison',
+            4: 'Interactive Evaluation',
+            5: 'Final Reflection'
+        }
+        return fallback_names.get(step_number, f'Step {step_number}')
+
+
+def get_overlap_game_total_steps():
+    """Get total number of steps for the overlap game (game id 4)"""
+    return GameStep.objects.filter(ai_game_id=4, is_active=True).count()
 
 
 @login_required
@@ -68,9 +90,9 @@ def step1(request, matchup_id):
         'matchup': matchup,
         'team': user_team,
         'team_data': team_data,
-        'step_name': STEP_NAMES['step1'],
+        'step_name': get_overlap_game_step_info(1),
         'current_step': 1,
-        'total_steps': TOTAL_STEPS,
+        'total_steps': get_overlap_game_total_steps(),
         'has_next_step': True,
         'next_step_accessible': step1_completed,
         'sensitivity_levels': range(1, 101),
@@ -118,9 +140,9 @@ def step2(request, matchup_id):
             'matchup': matchup,
             'team': None,
             'team_data': None,
-            'step_name': STEP_NAMES['step2'],
+            'step_name': get_overlap_game_step_info(2),
             'current_step': 2,
-            'total_steps': TOTAL_STEPS,
+            'total_steps': get_overlap_game_total_steps(),
             'has_next_step': True,
             'next_step_accessible': True,  # Always allow teacher to navigate
             'instructions': instructions,
@@ -153,9 +175,9 @@ def step2(request, matchup_id):
         'matchup': matchup,
         'team': user_team,
         'team_data': team_data,
-        'step_name': STEP_NAMES['step2'],
+        'step_name': get_overlap_game_step_info(2),
         'current_step': 2,
-        'total_steps': TOTAL_STEPS,
+        'total_steps': get_overlap_game_total_steps(),
         'has_next_step': True,
         'next_step_accessible': step2_completed,
         'instructions': instructions,
@@ -249,9 +271,9 @@ def step3(request, matchup_id):
                 'team_data': team_data,
                 'other_team': other_team,
                 'other_team_data': other_team_data,
-                'step_name': STEP_NAMES['step3'],
+                'step_name': get_overlap_game_step_info(3),
                 'current_step': 3,
-                'total_steps': TOTAL_STEPS,
+                'total_steps': get_overlap_game_total_steps(),
                 'has_next_step': True,
                 'next_step_accessible': next_step_accessible,
                 'step3_completed': step3_completed,
@@ -283,9 +305,9 @@ def step3(request, matchup_id):
         'team_data': team_data,
         'other_team': other_team,
         'other_team_data': other_team_data,
-        'step_name': STEP_NAMES['step3'],
+        'step_name': get_overlap_game_step_info(3),
         'current_step': 3,
-        'total_steps': TOTAL_STEPS,
+        'total_steps': get_overlap_game_total_steps(),
         'has_next_step': True,
         'next_step_accessible': next_step_accessible,
         'step3_completed': step3_completed,
@@ -383,9 +405,9 @@ def step4(request, matchup_id):
         'opponent_team': opponent_team,
         'other_team': other_team,
         'other_team_data': other_team_data,
-        'step_name': STEP_NAMES['step4'],
+        'step_name': get_overlap_game_step_info(4),
         'current_step': 4,
-        'total_steps': TOTAL_STEPS,
+        'total_steps': get_overlap_game_total_steps(),
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': allow_form_submission,
         'opponent_circle_x': int(opponent_circle_x),
@@ -467,9 +489,9 @@ def step5(request, matchup_id):
         'team_data': team_data,
         'opponent_team': opponent_team,
         'opponent_team_data': opponent_team_data,
-        'step_name': STEP_NAMES['step5'],
+        'step_name': get_overlap_game_step_info(5),
         'current_step': 5,
-        'total_steps': TOTAL_STEPS,
+        'total_steps': get_overlap_game_total_steps(),
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': allow_form_submission,
         'instructions': instructions,
