@@ -461,11 +461,61 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fill();
         ctx.stroke();
         
-        // Add a label
+        // Add a label that fits on canvas
         ctx.fillStyle = '#007bff';
-        ctx.font = '12px Arial';
+        ctx.font = '11px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Opponent Circle', opponentCircle.x, opponentCircle.y - opponentCircle.radius - 10);
+        
+        // Calculate label position to ensure it stays within canvas bounds
+        let labelY = opponentCircle.y - opponentCircle.radius - 5;
+        if (labelY < 15) {
+            labelY = opponentCircle.y + opponentCircle.radius + 15; // Put below if too close to top
+        }
+        if (labelY > canvas.height - 5) {
+            labelY = opponentCircle.y; // Put in center if too close to bottom
+        }
+        
+        ctx.fillText('Opponent', opponentCircle.x, labelY);
+    }
+    
+    function drawBestGuessCircle() {
+        // Find the best scoring click
+        let bestScore = -1;
+        let bestClick = null;
+        
+        for (let i = 0; i < clickedPoints.length; i++) {
+            if (clickedPoints[i].score > bestScore) {
+                bestScore = clickedPoints[i].score;
+                bestClick = clickedPoints[i];
+            }
+        }
+        
+        if (bestClick) {
+            // Draw team's best guess circle in a different color
+            ctx.fillStyle = 'rgba(40, 167, 69, 0.3)'; // Semi-transparent green
+            ctx.strokeStyle = '#28a745'; // Green border
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(bestClick.x, bestClick.y, circleRadius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Add a label that fits on canvas
+            ctx.fillStyle = '#28a745';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            
+            // Calculate label position to ensure it stays within canvas bounds
+            let labelY = bestClick.y - circleRadius - 5;
+            if (labelY < 15) {
+                labelY = bestClick.y + circleRadius + 15; // Put below if too close to top
+            }
+            if (labelY > canvas.height - 5) {
+                labelY = bestClick.y; // Put in center if too close to bottom
+            }
+            
+            ctx.fillText('Best Guess', bestClick.x, labelY);
+        }
     }
     
     function highlightBestScore() {
@@ -505,8 +555,9 @@ document.addEventListener('DOMContentLoaded', function() {
             canvas.classList.add('disabled');
             canvas.style.cursor = 'not-allowed';
             
-            // Show opponent circle and highlight best score when 12 clicks reached
+            // Show opponent circle, best guess circle, and highlight best score when 12 clicks reached
             drawOpponentCircle();
+            drawBestGuessCircle();
             highlightBestScore();
         }
         
