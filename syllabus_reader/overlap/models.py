@@ -14,6 +14,7 @@ class TeamOverlapData(models.Model):
     step2_completed = models.BooleanField(default=False)
     step3_completed = models.BooleanField(default=False)
     step4_completed = models.BooleanField(default=False)
+    step5_completed = models.BooleanField(default=False)
     
     # Game configuration (Step 1)
     sensitivity_level = models.IntegerField(default=50, help_text="Sensitivity level 1-100")
@@ -41,9 +42,11 @@ class TeamOverlapData(models.Model):
     evaluation_strategy = models.TextField(blank=True, help_text="Team's strategy for evaluating opponent's circle")
     evaluation_clicks = models.JSONField(default=list, blank=True, help_text="Stored click data as JSON")
     click_count = models.IntegerField(default=0, help_text="Number of clicks made")
+    step4_submitted = models.BooleanField(default=False, help_text="Whether step 4 has been submitted for teacher validation")
     final_score = models.FloatField(null=True, blank=True)
-    conclusions = models.TextField(blank=True)
-    game_completed = models.BooleanField(default=False)
+    
+    # Step 5: Final Reflection
+    reflection_notes = models.TextField(blank=True, help_text="Team's final reflection on the game and strategies")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -62,9 +65,10 @@ class TeamOverlapData(models.Model):
             self.step1_completed,
             self.step2_completed, 
             self.step3_completed,
-            self.step4_completed
+            self.step4_completed,
+            self.step5_completed
         ])
-        return (completed_steps / 4) * 100
+        return (completed_steps / 5) * 100
     
     def can_access_step(self, step_number):
         """Check if team can access a specific step"""
@@ -76,6 +80,8 @@ class TeamOverlapData(models.Model):
             return self.step2_completed
         elif step_number == 4:
             return self.step3_completed
+        elif step_number == 5:
+            return self.step4_completed
         return False
     
     def complete_step(self, step_number):
@@ -91,7 +97,10 @@ class TeamOverlapData(models.Model):
             self.current_step = 4
         elif step_number == 4:
             self.step4_completed = True
-            self.game_completed = True
+            self.current_step = 5
+        elif step_number == 5:
+            self.step5_completed = True
+            # Game is now fully completed
             
         self.save()
 

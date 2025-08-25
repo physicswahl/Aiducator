@@ -11,7 +11,7 @@
                     <p class="text-muted">{{ game.title }} - Step-by-Step Guide</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{% if unit %}{% url 'unit_list' unit.syllabus.id %}{% else %}{% url 'curriculum_list' %}{% endif %}" class="btn btn-secondary">
+                    <a href="{% if unit %}{% url 'unit_list' unit.syllabus.id %}{% else %}/syllabus/curricula/{% endif %}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> {% if unit %}Back to Units{% else %}Back to Curricula{% endif %}
                     </a>
                 </div>
@@ -47,15 +47,33 @@
                                     {% if step_data.teacher_instructions %}
                                         <div class="row">
                                             <div class="col-md-12">
-                                                <h5 class="text-primary mb-3">
-                                                    <i class="fas fa-chalkboard-teacher"></i> Teacher Instructions
-                                                </h5>
+                                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                                    <h5 class="text-primary mb-0">
+                                                        <i class="fas fa-chalkboard-teacher"></i> Teacher Instructions
+                                                    </h5>
+                                                    {% if is_admin %}
+                                                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#editModal" 
+                                                                onclick="openEditModal({{ step_data.step.id }}, null, '', '')">
+                                                            <i class="fas fa-plus"></i> Add Instruction
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
                                                 
                                                 {% for instruction in step_data.teacher_instructions %}
                                                     <div class="instruction-card mb-3 p-3 border rounded">
-                                                        <h6 class="fw-bold text-secondary">{{ instruction.title }}</h6>
-                                                        <div class="instruction-content">
-                                                            {{ instruction.content|linebreaks }}
+                                                        <div class="d-flex justify-content-between align-items-start">
+                                                            <div class="flex-grow-1">
+                                                                <h6 class="fw-bold text-secondary">{{ instruction.title }}</h6>
+                                                                <div class="instruction-content">
+                                                                    {{ instruction.content|linebreaks }}
+                                                                </div>
+                                                            </div>
+                                                            {% if is_admin %}
+                                                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#editModal"
+                                                                        onclick="openEditModal({{ step_data.step.id }}, {{ instruction.id }}, '{{ instruction.title|escapejs }}', '{{ instruction.content|escapejs }}')">
+                                                                    <i class="fas fa-edit"></i> Edit
+                                                                </button>
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 {% endfor %}
@@ -65,7 +83,13 @@
                                         <div class="text-center py-5">
                                             <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
                                             <h5 class="text-muted">No teacher instructions available for this step</h5>
-                                            <p class="text-muted">Instructions may be added by administrators later.</p>
+                                            <p class="text-muted">Instructions may be added by administrators.</p>
+                                            {% if is_admin %}
+                                                <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#editModal" 
+                                                        onclick="openEditModal({{ step_data.step.id }}, null, '', '')">
+                                                    <i class="fas fa-plus"></i> Add First Instruction
+                                                </button>
+                                            {% endif %}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -113,6 +137,41 @@
         </div>
     </div>
 </div>
+
+{% if is_admin %}
+<!-- Admin Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Instruction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="step_id" name="step_id">
+                    <input type="hidden" id="instruction_id" name="instruction_id">
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content</label>
+                        <textarea class="form-control" id="content" name="content" rows="10" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Instruction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <style>
 .instruction-card {
@@ -184,5 +243,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+{% if is_admin %}
+function openEditModal(stepId, instructionId, title, content) {
+    document.getElementById('step_id').value = stepId;
+    document.getElementById('instruction_id').value = instructionId || '';
+    document.getElementById('title').value = title || '';
+    document.getElementById('content').value = content || '';
+    
+    // Update modal title
+    const modalTitle = document.getElementById('editModalLabel');
+    modalTitle.textContent = instructionId ? 'Edit Instruction' : 'Add New Instruction';
+}
+{% endif %}
 </script>
 {% endblock %}

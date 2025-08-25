@@ -330,15 +330,45 @@ def step4(request, matchup_id):
         opponent_circle_x = opponent_team_data.circle_x
         opponent_circle_y = opponent_team_data.circle_y
     
+    # Check step 4 completion status for teacher validation
+    step4_progress = matchup.get_progress_for_step(4)
+    step4_completed = step4_progress.is_completed if step4_progress else False
+    
+    # Get both teams' data to check if both have submitted and been validated
+    other_team = matchup.get_other_team(user_team)
+    other_team_data = None
+    if other_team:
+        other_team_data, _ = TeamOverlapData.objects.get_or_create(
+            team=other_team, 
+            matchup=matchup,
+            defaults={'current_step': 1}
+        )
+    
+    # Check if current team can proceed to completion
+    # Requires: 1) Current team submitted and validated, 2) Other team submitted and validated
+    current_team_ready = (team_data.step4_submitted and step4_completed)
+    other_team_ready = (other_team_data and 
+                       other_team_data.step4_submitted and 
+                       step4_completed)  # step4_completed means teacher validated for the matchup
+    
+    next_step_accessible = current_team_ready and other_team_ready
+    
     # Check if form submission should be allowed (not for teachers viewing)
     allow_form_submission = should_allow_form_submission(request)
     
     if request.method == 'POST' and allow_form_submission:
-        # Handle click data submission (if you want to store it)
-        # For now, just mark step as completed
-        team_data.complete_step(4)
-        messages.success(request, "Step 4 completed successfully!")
-        return redirect('overlap:complete_step', matchup_id=matchup_id)
+        # Handle evaluation submission
+        # Validation: must have 12 clicks and 100+ character strategy
+        if team_data.click_count < 12:
+            messages.error(request, "You must complete all 12 evaluation clicks before submitting.")
+        elif len(team_data.evaluation_strategy.strip()) < 100:
+            messages.error(request, "Your strategy must be at least 100 characters long before submitting.")
+        else:
+            team_data.step4_submitted = True
+            team_data.save()
+            messages.success(request, "Step 4 evaluation submitted successfully! Waiting for teacher validation.")
+        
+        return redirect('overlap:step4', matchup_id=matchup_id)
     
     # Get instructions for this step
     instructions = []
@@ -351,6 +381,8 @@ def step4(request, matchup_id):
         'team': user_team,
         'team_data': team_data,
         'opponent_team': opponent_team,
+        'other_team': other_team,
+        'other_team_data': other_team_data,
         'step_name': STEP_NAMES['step4'],
         'current_step': 4,
         'total_steps': TOTAL_STEPS,
@@ -361,9 +393,89 @@ def step4(request, matchup_id):
         'instructions': instructions,
         'existing_clicks': team_data.evaluation_clicks,
         'existing_click_count': team_data.click_count,
+        'step4_completed': step4_completed,
+        'current_team_ready': current_team_ready,
+        'other_team_ready': other_team_ready,
+        'next_step_accessible': next_step_accessible,
     }
     
     return render(request, 'overlap/step4.html', context)
+
+
+@login_required
+@teacher_can_view_team
+def step5(request, matchup_id):
+    """Step 5: Final Reflection"""
+    matchup = get_object_or_404(GameMatchup, id=matchup_id)
+    
+    # Get the appropriate team (user's team or teacher's viewing team)
+    user_team = get_user_team_or_viewing_team(request, matchup)
+    
+    if not user_team:
+        messages.error(request, "You are not part of a team for this game.")
+        return redirect('aigames:student_dashboard')
+
+    team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
+    
+    # Check if step 4 is completed (only for students, not teachers)
+    if not hasattr(request, 'teacher_viewing_mode'):
+        if not team_data.can_access_step(5):
+            messages.warning(request, "You must complete previous steps first.")
+            return redirect('overlap:step4', matchup_id=matchup_id)
+    
+    # Get opponent team and their data
+    opponent_team = matchup.team1 if user_team == matchup.team2 else matchup.team2
+    opponent_team_data = TeamOverlapData.objects.filter(team=opponent_team, matchup=matchup).first()
+    
+    # Check if form submission should be allowed (not for teachers viewing)
+    allow_form_submission = should_allow_form_submission(request)
+    
+    if request.method == 'POST' and allow_form_submission:
+        # Handle step 5 completion - no validation required for this step
+        reflection_notes = request.POST.get('reflection_notes', '').strip()
+        
+        if len(reflection_notes) < 50:
+            messages.error(request, "Your reflection must be at least 50 characters long.")
+        else:
+            team_data.step5_completed = True
+            team_data.reflection_notes = reflection_notes
+            team_data.save()
+            
+            # Update step progress
+            step_progress, created = MatchupStepProgress.objects.get_or_create(
+                matchup=matchup,
+                step_number=5,
+                defaults={'is_completed': True, 'completed_at': timezone.now()}
+            )
+            if not step_progress.is_completed:
+                step_progress.is_completed = True
+                step_progress.completed_at = timezone.now()
+                step_progress.save()
+            
+            messages.success(request, "Step 5 completed successfully!")
+            return redirect('overlap:complete_step', matchup_id=matchup_id)
+    
+    # Get instructions for this step
+    instructions = []
+    game_step = matchup.ai_game.get_step_by_number(5)
+    if game_step:
+        instructions = game_step.get_instructions_for_user(request.user)
+    
+    context = {
+        'matchup': matchup,
+        'team': user_team,
+        'team_data': team_data,
+        'opponent_team': opponent_team,
+        'opponent_team_data': opponent_team_data,
+        'step_name': STEP_NAMES['step5'],
+        'current_step': 5,
+        'total_steps': TOTAL_STEPS,
+        'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
+        'allow_form_submission': allow_form_submission,
+        'instructions': instructions,
+    }
+    
+    return render(request, 'overlap/step5.html', context)
 
 
 @login_required

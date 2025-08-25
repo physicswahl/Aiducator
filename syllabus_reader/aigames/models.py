@@ -571,6 +571,15 @@ class GameMatchup(models.Model):
                     'actor': f'Teams ({self.team1.name} & {self.team2.name})'
                 })
         
+        # Add individual team validations (for validation-required steps)
+        for validation in self.team_validations.filter(is_validated=True):
+            if validation.validated_at:  # Make sure we have a validation timestamp
+                activities.append({
+                    'datetime': validation.validated_at,
+                    'activity': f'{validation.team.name} validated for Step {validation.game_step.step_number}',
+                    'actor': f'Teacher ({validation.validated_by.get_full_name() or validation.validated_by.username})'
+                })
+        
         # Add creation as fallback
         activities.append({
             'datetime': self.created_at,

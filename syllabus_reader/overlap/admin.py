@@ -4,8 +4,8 @@ from .models import TeamOverlapData, OverlapSubmission
 
 @admin.register(TeamOverlapData)
 class TeamOverlapDataAdmin(admin.ModelAdmin):
-    list_display = ('team', 'matchup', 'current_step', 'game_completed', 'final_score', 'created_at')
-    list_filter = ('current_step', 'game_completed', 'step1_completed', 'step2_completed', 'step3_completed', 'step4_completed')
+    list_display = ('team', 'matchup', 'current_step', 'step4_submitted', 'final_score', 'created_at')
+    list_filter = ('current_step', 'step4_submitted', 'step1_completed', 'step2_completed', 'step3_completed', 'step4_completed', 'step5_completed')
     search_fields = ('team__name', 'matchup__ai_game__title')
     readonly_fields = ('created_at', 'updated_at', 'completed_at')
     
@@ -14,7 +14,7 @@ class TeamOverlapDataAdmin(admin.ModelAdmin):
             'fields': ('team', 'matchup', 'current_step')
         }),
         ('Step Progress', {
-            'fields': ('step1_completed', 'step2_completed', 'step3_completed', 'step4_completed', 'game_completed')
+            'fields': ('step1_completed', 'step2_completed', 'step3_completed', 'step4_completed', 'step5_completed', 'step4_submitted')
         }),
         ('Game Configuration', {
             'fields': ('sensitivity_level', 'threshold_value', 'overlap_mode')
@@ -26,7 +26,7 @@ class TeamOverlapDataAdmin(admin.ModelAdmin):
             'fields': ('overlap_percentage', 'analysis_complete', 'analysis_notes')
         }),
         ('Final Results', {
-            'fields': ('final_score', 'conclusions')
+            'fields': ('final_score',)
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at', 'completed_at'),

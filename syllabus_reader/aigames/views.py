@@ -938,6 +938,46 @@ def teacher_game_instructions(request, game_id):
     """Show teacher-specific instructions for a game"""
     game = get_object_or_404(AiGame, id=game_id)
     user_school = request.user.profile.school
+    is_admin = request.user.profile.role == 'admin'
+    
+    # Handle admin instruction editing
+    if request.method == 'POST' and is_admin:
+        step_id = request.POST.get('step_id')
+        instruction_id = request.POST.get('instruction_id')
+        content = request.POST.get('content', '').strip()
+        title = request.POST.get('title', '').strip()
+        
+        if step_id:
+            try:
+                game_step = GameStep.objects.get(id=step_id, ai_game=game)
+                
+                if instruction_id:
+                    # Update existing instruction
+                    instruction = InstructionStep.objects.get(id=instruction_id, game_step=game_step)
+                    instruction.title = title
+                    instruction.content = content
+                    instruction.save()
+                    messages.success(request, 'Instruction updated successfully!')
+                else:
+                    # Create new instruction
+                    if title and content:
+                        InstructionStep.objects.create(
+                            game_step=game_step,
+                            title=title,
+                            content=content,
+                            role='teacher',
+                            is_active=True
+                        )
+                        messages.success(request, 'New instruction created successfully!')
+                    else:
+                        messages.error(request, 'Title and content are required for new instructions.')
+                        
+            except (GameStep.DoesNotExist, InstructionStep.DoesNotExist):
+                messages.error(request, 'Step or instruction not found.')
+            except Exception as e:
+                messages.error(request, f'Error saving instruction: {str(e)}')
+        
+        return redirect('aigames:teacher_game_instructions', game_id=game_id)
     
     # Get the unit that has this game associated
     from syllabus.models import Unit
@@ -974,6 +1014,7 @@ def teacher_game_instructions(request, game_id):
         'school_teams': school_teams,
         'existing_matchups': existing_matchups,
         'game_steps': game_steps_data,
+        'is_admin': is_admin,
     }
     return render(request, 'aigames/teacher_game_instructions.html', context)
 
