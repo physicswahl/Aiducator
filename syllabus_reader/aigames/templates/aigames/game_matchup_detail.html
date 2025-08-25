@@ -8,8 +8,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="h3">🎮 {{ matchup.ai_game.title }}</h1>
-                    <p class="text-muted">{{ matchup.team1.name }} vs {{ matchup.team2.name }} - {{ user_school.name }}</p>
+                    <h1 class="h3">{{ matchup.ai_game.title }}</h1>
                 </div>
                 <div>
                     <a href="{% url 'aigames:game_matchups_list' %}" class="btn btn-outline-secondary me-2">
@@ -63,143 +62,139 @@
     <div class="row">
         <!-- Matchup Overview -->
         <div class="col-lg-4">
-            <div class="card mb-4">
+            <div class="card mb-4 h-100">
                 <div class="card-header">
                     <h5 class="mb-0"><i class="fas fa-info-circle"></i> Matchup Details</h5>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6>Teams</h6>
-                            <div class="d-flex align-items-center justify-content-center">
-                                <span class="badge bg-primary fs-6 px-3 py-2">{{ matchup.team1.name }}</span>
-                                <span class="mx-3 text-muted">vs</span>
-                                <span class="badge bg-info fs-6 px-3 py-2">{{ matchup.team2.name }}</span>
+                <div class="card-body d-flex flex-column">
+                    <div class="flex-grow-1">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Teams:</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="badge bg-primary me-1">{{ matchup.team1.name }}</span>
+                                <small class="text-muted">vs</small>
+                                <span class="badge bg-info ms-1">{{ matchup.team2.name }}</span>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <strong>Status:</strong>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>School:</strong>
+                            </div>
+                            <div class="col-6">
+                                {{ user_school.name }}
+                            </div>
                         </div>
-                        <div class="col-6">
-                            {% if matchup.status == 'scheduled' %}
-                                <span class="badge bg-warning">{{ matchup.get_status_display }}</span>
-                            {% elif matchup.status == 'in_progress' %}
-                                <span class="badge bg-primary">{{ matchup.get_status_display }}</span>
-                            {% elif matchup.status == 'completed' %}
-                                <span class="badge bg-success">{{ matchup.get_status_display }}</span>
-                            {% elif matchup.status == 'cancelled' %}
-                                <span class="badge bg-danger">{{ matchup.get_status_display }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ matchup.get_status_display }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
 
-                    {% if matchup.scheduled_date %}
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <strong>Scheduled:</strong>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Status:</strong>
+                            </div>
+                            <div class="col-6">
+                                {% if matchup.status == 'scheduled' %}
+                                    <span class="badge bg-warning">{{ matchup.get_status_display }}</span>
+                                {% elif matchup.status == 'in_progress' %}
+                                    <span class="badge bg-primary">{{ matchup.get_status_display }}</span>
+                                {% elif matchup.status == 'completed' %}
+                                    <span class="badge bg-success">{{ matchup.get_status_display }}</span>
+                                {% elif matchup.status == 'cancelled' %}
+                                    <span class="badge bg-danger">{{ matchup.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ matchup.get_status_display }}</span>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="col-6">
-                            {{ matchup.scheduled_date|date:"M d, Y H:i" }}
-                        </div>
-                    </div>
-                    {% endif %}
 
-                    {% if matchup.started_at %}
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <strong>Started:</strong>
+                        {% if matchup.scheduled_date %}
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Scheduled:</strong>
+                            </div>
+                            <div class="col-6">
+                                {{ matchup.scheduled_date|date:"M d, Y H:i" }}
+                            </div>
                         </div>
-                        <div class="col-6">
-                            {{ matchup.started_at|date:"M d, Y H:i" }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if matchup.completed_at %}
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <strong>Completed:</strong>
-                        </div>
-                        <div class="col-6">
-                            {{ matchup.completed_at|date:"M d, Y H:i" }}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if matchup.duration_minutes %}
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <strong>Duration:</strong>
-                        </div>
-                        <div class="col-6">
-                            {{ matchup.duration_minutes }} minutes
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <strong>Created by:</strong>
-                        </div>
-                        <div class="col-6">
-                            {{ matchup.created_by.get_full_name|default:matchup.created_by.username }}
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-6">
-                            <strong>Created:</strong>
-                        </div>
-                        <div class="col-6">
-                            {{ matchup.created_at|date:"M d, Y H:i" }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notes -->
-            {% if matchup.notes %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Notes</h5>
-                </div>
-                <div class="card-body">
-                    {{ matchup.notes|linebreaks }}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Game Info -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-gamepad"></i> Game Information</h5>
-                </div>
-                <div class="card-body">
-                    <h6>{{ matchup.ai_game.title }}</h6>
-                    {% if matchup.ai_game.description %}
-                        <p class="text-muted">{{ matchup.ai_game.description|truncatewords:20 }}</p>
-                    {% endif %}
-                    
-                    {% if matchup.ai_game.has_multiple_steps %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-list-ol"></i> This is a multi-step game. Progress is tracked for each team below.
-                        </div>
-                    {% endif %}
-
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'aigames:teacher_game_instructions' matchup.ai_game.id %}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-chalkboard-teacher"></i> View Instructions
-                        </a>
-                        {% if not matchup.ai_game.has_multiple_steps %}
-                        <a href="{{ matchup.ai_game.get_first_step_url }}" class="btn btn-outline-success btn-sm">
-                            <i class="fas fa-external-link-alt"></i> Open Game
-                        </a>
                         {% endif %}
+
+                        {% if matchup.started_at %}
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Started:</strong>
+                            </div>
+                            <div class="col-6">
+                                {{ matchup.started_at|date:"M d, Y H:i" }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if matchup.completed_at %}
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Completed:</strong>
+                            </div>
+                            <div class="col-6">
+                                {{ matchup.completed_at|date:"M d, Y H:i" }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if matchup.duration_minutes %}
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Duration:</strong>
+                            </div>
+                            <div class="col-6">
+                                {{ matchup.duration_minutes }} minutes
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Created by:</strong>
+                            </div>
+                            <div class="col-6">
+                                {{ matchup.created_by.get_full_name|default:matchup.created_by.username }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Last Activity:</strong>
+                            </div>
+                            <div class="col-6">
+                                {% with last_activity=matchup.get_last_activity %}
+                                    {% if last_activity %}
+                                        <div class="small">
+                                            {{ last_activity.datetime|date:"M d, Y H:i" }}<br>
+                                            <span class="text-muted">{{ last_activity.activity }}</span><br>
+                                            <span class="badge badge-outline-secondary">{{ last_activity.actor }}</span>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">No recent activity</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        
+                        {% if matchup.notes %}
+                        <hr>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-sticky-note"></i> Notes</h6>
+                            <div class="text-muted">{{ matchup.notes|linebreaks }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <hr>
+                        <div class="d-grid">
+                            <a href="{% url 'aigames:teacher_game_instructions' matchup.ai_game.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-chalkboard-teacher me-1"></i> View Instructions
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -209,7 +204,7 @@
         <div class="col-lg-8">
             {% if step_progress_info %}
             <!-- Step Progression Controls -->
-            <div class="card mb-4">
+            <div class="card mb-4 h-100">
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fas fa-list-ol"></i> Step Progression 
@@ -324,95 +319,7 @@
             </div>
             {% endif %}
             
-            {% if matchup.ai_game.has_multiple_steps %}
-            <div class="row">
-                <!-- Team 1 Progress -->
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-users"></i> {{ matchup.team1.name }} Progress
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            {% if team1_progress %}
-                                {% for progress in team1_progress %}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="flex-shrink-0">
-                                        {% if progress.is_completed %}
-                                            <i class="fas fa-check-circle text-success fa-lg"></i>
-                                        {% else %}
-                                            <i class="fas fa-clock text-warning fa-lg"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-1">Step {{ progress.game_step.step_number }}: {{ progress.game_step.title }}</h6>
-                                        {% if progress.is_completed %}
-                                            <small class="text-success">
-                                                Completed {{ progress.completed_at|date:"M d, H:i" }}
-                                                {% if progress.duration_minutes %}
-                                                    ({{ progress.duration_minutes }} min)
-                                                {% endif %}
-                                            </small>
-                                        {% else %}
-                                            <small class="text-muted">
-                                                Started {{ progress.started_at|date:"M d, H:i" }}
-                                            </small>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <p class="text-muted">No progress recorded yet.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Team 2 Progress -->
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-users"></i> {{ matchup.team2.name }} Progress
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            {% if team2_progress %}
-                                {% for progress in team2_progress %}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="flex-shrink-0">
-                                        {% if progress.is_completed %}
-                                            <i class="fas fa-check-circle text-success fa-lg"></i>
-                                        {% else %}
-                                            <i class="fas fa-clock text-warning fa-lg"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-1">Step {{ progress.game_step.step_number }}: {{ progress.game_step.title }}</h6>
-                                        {% if progress.is_completed %}
-                                            <small class="text-success">
-                                                Completed {{ progress.completed_at|date:"M d, H:i" }}
-                                                {% if progress.duration_minutes %}
-                                                    ({{ progress.duration_minutes }} min)
-                                                {% endif %}
-                                            </small>
-                                        {% else %}
-                                            <small class="text-muted">
-                                                Started {{ progress.started_at|date:"M d, H:i" }}
-                                            </small>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <p class="text-muted">No progress recorded yet.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% else %}
+            {% if not step_progress_info %}
             <!-- Single-step game information -->
             <div class="card">
                 <div class="card-header">

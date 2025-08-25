@@ -513,18 +513,73 @@ class GameMatchup(models.Model):
             return self.step_progress.filter(game_step=game_step).first()
         return None
     
-    def complete_step(self, step_number):
+    def complete_step(self, step_number, completed_by=None):
         """Mark a step as completed for this matchup"""
         game_step = self.ai_game.get_step_by_number(step_number)
         if game_step:
             progress, created = MatchupStepProgress.objects.get_or_create(
                 matchup=self,
                 game_step=game_step,
-                defaults={'is_completed': True, 'completed_at': timezone.now()}
+                defaults={
+                    'is_completed': True, 
+                    'completed_at': timezone.now(),
+                    'completed_by': completed_by
+                }
             )
             if not created and not progress.is_completed:
-                progress.complete_step()
+                progress.complete_step(completed_by)
             return progress
+        return None
+    
+    def get_last_activity(self):
+        """Get the most recent activity for this matchup"""
+        activities = []
+        
+        # Add matchup status changes
+        if self.completed_at:
+            activities.append({
+                'datetime': self.completed_at,
+                'activity': 'Matchup completed',
+                'actor': f'Teacher ({self.created_by.get_full_name() or self.created_by.username})'
+            })
+        
+        if self.started_at:
+            activities.append({
+                'datetime': self.started_at,
+                'activity': 'Matchup started',
+                'actor': f'Teacher ({self.created_by.get_full_name() or self.created_by.username})'
+            })
+        
+        # Add step completions
+        for progress in self.step_progress.filter(is_completed=True):
+            game_step = progress.game_step
+            if game_step.requires_validation:
+                # Validation-required steps are completed by the teacher
+                activities.append({
+                    'datetime': progress.completed_at,
+                    'activity': f'Step {progress.game_step.step_number} validated',
+                    'actor': f'Teacher ({self.created_by.get_full_name() or self.created_by.username})'
+                })
+            else:
+                # Regular steps are completed by student teams
+                activities.append({
+                    'datetime': progress.completed_at,
+                    'activity': f'Step {progress.game_step.step_number} completed',
+                    'actor': f'Teams ({self.team1.name} & {self.team2.name})'
+                })
+        
+        # Add creation as fallback
+        activities.append({
+            'datetime': self.created_at,
+            'activity': 'Matchup created',
+            'actor': f'Teacher ({self.created_by.get_full_name() or self.created_by.username})'
+        })
+        
+        # Sort by datetime and return the most recent
+        if activities:
+            activities.sort(key=lambda x: x['datetime'], reverse=True)
+            return activities[0]
+        
         return None
 
     class Meta:

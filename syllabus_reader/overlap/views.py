@@ -299,6 +299,7 @@ def step4(request, matchup_id):
         team_data.completed_at = timezone.now()
         team_data.complete_step(4)
         
+        messages.success(request, "Overlap game completed successfully!")
         return redirect('overlap:complete_step', matchup_id=matchup_id)
     
     context = {
