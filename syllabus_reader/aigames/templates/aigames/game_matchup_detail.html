@@ -296,10 +296,25 @@
                                             {% endif %}
                                         {% elif step.is_completed %}
                                             {% if step.step_url %}
-                                                <a href="{{ step.step_url }}" 
-                                                   class="btn btn-outline-success btn-sm w-100">
-                                                    <i class="fas fa-eye me-1"></i>Review step
-                                                </a>
+                                                {% if step.game_step.requires_validation %}
+                                                    <!-- Two review buttons for validation-required steps -->
+                                                    <div class="d-grid gap-1">
+                                                        <a href="{{ step.step_url }}?team={{ matchup.team1.id }}" 
+                                                           class="btn btn-outline-success btn-sm">
+                                                            <i class="fas fa-eye me-1"></i>Review for {{ matchup.team1.name }}
+                                                        </a>
+                                                        <a href="{{ step.step_url }}?team={{ matchup.team2.id }}" 
+                                                           class="btn btn-outline-success btn-sm">
+                                                            <i class="fas fa-eye me-1"></i>Review for {{ matchup.team2.name }}
+                                                        </a>
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Single review button for non-validation steps -->
+                                                    <a href="{{ step.step_url }}" 
+                                                       class="btn btn-outline-success btn-sm w-100">
+                                                        <i class="fas fa-eye me-1"></i>Review step
+                                                    </a>
+                                                {% endif %}
                                             {% else %}
                                                 <span class="btn btn-outline-secondary btn-sm w-100 disabled">
                                                     <i class="fas fa-exclamation-triangle me-1"></i>URL Not Available
