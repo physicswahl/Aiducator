@@ -7,35 +7,22 @@ from django.utils import timezone
 import json
 
 from aigames.models import Team, GameMatchup, MatchupStepProgress
+from aigames.decorators import teacher_can_view_team, get_user_team_or_viewing_team, should_allow_form_submission
 from .models import TeamOverlapData, OverlapSubmission
 from .constants import *
 
 
 @login_required
+@teacher_can_view_team
 def step1(request, matchup_id):
     """Step 1: Game Setup and Configuration"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
     
-    # Check if teacher is viewing a specific team's work
-    teacher_viewing_team_id = request.GET.get('team')
-    if teacher_viewing_team_id:
-        # Verify user is a teacher for this game's school
-        if hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'teacher':
-            user_team = get_object_or_404(Team, id=teacher_viewing_team_id)
-            # Verify this team is part of the matchup
-            if user_team != matchup.team1 and user_team != matchup.team2:
-                messages.error(request, "Invalid team access.")
-                return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
-        else:
-            messages.error(request, "You don't have permission to view team data.")
-            return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
-    else:
-        # Regular student access - find their team
-        user_team = Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or \
-                    Team.objects.filter(members=request.user, matchups_as_team2=matchup).first()
-        if not user_team:
-            messages.error(request, "You are not part of a team for this game.")
-            return redirect('aigames:student_dashboard')
+    # Get the appropriate team (user's team or teacher's viewing team)
+    user_team = get_user_team_or_viewing_team(request, matchup)
+    if not user_team:
+        messages.error(request, "You are not part of a team for this game.")
+        return redirect('aigames:student_dashboard')
     
     team_data, created = TeamOverlapData.objects.get_or_create(
         team=user_team, 
@@ -69,37 +56,23 @@ def step1(request, matchup_id):
         'threshold_options': [i/100 for i in range(50, 101, 5)],
         'mode_options': ['standard', 'enhanced', 'advanced'],
         'instructions': instructions,
-        'is_teacher_viewing': bool(teacher_viewing_team_id),
+        'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
     }
     
     return render(request, 'overlap/step1.html', context)
 
 
 @login_required
+@teacher_can_view_team
 def step2(request, matchup_id):
     """Step 2: Data Collection"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
     
-    # Check if teacher is viewing a specific team's work
-    teacher_viewing_team_id = request.GET.get('team')
-    if teacher_viewing_team_id:
-        # Verify user is a teacher for this game's school
-        if hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'teacher':
-            user_team = get_object_or_404(Team, id=teacher_viewing_team_id)
-            # Verify this team is part of the matchup
-            if user_team != matchup.team1 and user_team != matchup.team2:
-                messages.error(request, "Invalid team access.")
-                return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
-        else:
-            messages.error(request, "You don't have permission to view team data.")
-            return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
-    else:
-        # Regular student access - find their team
-        user_team = Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or \
-                    Team.objects.filter(members=request.user, matchups_as_team2=matchup).first()
-        if not user_team:
-            messages.error(request, "You are not part of a team for this game.")
-            return redirect('aigames:student_dashboard')
+    # Get the appropriate team (user's team or teacher's viewing team)
+    user_team = get_user_team_or_viewing_team(request, matchup)
+    if not user_team:
+        messages.error(request, "You are not part of a team for this game.")
+        return redirect('aigames:student_dashboard')
     
     team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
     
@@ -107,7 +80,7 @@ def step2(request, matchup_id):
     step1_progress = matchup.get_progress_for_step(1)
     step1_completed = step1_progress.is_completed if step1_progress else False
     
-    if not step1_completed and not teacher_viewing_team_id:
+    if not step1_completed and not hasattr(request, 'teacher_viewing_mode'):
         messages.warning(request, "You must complete Step 1 first.")
         return redirect('overlap:step1', matchup_id=matchup_id)
     
@@ -131,45 +104,42 @@ def step2(request, matchup_id):
         'has_next_step': True,
         'next_step_accessible': step2_completed,
         'instructions': instructions,
-        'is_teacher_viewing': bool(teacher_viewing_team_id),
+        'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
     }
     
     return render(request, 'overlap/step2.html', context)
 
 
 @login_required
+@teacher_can_view_team
 def step3(request, matchup_id):
     """Step 3: Circle Placement Challenge"""
+    print(f"[DEBUG] step3 view called for matchup {matchup_id}")
+    print(f"[DEBUG] User: {request.user}")
+    print(f"[DEBUG] Request attributes: teacher_viewing_mode={getattr(request, 'teacher_viewing_mode', 'NOT_SET')}")
+    
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
     
-    # Check if teacher is viewing a specific team's work
-    teacher_viewing_team_id = request.GET.get('team')
-    if teacher_viewing_team_id:
-        # Verify user is a teacher for this game's school
-        if hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'teacher':
-            user_team = get_object_or_404(Team, id=teacher_viewing_team_id)
-            # Verify this team is part of the matchup
-            if user_team != matchup.team1 and user_team != matchup.team2:
-                messages.error(request, "Invalid team access.")
-                return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
-        else:
-            messages.error(request, "You don't have permission to view team data.")
-            return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
-    else:
-        # Regular student access - find their team
-        user_team = Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or \
-                    Team.objects.filter(members=request.user, matchups_as_team2=matchup).first()
-        if not user_team:
-            messages.error(request, "You are not part of a team for this game.")
-            return redirect('aigames:student_dashboard')
+    # Get the appropriate team (user's team or teacher's viewing team)
+    user_team = get_user_team_or_viewing_team(request, matchup)
+    print(f"[DEBUG] user_team from helper: {user_team}")
+    
+    if not user_team:
+        print(f"[DEBUG] No user team found - redirecting")
+        messages.error(request, "You are not part of a team for this game.")
+        return redirect('aigames:student_dashboard')
     
     team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
+    print(f"[DEBUG] team_data retrieved: {team_data}")
+    print(f"[DEBUG] team_data.circle_placement_submitted: {team_data.circle_placement_submitted}")
+    print(f"[DEBUG] team_data.circle_x: {team_data.circle_x}, circle_y: {team_data.circle_y}")
     
     # Check if step 2 is completed using MatchupStepProgress (only for students)
     step2_progress = matchup.get_progress_for_step(2)
     step2_completed = step2_progress.is_completed if step2_progress else False
     
-    if not step2_completed and not teacher_viewing_team_id:
+    if not step2_completed and not hasattr(request, 'teacher_viewing_mode'):
+        print(f"[DEBUG] Step 2 not completed - redirecting to step2")
         messages.warning(request, "You must complete Step 2 before accessing Step 3.")
         return redirect('overlap:step2', matchup_id=matchup_id)
     
@@ -196,7 +166,7 @@ def step3(request, matchup_id):
     
     next_step_accessible = current_team_ready and other_team_ready
     
-    if request.method == 'POST' and not teacher_viewing_team_id:
+    if request.method == 'POST' and should_allow_form_submission(request):
         # Handle circle placement submission (only for students, not teachers viewing)
         circle_x = float(request.POST.get('circle_x', 0))
         circle_y = float(request.POST.get('circle_y', 0))
@@ -233,7 +203,7 @@ def step3(request, matchup_id):
                 'other_team_ready': other_team_ready,
                 'instructions': instructions,
                 'error_message': "Circle must be fully within the canvas boundaries!",
-                'is_teacher_viewing': bool(teacher_viewing_team_id),
+                'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
             })
         
         team_data.circle_x = circle_x
@@ -266,7 +236,7 @@ def step3(request, matchup_id):
         'current_team_ready': current_team_ready,
         'other_team_ready': other_team_ready,
         'instructions': instructions,
-        'is_teacher_viewing': bool(teacher_viewing_team_id),
+        'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
     }
     
     return render(request, 'overlap/step3.html', context)

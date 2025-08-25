@@ -263,8 +263,8 @@
                                                         </a>
                                                         <form method="post" action="{% url 'aigames:validate_team_step' matchup_id=matchup.id step_number=step.step_number team_id=matchup.team1.id %}" class="d-inline">
                                                             {% csrf_token %}
-                                                            <button type="submit" class="btn btn-success btn-sm" title="Mark {{ matchup.team1.name }} as complete">
-                                                                <i class="fas fa-check"></i>
+                                                            <button type="submit" class="btn {% if step.team1_validated %}btn-success{% else %}btn-danger{% endif %} btn-sm" title="{% if step.team1_validated %}{{ matchup.team1.name }} validated{% else %}Mark {{ matchup.team1.name }} as complete{% endif %}" {% if step.team1_validated %}disabled{% endif %}>
+                                                                <i class="fas {% if step.team1_validated %}fa-check{% else %}fa-times{% endif %}"></i>
                                                             </button>
                                                         </form>
                                                     </div>
@@ -276,8 +276,8 @@
                                                         </a>
                                                         <form method="post" action="{% url 'aigames:validate_team_step' matchup_id=matchup.id step_number=step.step_number team_id=matchup.team2.id %}" class="d-inline">
                                                             {% csrf_token %}
-                                                            <button type="submit" class="btn btn-success btn-sm" title="Mark {{ matchup.team2.name }} as complete">
-                                                                <i class="fas fa-check"></i>
+                                                            <button type="submit" class="btn {% if step.team2_validated %}btn-success{% else %}btn-danger{% endif %} btn-sm" title="{% if step.team2_validated %}{{ matchup.team2.name }} validated{% else %}Mark {{ matchup.team2.name }} as complete{% endif %}" {% if step.team2_validated %}disabled{% endif %}>
+                                                                <i class="fas {% if step.team2_validated %}fa-check{% else %}fa-times{% endif %}"></i>
                                                             </button>
                                                         </form>
                                                     </div>
@@ -300,7 +300,8 @@
                                             {% endif %}
                                         {% endif %}
                                         
-                                        {% if step.can_complete %}
+                                        {% comment %}Only show complete step button for steps that don't require validation and aren't already completed{% endcomment %}
+                                        {% if step.can_complete and not step.game_step.requires_validation and not step.is_completed %}
                                             <form method="post" action="{% url 'aigames:complete_matchup_step_from_detail' matchup_id=matchup.id step_number=step.step_number %}" class="mt-1">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-success btn-sm w-100" 

@@ -816,6 +816,9 @@ def game_matchup_detail(request, matchup_id):
                 'is_current': step_num == current_step_number,
                 'completed_at': progress.completed_at if progress and progress.is_completed else None,
                 'can_complete': is_teacher and step_num == current_step_number and (not progress or not progress.is_completed),
+                # Add team validation status
+                'team1_validated': matchup.is_team_validated_for_step(matchup.team1, step_num),
+                'team2_validated': matchup.is_team_validated_for_step(matchup.team2, step_num),
             }
             step_progress_info.append(step_info)
     
@@ -890,7 +893,7 @@ def validate_team_step(request, matchup_id, step_number, team_id):
     team = get_object_or_404(Team, id=team_id)
     
     # Only teachers can validate steps
-    if not (hasattr(request.user, 'profile') and (request.user.profile.is_teacher or request.user.profile.is_admin)):
+    if not (hasattr(request.user, 'profile') and (request.user.profile.role == 'teacher' or request.user.profile.role == 'admin')):
         messages.error(request, "Only teachers can validate team steps.")
         return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
     
@@ -899,19 +902,30 @@ def validate_team_step(request, matchup_id, step_number, team_id):
         messages.error(request, "Team is not part of this matchup.")
         return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
     
-    # Mark the step as validated for this team
+    # Get the game step
+    game_step = matchup.ai_game.get_step_by_number(step_number)
+    if not game_step:
+        messages.error(request, f"Step {step_number} not found.")
+        return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
+    
+    # Get or create team validation record
+    from .models import TeamStepValidation
+    validation, created = TeamStepValidation.objects.get_or_create(
+        matchup=matchup,
+        team=team,
+        game_step=game_step
+    )
+    
+    # Mark as validated
     try:
-        # Check if both teams have now been validated for this step
-        other_team = matchup.team2 if team == matchup.team1 else matchup.team2
+        validation.validate(request.user)
+        messages.success(request, f"Step {step_number} validated for {team.name}!")
         
-        # For now, we'll complete the step at the matchup level
-        # TODO: Implement team-specific validation tracking if needed
-        progress = matchup.complete_step(step_number)
-        
-        if progress:
-            messages.success(request, f"Step {step_number} validated for {team.name}!")
-        else:
-            messages.error(request, f"Could not validate step {step_number} for {team.name}.")
+        # Check if step is now complete (both teams validated)
+        step_progress = matchup.get_progress_for_step(step_number)
+        if step_progress and step_progress.is_completed:
+            messages.info(request, f"Step {step_number} is now complete - both teams validated!")
+            
     except Exception as e:
         messages.error(request, f"Error validating step: {str(e)}")
     

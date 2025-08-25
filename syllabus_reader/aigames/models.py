@@ -527,7 +527,10 @@ class GameMatchup(models.Model):
                 }
             )
             if not created and not progress.is_completed:
-                progress.complete_step(completed_by)
+                progress.complete_step()
+                if completed_by:
+                    progress.completed_by = completed_by
+                    progress.save()
             return progress
         return None
     
@@ -581,6 +584,33 @@ class GameMatchup(models.Model):
             return activities[0]
         
         return None
+
+    def is_team_validated_for_step(self, team, step_number):
+        """Check if a specific team has been validated for a specific step"""
+        game_step = self.ai_game.get_step_by_number(step_number)
+        if not game_step:
+            return False
+        
+        validation = TeamStepValidation.objects.filter(
+            matchup=self,
+            team=team,
+            game_step=game_step,
+            is_validated=True
+        ).first()
+        
+        return validation is not None
+    
+    def get_team_validation_for_step(self, team, step_number):
+        """Get the validation record for a specific team and step"""
+        game_step = self.ai_game.get_step_by_number(step_number)
+        if not game_step:
+            return None
+        
+        return TeamStepValidation.objects.filter(
+            matchup=self,
+            team=team,
+            game_step=game_step
+        ).first()
 
     class Meta:
         ordering = ['-created_at']
@@ -666,4 +696,44 @@ class MatchupStepProgress(models.Model):
     class Meta:
         unique_together = ['matchup', 'game_step']  # One progress record per step per matchup
         ordering = ['matchup', 'game_step__step_number']
+
+
+class TeamStepValidation(models.Model):
+    """Tracks teacher validation for each team's work on validation-required steps"""
+    matchup = models.ForeignKey(GameMatchup, on_delete=models.CASCADE, related_name='team_validations')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='step_validations')
+    game_step = models.ForeignKey(GameStep, on_delete=models.CASCADE, related_name='team_validations')
+    is_validated = models.BooleanField(default=False)
+    validated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                   help_text="Teacher who validated this team's work")
+    validated_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True, help_text="Teacher notes about this team's work")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def validate(self, teacher):
+        """Mark this team's work as validated by the teacher"""
+        self.is_validated = True
+        self.validated_by = teacher
+        self.validated_at = timezone.now()
+        self.save()
+        
+        # Check if both teams are now validated and complete the step if so
+        other_team = self.matchup.team2 if self.team == self.matchup.team1 else self.matchup.team1
+        other_validation, _ = TeamStepValidation.objects.get_or_create(
+            matchup=self.matchup,
+            team=other_team,
+            game_step=self.game_step
+        )
+        
+        if other_validation.is_validated:
+            # Both teams validated - complete the step
+            self.matchup.complete_step(self.game_step.step_number)
+    
+    def __str__(self):
+        status = "Validated" if self.is_validated else "Pending"
+        return f"{self.team.name} - Step {self.game_step.step_number} ({status})"
+    
+    class Meta:
+        unique_together = ['matchup', 'team', 'game_step']  # One validation record per team per step per matchup
+        ordering = ['matchup', 'game_step__step_number', 'team__name']
 
