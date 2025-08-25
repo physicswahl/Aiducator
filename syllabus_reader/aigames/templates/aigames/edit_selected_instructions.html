@@ -207,20 +207,6 @@
     </div>
 </div>
 
-<!-- Loading Modal -->
-<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body text-center py-4">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mb-0">Saving instructions...</p>
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
 .instruction-card {
     border-left: 4px solid #007bff !important;
@@ -365,11 +351,6 @@ function removeInstruction(instructionId) {
 
 function saveAllInstructions() {
     const form = document.getElementById('instructions-form');
-    const loadingModalElement = document.getElementById('loadingModal');
-    const loadingModal = new bootstrap.Modal(loadingModalElement);
-    
-    // Show loading modal
-    loadingModal.show();
     
     // Create FormData object
     const formData = new FormData(form);
@@ -389,71 +370,41 @@ function saveAllInstructions() {
         return response.json();
     })
     .then(data => {
-        // Hide loading modal first
-        loadingModal.hide();
-        
-        // Force remove any stuck modal backdrops
-        setTimeout(() => {
-            document.body.classList.remove('modal-open');
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-        }, 100);
-        
-        // Wait a bit for modal to close, then show success
-        setTimeout(() => {
-            if (data.success) {
-                // Show success message
-                showToast('Instructions saved successfully!', 'success');
-                
-                // Update instruction IDs for new instructions
-                if (data.instruction_mappings) {
-                    Object.entries(data.instruction_mappings).forEach(([oldId, newId]) => {
-                        const card = document.querySelector(`[data-instruction-id="${oldId}"]`);
-                        if (card) {
-                            card.setAttribute('data-instruction-id', newId);
-                            card.classList.remove('new-instruction');
-                            
-                            // Update form field names
-                            const inputs = card.querySelectorAll('input, textarea');
-                            inputs.forEach(input => {
-                                if (input.name.includes(oldId)) {
-                                    input.name = input.name.replace(oldId, newId);
-                                }
-                            });
-                            
-                            // Update the "New instruction" text
-                            const idLabel = card.querySelector('small');
-                            if (idLabel && idLabel.textContent === 'New instruction') {
-                                idLabel.textContent = `ID: ${newId}`;
+        if (data.success) {
+            // Show success message
+            showToast('Instructions saved successfully!', 'success');
+            
+            // Update instruction IDs for new instructions
+            if (data.instruction_mappings) {
+                Object.entries(data.instruction_mappings).forEach(([oldId, newId]) => {
+                    const card = document.querySelector(`[data-instruction-id="${oldId}"]`);
+                    if (card) {
+                        card.setAttribute('data-instruction-id', newId);
+                        card.classList.remove('new-instruction');
+                        
+                        // Update form field names
+                        const inputs = card.querySelectorAll('input, textarea');
+                        inputs.forEach(input => {
+                            if (input.name.includes(oldId)) {
+                                input.name = input.name.replace(oldId, newId);
                             }
+                        });
+                        
+                        // Update the "New instruction" text
+                        const idLabel = card.querySelector('small');
+                        if (idLabel && idLabel.textContent === 'New instruction') {
+                            idLabel.textContent = `ID: ${newId}`;
                         }
-                    });
-                }
-            } else {
-                showToast('Error saving instructions: ' + (data.error || 'Unknown error'), 'danger');
+                    }
+                });
             }
-        }, 300);
+        } else {
+            showToast('Error saving instructions: ' + (data.error || 'Unknown error'), 'danger');
+        }
     })
     .catch(error => {
-        // Hide loading modal first
-        loadingModal.hide();
-        
-        // Force remove any stuck modal backdrops
-        setTimeout(() => {
-            document.body.classList.remove('modal-open');
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-        }, 100);
-        
-        // Wait a bit for modal to close, then show error
-        setTimeout(() => {
-            console.error('Error saving instructions:', error);
-            showToast('Error saving instructions: ' + error.message, 'danger');
-        }, 300);
+        console.error('Error saving instructions:', error);
+        showToast('Error saving instructions: ' + error.message, 'danger');
     });
 }
 
