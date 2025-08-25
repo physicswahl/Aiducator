@@ -192,32 +192,22 @@ def step2(request, matchup_id):
 @teacher_can_view_team
 def step3(request, matchup_id):
     """Step 3: Circle Placement Challenge"""
-    print(f"[DEBUG] step3 view called for matchup {matchup_id}")
-    print(f"[DEBUG] User: {request.user}")
-    print(f"[DEBUG] Request attributes: teacher_viewing_mode={getattr(request, 'teacher_viewing_mode', 'NOT_SET')}")
-    
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
     
     # Get the appropriate team (user's team or teacher's viewing team)
     user_team = get_user_team_or_viewing_team(request, matchup)
-    print(f"[DEBUG] user_team from helper: {user_team}")
     
     if not user_team:
-        print(f"[DEBUG] No user team found - redirecting")
         messages.error(request, "You are not part of a team for this game.")
         return redirect('aigames:student_dashboard')
     
     team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
-    print(f"[DEBUG] team_data retrieved: {team_data}")
-    print(f"[DEBUG] team_data.circle_placement_submitted: {team_data.circle_placement_submitted}")
-    print(f"[DEBUG] team_data.circle_x: {team_data.circle_x}, circle_y: {team_data.circle_y}")
     
     # Check if step 2 is completed using MatchupStepProgress (only for students)
     step2_progress = matchup.get_progress_for_step(2)
     step2_completed = step2_progress.is_completed if step2_progress else False
     
     if not step2_completed and not hasattr(request, 'teacher_viewing_mode'):
-        print(f"[DEBUG] Step 2 not completed - redirecting to step2")
         messages.warning(request, "You must complete Step 2 before accessing Step 3.")
         return redirect('overlap:step2', matchup_id=matchup_id)
     
