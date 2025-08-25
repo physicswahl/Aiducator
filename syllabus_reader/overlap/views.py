@@ -300,68 +300,57 @@ def step3(request, matchup_id):
 @login_required
 @teacher_can_view_team
 def step4(request, matchup_id):
-    """Step 4: Final Results and Conclusions"""
+    """Step 4: Interactive Evaluation Canvas"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
     
     # Get the appropriate team (user's team or teacher's viewing team)
     user_team = get_user_team_or_viewing_team(request, matchup)
     
-    # Check if this is a teacher viewing general content (non-validation step)
-    is_teacher_general_view = (hasattr(request, 'is_teacher_viewing') and 
-                              request.is_teacher_viewing and 
-                              user_team is None)
-    
-    if not user_team and not is_teacher_general_view:
+    if not user_team:
         messages.error(request, "You are not part of a team for this game.")
         return redirect('aigames:student_dashboard')
-
-    # For teacher general viewing, create dummy data or use default values
-    if is_teacher_general_view:
-        team_data = None
-        # Show example data for teachers
-        context = {
-            'matchup': matchup,
-            'team': None,
-            'team_data': None,
-            'step_name': STEP_NAMES['step4'],
-            'current_step': 4,
-            'total_steps': TOTAL_STEPS,
-            'is_teacher_viewing': True,
-            'allow_form_submission': False,
-        }
-        return render(request, 'overlap/step4.html', context)
     
     team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
     
-    if not team_data.can_access_step(4):
-        messages.warning(request, "You must complete previous steps first.")
-        return redirect('overlap:step3', matchup_id=matchup_id)
+    # Check if step 3 is completed (only for students, not teachers)
+    if not hasattr(request, 'teacher_viewing_mode'):
+        if not team_data.can_access_step(4):
+            messages.warning(request, "You must complete previous steps first.")
+            return redirect('overlap:step3', matchup_id=matchup_id)
+    
+    # Get opponent team and their circle data
+    opponent_team = matchup.team1 if user_team == matchup.team2 else matchup.team2
+    opponent_team_data = TeamOverlapData.objects.filter(team=opponent_team, matchup=matchup).first()
+    
+    # Get opponent's circle position from step 3
+    opponent_circle_x = 200  # Default
+    opponent_circle_y = 150  # Default
+    if opponent_team_data and opponent_team_data.circle_x is not None:
+        opponent_circle_x = opponent_team_data.circle_x
+        opponent_circle_y = opponent_team_data.circle_y
     
     # Check if form submission should be allowed (not for teachers viewing)
     allow_form_submission = should_allow_form_submission(request)
     
     if request.method == 'POST' and allow_form_submission:
-        # Handle final submission
-        final_score = float(request.POST.get('final_score', 0))
-        conclusions = request.POST.get('conclusions', '')
-        
-        team_data.final_score = final_score
-        team_data.conclusions = conclusions
-        team_data.completed_at = timezone.now()
+        # Handle click data submission (if you want to store it)
+        # For now, just mark step as completed
         team_data.complete_step(4)
-        
-        messages.success(request, "Overlap game completed successfully!")
+        messages.success(request, "Step 4 completed successfully!")
         return redirect('overlap:complete_step', matchup_id=matchup_id)
     
     context = {
         'matchup': matchup,
         'team': user_team,
         'team_data': team_data,
+        'opponent_team': opponent_team,
         'step_name': STEP_NAMES['step4'],
         'current_step': 4,
         'total_steps': TOTAL_STEPS,
-        'is_teacher_viewing': hasattr(request, 'is_teacher_viewing') and request.is_teacher_viewing,
+        'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': allow_form_submission,
+        'opponent_circle_x': int(opponent_circle_x),
+        'opponent_circle_y': int(opponent_circle_y),
     }
     
     return render(request, 'overlap/step4.html', context)

@@ -33,177 +33,426 @@
         color: white;
         border-color: #28a745;
     }
-    
-    .results-summary {
-        background-color: #e8f5e8;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
-        border-left: 5px solid #28a745;
+
+    .canvas-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
     }
-    
-    .score-display {
-        font-size: 3rem;
+
+    #evaluationCanvas {
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+        background-color: #e9ecef;
+        cursor: crosshair;
+    }
+
+    #evaluationCanvas.disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .results-table {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .click-counter {
+        font-size: 1.2rem;
         font-weight: bold;
-        color: #28a745;
+        margin-bottom: 1rem;
         text-align: center;
-        padding: 1.5rem;
-        background-color: white;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-        border: 3px solid #28a745;
     }
-    
-    .analysis-summary {
-        background-color: #f8f9fa;
+
+    .evaluation-info {
+        background-color: #e3f2fd;
         padding: 1rem;
         border-radius: 0.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #2196f3;
     }
+
+    .table th {
+        background-color: #f8f9fa;
+        border-top: none;
+    }
+
+    .score-cell {
+        font-weight: bold;
+    }
+
+    .score-high { color: #28a745; }
+    .score-medium { color: #ffc107; }
+    .score-low { color: #dc3545; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <h2>{{ matchup.ai_game.title }} - {{ step_name }}</h2>
-            <p class="text-muted">Team: {{ team.name }}</p>
-            
-            <!-- Progress Indicator -->
-            <div class="step-progress">
-                <h5>Progress</h5>
-                <div class="progress-steps">
-                    {% for i in "1234"|make_list %}
-                        <span class="progress-step {% if current_step == i|add:0 %}active{% endif %} {% if team_data.current_step > i|add:0 %}completed{% endif %}">
-                            Step {{ i }}
-                        </span>
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <!-- Step 4 Content -->
+<div class="container-fluid">
+    <!-- Instructions Button -->
+    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
+        <button class="btn btn-primary" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas"
+                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
+            Instructions
+        </button>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="row justify-content-center">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h4>Results & Conclusion</h4>
-                    <p class="mb-0">Review your analysis results and draw final conclusions.</p>
+                    <h4>{{ matchup.ai_game.title }} - {{ step_name }}</h4>
+                    {% if not is_teacher_viewing %}
+                        <p class="text-muted mb-0">Team: {{ team.name }}</p>
+                    {% else %}
+                        <p class="text-muted mb-0">Teacher View</p>
+                    {% endif %}
                 </div>
+                
                 <div class="card-body">
-                    <!-- Analysis Summary -->
-                    <div class="results-summary">
-                        <h5>Analysis Summary</h5>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>Data Points:</strong><br>
-                                {{ team_data.data_points_collected }}
+                    <!-- Progress Indicator -->
+                    <div class="step-progress">
+                        <h5>Progress</h5>
+                        <div class="progress-steps">
+                            {% for i in "1234"|make_list %}
+                                <span class="progress-step {% if current_step == i|add:0 %}active{% endif %} {% if current_step > i|add:0 %}completed{% endif %}">
+                                    Step {{ i }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Evaluation Info -->
+                    {% if not is_teacher_viewing %}
+                        <div class="evaluation-info">
+                            <h5><i class="fas fa-target"></i> Circle Evaluation</h5>
+                            <p>Click on the canvas to evaluate overlap scores. You're evaluating against the circle placed by the opposing team in Step 3.</p>
+                            <p><strong>Your opponent's circle:</strong> {{ opponent_team.name }}</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Click Counter and Controls -->
+                    <div class="click-counter">
+                        <span id="clickCount">0</span> / 12 clicks used
+                        <button id="clearPointsBtn" class="btn btn-warning btn-sm ms-3" onclick="clearAllPoints()">
+                            <i class="fas fa-eraser"></i> Clear Points
+                        </button>
+                    </div>
+
+                    <!-- Canvas and Results Layout -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <!-- Canvas -->
+                            <div class="canvas-container">
+                                <canvas id="evaluationCanvas" width="400" height="300"></canvas>
                             </div>
-                            <div class="col-md-3">
-                                <strong>Overlap Found:</strong><br>
-                                {{ team_data.overlap_percentage|default:0 }}%
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Sensitivity:</strong><br>
-                                {{ team_data.sensitivity_level }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Threshold:</strong><br>
-                                {{ team_data.threshold_value }}
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Results Table -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-table"></i> Evaluation Results</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="results-table">
+                                        <table class="table table-striped" id="resultsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Click #</th>
+                                                    <th>X Position</th>
+                                                    <th>Y Position</th>
+                                                    <th>Overlap Score</th>
+                                                    <th>Gradient</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="resultsBody">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <!-- Final Score -->
-                        <div class="analysis-summary">
-                            <h5>Final Score Calculation</h5>
-                            <p>Calculate your final score based on accuracy, methodology, and analysis quality.</p>
-                            
-                            <div class="score-display">
-                                <span id="score_display">{{ team_data.final_score|default:0 }}</span>
-                                <div class="small text-muted">Final Score</div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="final_score">Final Score (0-100):</label>
-                                <input type="range" 
-                                       class="form-control-range" 
-                                       id="final_score" 
-                                       name="final_score" 
-                                       min="0" 
-                                       max="100" 
-                                       step="1"
-                                       value="{{ team_data.final_score|default:0 }}"
-                                       oninput="updateScoreDisplay(this.value)">
-                                <div class="d-flex justify-content-between small text-muted">
-                                    <span>0</span>
-                                    <span>50</span>
-                                    <span>100</span>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="score_number" 
-                                       name="final_score" 
-                                       value="{{ team_data.final_score|default:0 }}"
-                                       min="0"
-                                       max="100"
-                                       step="1"
-                                       placeholder="Enter exact score"
-                                       oninput="updateFromScoreNumber(this.value)">
-                            </div>
-                        </div>
-                        
-                        <!-- Conclusions -->
-                        <div class="form-group">
-                            <label for="conclusions">Conclusions and Insights:</label>
-                            <textarea class="form-control" 
-                                      id="conclusions" 
-                                      name="conclusions" 
-                                      rows="6" 
-                                      placeholder="Summarize your findings, insights gained, methodology effectiveness, and overall conclusions from the overlap analysis...">{{ team_data.conclusions }}</textarea>
-                        </div>
-                        
-                        <div class="form-group text-center">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                Complete Overlap Game
-                            </button>
-                        </div>
-                    </form>
                 </div>
-            </div>
-            
-            <!-- Navigation -->
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <a href="{% url 'overlap:step3' matchup.id %}" class="btn btn-secondary">
-                        ← Back to Step 3
-                    </a>
-                </div>
-                <div class="col-md-6 text-right">
-                    {% if team_data.step4_completed %}
-                        <a href="{% url 'overlap:complete_step' matchup.id %}" class="btn btn-success">
-                            View Completion →
-                        </a>
-                    {% endif %}
+
+                <!-- Navigation -->
+                <div class="step-navigation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'overlap:step3' matchup.id %}" class="btn btn-secondary">
+                                ← Back to Step 3
+                            </a>
+                        </div>
+                        <div>
+                            {% if allow_form_submission %}
+                                <button id="completeBtn" class="btn btn-success" disabled onclick="completeStep()">
+                                    Complete Step 4 →
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-function updateScoreDisplay(value) {
-    document.getElementById('score_display').textContent = value;
-    document.getElementById('score_number').value = value;
-}
+<!-- Instructions Offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+            Step 4 Instructions
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <h6>Objective</h6>
+        <p>Evaluate overlap scores by clicking on the canvas. You can click up to 12 times to test different positions.</p>
+        
+        <h6>How it works</h6>
+        <ul>
+            <li>The canvas shows a greyed-out evaluation area</li>
+            <li>Click anywhere to test overlap with the opposing team's circle</li>
+            <li>Red points will appear showing your click positions</li>
+            <li>Each click calculates an overlap score based on the opponent's circle from Step 3</li>
+            <li>Results are recorded in the table below</li>
+        </ul>
+        
+        <h6>Scoring</h6>
+        <p>Overlap scores range from 0 (no overlap) to 100 (maximum overlap) based on how much your click position would overlap with the opponent's circle.</p>
+    </div>
+</div>
 
-function updateFromScoreNumber(value) {
-    document.getElementById('final_score').value = value;
-    document.getElementById('score_display').textContent = value;
-}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('evaluationCanvas');
+    const ctx = canvas.getContext('2d');
+    const resultsBody = document.getElementById('resultsBody');
+    const clickCountElement = document.getElementById('clickCount');
+    const completeBtn = document.getElementById('completeBtn');
+    
+    let clickCount = 0;
+    const maxClicks = 12;
+    const clickedPoints = [];
+    
+    // Opponent's circle data (from step 3)
+    const opponentCircle = {
+        x: {{ opponent_circle_x }},
+        y: {{ opponent_circle_y }},
+        radius: 40
+    };
+    
+    // Canvas setup
+    const circleRadius = 40;
+    
+    function initCanvas() {
+        // Clear canvas with grey background
+        ctx.fillStyle = '#e9ecef';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw border
+        ctx.strokeStyle = '#dee2e6';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+        
+        // Draw valid area boundary (where circles can be placed)
+        ctx.strokeStyle = '#adb5bd';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(circleRadius, circleRadius, 
+                      canvas.width - 2 * circleRadius, 
+                      canvas.height - 2 * circleRadius);
+        ctx.setLineDash([]);
+    }
+    
+    function calculateOverlapScore(x, y) {
+        // Calculate distance between clicked point and opponent's circle center
+        const dx = x - opponentCircle.x;
+        const dy = y - opponentCircle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Calculate overlap based on distance and radii
+        const maxDistance = circleRadius + opponentCircle.radius;
+        const minDistance = Math.abs(circleRadius - opponentCircle.radius);
+        
+        if (distance >= maxDistance) {
+            return 0; // No overlap
+        } else if (distance <= minDistance) {
+            return 100; // Maximum overlap
+        } else {
+            // Partial overlap - linear interpolation
+            const overlapRatio = (maxDistance - distance) / (maxDistance - minDistance);
+            return Math.round(overlapRatio * 100);
+        }
+    }
+    
+    function calculateGradient(x, y) {
+        // Numerical derivative calculation using small step size
+        const h = 1.0; // Step size for numerical derivative
+        
+        // Calculate partial derivatives
+        const scoreCenter = calculateOverlapScore(x, y);
+        const scoreRight = calculateOverlapScore(x + h, y);
+        const scoreLeft = calculateOverlapScore(x - h, y);
+        const scoreUp = calculateOverlapScore(x, y - h);
+        const scoreDown = calculateOverlapScore(x, y + h);
+        
+        // Central difference for better accuracy
+        const dfdx = (scoreRight - scoreLeft) / (2 * h);
+        const dfdy = (scoreDown - scoreUp) / (2 * h); // Note: y increases downward in canvas
+        
+        return { x: dfdx, y: dfdy };
+    }
+    
+    function createGradientArrow(gradient) {
+        // Create SVG arrow showing gradient direction
+        const magnitude = Math.sqrt(gradient.x * gradient.x + gradient.y * gradient.y);
+        
+        if (magnitude < 0.1) {
+            return '<span class="text-muted">~</span>'; // No significant gradient
+        }
+        
+        // Normalize and scale the gradient for visualization
+        const scale = 20; // Scale factor for arrow size
+        const arrowX = (gradient.x / magnitude) * scale;
+        const arrowY = (gradient.y / magnitude) * scale;
+        
+        // Calculate angle for rotation
+        const angle = Math.atan2(arrowY, arrowX) * 180 / Math.PI;
+        
+        // Create SVG arrow
+        const arrowSvg = `
+            <svg width="50" height="30" viewBox="0 0 50 30" style="display: block; margin: 0 auto;">
+                <defs>
+                    <marker id="arrowhead-${Date.now()}-${Math.random()}" markerWidth="6" markerHeight="4" 
+                            refX="6" refY="2" orient="auto" fill="#007bff">
+                        <polygon points="0 0, 6 2, 0 4" />
+                    </marker>
+                </defs>
+                <line x1="25" y1="15" 
+                      x2="${25 + arrowX}" y2="${15 + arrowY}" 
+                      stroke="#007bff" stroke-width="2" 
+                      marker-end="url(#arrowhead-${Date.now()}-${Math.random()})" />
+                <text x="25" y="28" text-anchor="middle" font-size="8" fill="#666">
+                    ${magnitude.toFixed(1)}
+                </text>
+            </svg>
+        `;
+        
+        return arrowSvg;
+    }
+    
+    function drawClickedPoint(x, y) {
+        ctx.fillStyle = '#dc3545';
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+    
+    function addResultRow(clickNum, x, y, score) {
+        const gradient = calculateGradient(x, y);
+        const row = resultsBody.insertRow();
+        
+        // Add cells
+        row.insertCell(0).textContent = clickNum;
+        row.insertCell(1).textContent = Math.round(x);
+        row.insertCell(2).textContent = Math.round(y);
+        
+        const scoreCell = row.insertCell(3);
+        scoreCell.textContent = score;
+        scoreCell.className = 'score-cell ' + (score >= 70 ? 'score-high' : score >= 30 ? 'score-medium' : 'score-low');
+        
+        // Add gradient arrow cell
+        const gradientCell = row.insertCell(4);
+        gradientCell.innerHTML = createGradientArrow(gradient);
+        gradientCell.style.textAlign = 'center';
+    }
+    
+    function updateClickCounter() {
+        clickCountElement.textContent = clickCount;
+        
+        if (clickCount >= maxClicks) {
+            canvas.classList.add('disabled');
+            canvas.style.cursor = 'not-allowed';
+            if (completeBtn) {
+                completeBtn.disabled = false;
+            }
+        }
+    }
+    
+    function clearAllPoints() {
+        // Reset click counter
+        clickCount = 0;
+        clickedPoints.length = 0;
+        
+        // Clear the canvas and redraw
+        initCanvas();
+        
+        // Clear the results table
+        resultsBody.innerHTML = '';
+        
+        // Update counter and enable canvas
+        canvas.classList.remove('disabled');
+        canvas.style.cursor = 'crosshair';
+        updateClickCounter();
+        
+        if (completeBtn) {
+            completeBtn.disabled = true;
+        }
+    }
+    
+    // Canvas click handler
+    canvas.addEventListener('click', function(event) {
+        if (clickCount >= maxClicks) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Check if click is within canvas bounds (allow anywhere within canvas)
+        if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
+            
+            clickCount++;
+            const score = calculateOverlapScore(x, y);
+            
+            // Draw the clicked point
+            drawClickedPoint(x, y);
+            
+            // Add to results table
+            addResultRow(clickCount, x, y, score);
+            
+            // Store the point
+            clickedPoints.push({x: x, y: y, score: score});
+            
+            // Update counter
+            updateClickCounter();
+        }
+    });
+    
+    // Complete step function
+    window.completeStep = function() {
+        if (clickCount < maxClicks) {
+            if (!confirm(`You've only used ${clickCount} out of ${maxClicks} clicks. Are you sure you want to complete this step?`)) {
+                return;
+            }
+        }
+        
+        // Submit the results (you can add AJAX call here if needed)
+        const results = {
+            clicks: clickedPoints,
+            total_clicks: clickCount
+        };
+        
+        // For now, just redirect to the next step
+        window.location.href = "{% url 'overlap:complete_step' matchup.id %}";
+    };
+    
+    // Initialize canvas
+    initCanvas();
+});
 </script>
 {% endblock %}
