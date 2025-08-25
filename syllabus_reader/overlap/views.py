@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 import json
 
@@ -339,6 +340,12 @@ def step4(request, matchup_id):
         messages.success(request, "Step 4 completed successfully!")
         return redirect('overlap:complete_step', matchup_id=matchup_id)
     
+    # Get instructions for this step
+    instructions = []
+    game_step = matchup.ai_game.get_step_by_number(4)
+    if game_step:
+        instructions = game_step.get_instructions_for_user(request.user)
+    
     context = {
         'matchup': matchup,
         'team': user_team,
@@ -351,6 +358,9 @@ def step4(request, matchup_id):
         'allow_form_submission': allow_form_submission,
         'opponent_circle_x': int(opponent_circle_x),
         'opponent_circle_y': int(opponent_circle_y),
+        'instructions': instructions,
+        'existing_clicks': team_data.evaluation_clicks,
+        'existing_click_count': team_data.click_count,
     }
     
     return render(request, 'overlap/step4.html', context)
@@ -432,3 +442,97 @@ def save_data(request, matchup_id):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+@teacher_can_view_team
+def save_strategy(request, matchup_id):
+    """Save team's evaluation strategy for step 4"""
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('overlap:step4', matchup_id=matchup_id)
+    
+    matchup = get_object_or_404(GameMatchup, id=matchup_id)
+    
+    # Get the appropriate team (user's team, not teacher's viewing team)
+    user_team = Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or \
+                Team.objects.filter(members=request.user, matchups_as_team2=matchup).first()
+    
+    if not user_team:
+        messages.error(request, "You are not part of a team for this game.")
+        return redirect('aigames:student_dashboard')
+    
+    # Don't allow teachers to save strategy when viewing
+    if hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode:
+        messages.error(request, "Teachers cannot save strategies while viewing team data.")
+        return redirect('overlap:step4', matchup_id=matchup_id)
+    
+    team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
+    
+    # Get strategy from form
+    strategy = request.POST.get('strategy', '').strip()
+    
+    # Validate strategy length
+    if len(strategy) > 500:
+        if request.headers.get('Content-Type') == 'application/x-www-form-urlencoded' and 'XMLHttpRequest' in request.META.get('HTTP_X_REQUESTED_WITH', ''):
+            return JsonResponse({'success': False, 'error': 'Strategy cannot exceed 500 characters.'})
+        messages.error(request, "Strategy cannot exceed 500 characters.")
+        return redirect('overlap:step4', matchup_id=matchup_id)
+    
+    # Save strategy
+    team_data.evaluation_strategy = strategy
+    team_data.save()
+    
+    # Check if this is an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/x-www-form-urlencoded' in request.headers.get('Content-Type', ''):
+        return JsonResponse({'success': True})
+    
+    messages.success(request, "Evaluation strategy saved successfully!")
+    return redirect('overlap:step4', matchup_id=matchup_id)
+
+
+@login_required
+@require_POST
+def save_click(request, matchup_id):
+    """Save a click point to the database via AJAX"""
+    try:
+        matchup = get_object_or_404(GameMatchup, id=matchup_id)
+        
+        # Get the appropriate team (user's team, not teacher's viewing team)
+        user_team = Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or \
+                    Team.objects.filter(members=request.user, matchups_as_team2=matchup).first()
+        
+        if not user_team:
+            return JsonResponse({'success': False, 'error': 'You are not part of a team for this game.'})
+        
+        # Don't allow teachers to save clicks when viewing
+        if hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode:
+            return JsonResponse({'success': False, 'error': 'Teachers cannot save clicks while viewing team data.'})
+        
+        team_data, created = TeamOverlapData.objects.get_or_create(
+            team=user_team,
+            matchup=matchup
+        )
+        
+        # Get click data from request
+        x = float(request.POST.get('x'))
+        y = float(request.POST.get('y'))
+        
+        # Initialize clicks list if None
+        if team_data.evaluation_clicks is None:
+            team_data.evaluation_clicks = []
+        
+        # Add new click (limit to 12)
+        if len(team_data.evaluation_clicks) < 12:
+            team_data.evaluation_clicks.append({'x': x, 'y': y})
+            team_data.click_count = len(team_data.evaluation_clicks)
+            team_data.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'click_count': team_data.click_count,
+            'total_clicks': len(team_data.evaluation_clicks)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

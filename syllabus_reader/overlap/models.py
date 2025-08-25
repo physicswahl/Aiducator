@@ -38,6 +38,9 @@ class TeamOverlapData(models.Model):
     placement_notes = models.TextField(blank=True, help_text="Notes about circle placement strategy")
     
     # Final results (Step 4)
+    evaluation_strategy = models.TextField(blank=True, help_text="Team's strategy for evaluating opponent's circle")
+    evaluation_clicks = models.JSONField(default=list, blank=True, help_text="Stored click data as JSON")
+    click_count = models.IntegerField(default=0, help_text="Number of clicks made")
     final_score = models.FloatField(null=True, blank=True)
     conclusions = models.TextField(blank=True)
     game_completed = models.BooleanField(default=False)

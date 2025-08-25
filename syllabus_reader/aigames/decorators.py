@@ -39,7 +39,7 @@ def teacher_can_view_team(view_func):
             
             # Check if user is a student in one of the teams
             elif request.user.profile.role == 'student':
-                user_teams = request.user.profile.teams.all()
+                user_teams = request.user.teams.all()  # Fixed: use teams directly, not profile.teams
                 if matchup.team1 in user_teams or matchup.team2 in user_teams:
                     user_can_access = True
                     is_teacher = False

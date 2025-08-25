@@ -84,6 +84,16 @@
     .score-high { color: #28a745; }
     .score-medium { color: #ffc107; }
     .score-low { color: #dc3545; }
+    
+    .best-score-badge {
+        background-color: #28a745 !important;
+        color: white !important;
+        padding: 2px 6px !important;
+        border-radius: 10px !important;
+        font-size: 10px !important;
+        font-weight: bold !important;
+        margin-left: 5px !important;
+    }
 </style>
 {% endblock %}
 
@@ -114,34 +124,7 @@
                 </div>
                 
                 <div class="card-body">
-                    <!-- Progress Indicator -->
-                    <div class="step-progress">
-                        <h5>Progress</h5>
-                        <div class="progress-steps">
-                            {% for i in "1234"|make_list %}
-                                <span class="progress-step {% if current_step == i|add:0 %}active{% endif %} {% if current_step > i|add:0 %}completed{% endif %}">
-                                    Step {{ i }}
-                                </span>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Evaluation Info -->
-                    {% if not is_teacher_viewing %}
-                        <div class="evaluation-info">
-                            <h5><i class="fas fa-target"></i> Circle Evaluation</h5>
-                            <p>Click on the canvas to evaluate overlap scores. You're evaluating against the circle placed by the opposing team in Step 3.</p>
-                            <p><strong>Your opponent's circle:</strong> {{ opponent_team.name }}</p>
-                        </div>
-                    {% endif %}
-
-                    <!-- Click Counter and Controls -->
-                    <div class="click-counter">
-                        <span id="clickCount">0</span> / 12 clicks used
-                        <button id="clearPointsBtn" class="btn btn-warning btn-sm ms-3" onclick="clearAllPoints()">
-                            <i class="fas fa-eraser"></i> Clear Points
-                        </button>
-                    </div>
+                  
 
                     <!-- Canvas and Results Layout -->
                     <div class="row">
@@ -149,6 +132,13 @@
                             <!-- Canvas -->
                             <div class="canvas-container">
                                 <canvas id="evaluationCanvas" width="400" height="300"></canvas>
+                            </div>
+                            
+                            <!-- Canvas Controls -->
+                            <div class="mt-3 text-center">
+                                <p class="mb-2">
+                                    <strong>Clicks: <span id="clickCount">0</span> / 12</strong>
+                                </p>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -177,6 +167,43 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Strategy Input -->
+                    {% if not is_teacher_viewing %}
+                        <div class="card mt-3 mb-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-lightbulb"></i> Strategy</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="strategyForm" method="post" action="{% url 'overlap:save_strategy' matchup.id %}">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <textarea class="form-control" 
+                                                  id="strategy" 
+                                                  name="strategy" 
+                                                  rows="3" 
+                                                  placeholder="Explain your approach to finding the other team's circle..."
+                                                  maxlength="500">{{ team_data.evaluation_strategy|default:'' }}</textarea>
+                                        <small class="form-text text-muted">
+                                            <span id="charCount">{{ team_data.evaluation_strategy|length|default:0 }}</span>/500 characters
+                                        </small>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Teacher view of strategy -->
+                        {% if team_data.evaluation_strategy %}
+                            <div class="card mt-3 mb-3">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-lightbulb"></i> Team's Evaluation Strategy</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">{{ team_data.evaluation_strategy }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
 
                 <!-- Navigation -->
@@ -210,20 +237,35 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
-        <h6>Objective</h6>
-        <p>Evaluate overlap scores by clicking on the canvas. You can click up to 12 times to test different positions.</p>
-        
-        <h6>How it works</h6>
-        <ul>
-            <li>The canvas shows a greyed-out evaluation area</li>
-            <li>Click anywhere to test overlap with the opposing team's circle</li>
-            <li>Red points will appear showing your click positions</li>
-            <li>Each click calculates an overlap score based on the opponent's circle from Step 3</li>
-            <li>Results are recorded in the table below</li>
-        </ul>
-        
-        <h6>Scoring</h6>
-        <p>Overlap scores range from 0 (no overlap) to 100 (maximum overlap) based on how much your click position would overlap with the opponent's circle.</p>
+        {% if instructions %}
+            {% for instruction in instructions %}
+                <div class="instruction-item mb-3">
+                    {% if instruction.title %}
+                        <h6>{{ instruction.title }}</h6>
+                    {% endif %}
+                    {% if instruction.content %}
+                        <div class="instruction-content">
+                            {{ instruction.content|safe }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <h6>Objective</h6>
+            <p>Evaluate overlap scores by clicking on the canvas. You can click up to 12 times to test different positions.</p>
+            
+            <h6>How it works</h6>
+            <ul>
+                <li>The canvas shows a greyed-out evaluation area</li>
+                <li>Click anywhere to test overlap with the opposing team's circle</li>
+                <li>Red points will appear showing your click positions</li>
+                <li>Each click calculates an overlap score based on the opponent's circle from Step 3</li>
+                <li>Results are recorded in the table below</li>
+            </ul>
+            
+            <h6>Scoring</h6>
+            <p>Overlap scores range from 0 (no overlap) to 100 (maximum overlap) based on how much your click position would overlap with the opponent's circle.</p>
+        {% endif %}
     </div>
 </div>
 
@@ -238,6 +280,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let clickCount = 0;
     const maxClicks = 12;
     const clickedPoints = [];
+    
+    // Load existing clicks from database
+    const existingClicks = {{ existing_clicks|default:"[]"|safe }};
     
     // Opponent's circle data (from step 3)
     const opponentCircle = {
@@ -267,6 +312,31 @@ document.addEventListener('DOMContentLoaded', function() {
                       canvas.width - 2 * circleRadius, 
                       canvas.height - 2 * circleRadius);
         ctx.setLineDash([]);
+        
+        // Load and draw existing clicks
+        loadExistingClicks();
+    }
+    
+    function loadExistingClicks() {
+        if (existingClicks && Array.isArray(existingClicks)) {
+            existingClicks.forEach(function(click, index) {
+                const x = click.x;
+                const y = click.y;
+                const score = calculateOverlapScore(x, y);
+                
+                // Draw the point
+                drawClickedPoint(x, y);
+                
+                // Add to results table
+                addResultRow(index + 1, x, y, score);
+                
+                // Add to local storage
+                clickedPoints.push({x: x, y: y, score: score});
+                clickCount++;
+            });
+            
+            updateClickCounter();
+        }
     }
     
     function calculateOverlapScore(x, y) {
@@ -316,30 +386,39 @@ document.addEventListener('DOMContentLoaded', function() {
             return '<span class="text-muted">~</span>'; // No significant gradient
         }
         
-        // Normalize and scale the gradient for visualization
-        const scale = 20; // Scale factor for arrow size
+        // Scale arrow size based on gradient magnitude
+        const minScale = 8;   // Minimum arrow length
+        const maxScale = 25;  // Maximum arrow length
+        const scale = Math.min(maxScale, minScale + magnitude * 2); // Scale factor based on magnitude
+        
+        // Normalize direction
         const arrowX = (gradient.x / magnitude) * scale;
         const arrowY = (gradient.y / magnitude) * scale;
         
         // Calculate angle for rotation
         const angle = Math.atan2(arrowY, arrowX) * 180 / Math.PI;
         
-        // Create SVG arrow
+        // Scale SVG viewbox and arrow thickness based on magnitude
+        const svgSize = Math.min(60, 30 + magnitude * 3); // Dynamic SVG size
+        const strokeWidth = Math.max(1, Math.min(4, magnitude * 0.3)); // Dynamic stroke width
+        const arrowheadSize = Math.max(4, Math.min(8, 3 + magnitude * 0.2)); // Dynamic arrowhead size
+        
+        // Create unique ID for this arrow's marker
+        const markerId = `arrowhead-${Date.now()}-${Math.random()}`;
+        
+        // Create SVG arrow with size proportional to gradient magnitude
         const arrowSvg = `
-            <svg width="50" height="30" viewBox="0 0 50 30" style="display: block; margin: 0 auto;">
+            <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}" style="display: block; margin: 0 auto;">
                 <defs>
-                    <marker id="arrowhead-${Date.now()}-${Math.random()}" markerWidth="6" markerHeight="4" 
-                            refX="6" refY="2" orient="auto" fill="#007bff">
-                        <polygon points="0 0, 6 2, 0 4" />
+                    <marker id="${markerId}" markerWidth="${arrowheadSize}" markerHeight="${arrowheadSize}" 
+                            refX="${arrowheadSize}" refY="${arrowheadSize/2}" orient="auto" fill="#007bff">
+                        <polygon points="0 0, ${arrowheadSize} ${arrowheadSize/2}, 0 ${arrowheadSize}" />
                     </marker>
                 </defs>
-                <line x1="25" y1="15" 
-                      x2="${25 + arrowX}" y2="${15 + arrowY}" 
-                      stroke="#007bff" stroke-width="2" 
-                      marker-end="url(#arrowhead-${Date.now()}-${Math.random()})" />
-                <text x="25" y="28" text-anchor="middle" font-size="8" fill="#666">
-                    ${magnitude.toFixed(1)}
-                </text>
+                <line x1="${svgSize/2}" y1="${svgSize/2}" 
+                      x2="${svgSize/2 + arrowX}" y2="${svgSize/2 + arrowY}" 
+                      stroke="#007bff" stroke-width="${strokeWidth}" 
+                      marker-end="url(#${markerId})" />
             </svg>
         `;
         
@@ -372,43 +451,143 @@ document.addEventListener('DOMContentLoaded', function() {
         gradientCell.style.textAlign = 'center';
     }
     
+    function drawOpponentCircle() {
+        // Draw opponent's circle in a shaded form
+        ctx.fillStyle = 'rgba(0, 123, 255, 0.3)'; // Semi-transparent blue
+        ctx.strokeStyle = '#007bff'; // Blue border
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(opponentCircle.x, opponentCircle.y, opponentCircle.radius, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Add a label
+        ctx.fillStyle = '#007bff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Opponent Circle', opponentCircle.x, opponentCircle.y - opponentCircle.radius - 10);
+    }
+    
+    function highlightBestScore() {
+        // Find the best (highest) score
+        let bestScore = -1;
+        let bestRowIndex = -1;
+        
+        for (let i = 0; i < clickedPoints.length; i++) {
+            if (clickedPoints[i].score > bestScore) {
+                bestScore = clickedPoints[i].score;
+                bestRowIndex = i;
+            }
+        }
+        
+        // Highlight the row with the best score
+        if (bestRowIndex >= 0 && resultsBody.rows[bestRowIndex]) {
+            const row = resultsBody.rows[bestRowIndex];
+            row.style.backgroundColor = '#d4edda'; // Light green background
+            row.style.border = '2px solid #28a745'; // Green border
+            
+            // Add a badge to indicate best score
+            const bestScoreCell = row.cells[3]; // Score cell
+            if (!bestScoreCell.querySelector('.best-score-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'best-score-badge badge badge-success ms-1';
+                badge.style.fontSize = '10px';
+                badge.textContent = 'BEST';
+                bestScoreCell.appendChild(badge);
+            }
+        }
+    }
+    
     function updateClickCounter() {
         clickCountElement.textContent = clickCount;
         
         if (clickCount >= maxClicks) {
             canvas.classList.add('disabled');
             canvas.style.cursor = 'not-allowed';
-            if (completeBtn) {
-                completeBtn.disabled = false;
-            }
+            
+            // Show opponent circle and highlight best score when 12 clicks reached
+            drawOpponentCircle();
+            highlightBestScore();
+        }
+        
+        // Update complete button based on completion requirements
+        updateCompleteButton();
+    }
+    
+    function updateCompleteButton() {
+        if (completeBtn) {
+            const strategyLength = document.getElementById('strategy') ? document.getElementById('strategy').value.length : 0;
+            const hasRequiredClicks = clickCount >= maxClicks;
+            const hasRequiredStrategy = strategyLength >= 100;
+            
+            completeBtn.disabled = !(hasRequiredClicks && hasRequiredStrategy);
+            
+            // Always show just "Complete Step"
+            completeBtn.textContent = 'Complete Step';
         }
     }
     
-    function clearAllPoints() {
-        // Reset click counter
-        clickCount = 0;
-        clickedPoints.length = 0;
-        
-        // Clear the canvas and redraw
-        initCanvas();
-        
-        // Clear the results table
-        resultsBody.innerHTML = '';
-        
-        // Update counter and enable canvas
-        canvas.classList.remove('disabled');
-        canvas.style.cursor = 'crosshair';
-        updateClickCounter();
-        
-        if (completeBtn) {
-            completeBtn.disabled = true;
-        }
+    function saveClickToDatabase(x, y) {
+        // Save click to database via AJAX
+        fetch('{% url "overlap:save_click" matchup.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `x=${x}&y=${y}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('Failed to save click:', data.error);
+                alert('Failed to save click: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving click:', error);
+        });
+    }
+    
+    function saveStrategyToDatabase(strategy) {
+        // Save strategy to database via AJAX
+        fetch('{% url "overlap:save_strategy" matchup.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `strategy=${encodeURIComponent(strategy)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('Failed to save strategy:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving strategy:', error);
+        });
+    }
+    
+    // Debounce function to prevent too many API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
     
     // Canvas click handler
     canvas.addEventListener('click', function(event) {
         if (clickCount >= maxClicks) return;
         
+        {% if not is_teacher_viewing %}
         const rect = canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
@@ -425,34 +604,80 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add to results table
             addResultRow(clickCount, x, y, score);
             
-            // Store the point
+            // Store the point locally
             clickedPoints.push({x: x, y: y, score: score});
+            
+            // Save to database
+            saveClickToDatabase(x, y);
             
             // Update counter
             updateClickCounter();
         }
+        {% endif %}
     });
     
     // Complete step function
     window.completeStep = function() {
+        const strategyLength = document.getElementById('strategy') ? document.getElementById('strategy').value.length : 0;
+        
         if (clickCount < maxClicks) {
-            if (!confirm(`You've only used ${clickCount} out of ${maxClicks} clicks. Are you sure you want to complete this step?`)) {
-                return;
-            }
+            alert(`You need exactly ${maxClicks} clicks to complete this step. You currently have ${clickCount} clicks.`);
+            return;
         }
         
-        // Submit the results (you can add AJAX call here if needed)
+        if (strategyLength < 100) {
+            alert(`Your strategy must be at least 100 characters long. You currently have ${strategyLength} characters.`);
+            return;
+        }
+        
+        // Submit the results
         const results = {
             clicks: clickedPoints,
             total_clicks: clickCount
         };
         
-        // For now, just redirect to the next step
+        // Redirect to the next step
         window.location.href = "{% url 'overlap:complete_step' matchup.id %}";
     };
     
     // Initialize canvas
     initCanvas();
+    
+    // Strategy character counter and auto-save
+    const strategyTextarea = document.getElementById('strategy');
+    const charCountElement = document.getElementById('charCount');
+    
+    // Create debounced save function (saves 1 second after user stops typing)
+    const debouncedSaveStrategy = debounce(saveStrategyToDatabase, 1000);
+    
+    if (strategyTextarea && charCountElement) {
+        strategyTextarea.addEventListener('input', function() {
+            const currentLength = this.value.length;
+            charCountElement.textContent = currentLength;
+            
+            // Change color based on length
+            if (currentLength >= 100) {
+                charCountElement.style.color = '#28a745'; // Green
+            } else if (currentLength > 450) {
+                charCountElement.style.color = '#dc3545'; // Red
+            } else if (currentLength > 400) {
+                charCountElement.style.color = '#ffc107'; // Yellow
+            } else {
+                charCountElement.style.color = '#6c757d'; // Default grey
+            }
+            
+            // Update complete button
+            updateCompleteButton();
+            
+            {% if not is_teacher_viewing %}
+            // Auto-save strategy (debounced)
+            debouncedSaveStrategy(this.value);
+            {% endif %}
+        });
+        
+        // Trigger initial update
+        strategyTextarea.dispatchEvent(new Event('input'));
+    }
 });
 </script>
 {% endblock %}
