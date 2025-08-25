@@ -188,27 +188,12 @@ class GameStep(models.Model):
             return fallback_url
     
     def get_instruction_chain_for_role(self, role):
-        """Get the linked chain of instructions for a specific role in this step"""
-        # Find the first instruction (one with no incoming links)
-        first_instruction = self.instruction_steps.filter(
+        """Get all instructions for a specific role in this step"""
+        # Simply return all active instructions for the role, ordered by ID
+        return list(self.instruction_steps.filter(
             role=role,
-            previous_instruction__isnull=True,
             is_active=True
-        ).first()
-        
-        if not first_instruction:
-            return []
-        
-        # Build the chain by following links
-        chain = []
-        current = first_instruction
-        while current:
-            chain.append(current)
-            current = current.next_instruction
-            if current and current.id in [inst.id for inst in chain]:  # Prevent infinite loops
-                break
-        
-        return chain
+        ).order_by('id'))
     
     def get_instructions_for_user(self, user):
         """Get the appropriate instruction chain based on user role"""
@@ -705,7 +690,6 @@ class MatchupStepProgress(models.Model):
     class Meta:
         unique_together = ['matchup', 'game_step']  # One progress record per step per matchup
         ordering = ['matchup', 'game_step__step_number']
-
 
 class TeamStepValidation(models.Model):
     """Tracks teacher validation for each team's work on validation-required steps"""
