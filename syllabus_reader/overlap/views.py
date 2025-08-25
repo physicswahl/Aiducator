@@ -10,7 +10,6 @@ import json
 from aigames.models import Team, GameMatchup, MatchupStepProgress, GameStep
 from aigames.decorators import teacher_can_view_team, get_user_team_or_viewing_team, should_allow_form_submission
 from .models import TeamOverlapData
-from .constants import DEFAULT_SENSITIVITY, DEFAULT_THRESHOLD, DEFAULT_MODE, DEFAULT_OVERLAP_PERCENTAGE
 
 
 def get_overlap_game_step_info(step_number):
