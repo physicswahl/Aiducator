@@ -5,6 +5,7 @@ from django.http import HttpResponse, JsonResponse
 from django.template.loader import get_template
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.urls import reverse
 from django.db import transaction
 import json
 import math
@@ -293,6 +294,12 @@ def step3(request, matchup_id):
         'total_steps': total_steps,
         'has_next_step': has_next_step,
         'next_step_accessible': next_step_accessible,
+        
+        # Variables for gamepage template
+        'step_name': 'Step 3: Rule Application',
+        'current_step': 3,
+        'previous_step_url': reverse('phoneme_density:step2', kwargs={'matchup_id': matchup_id}),
+        'next_step_url': reverse('phoneme_density:step4', kwargs={'matchup_id': matchup_id}) if has_next_step else None,
     }
     
     return render(request, 'phoneme_density/step3.html', context)
