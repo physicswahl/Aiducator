@@ -27,7 +27,9 @@ The `gamepage.html` template provides a standardized base template for all AI ga
   - **Previous Step**: Available for all steps except step 1
   - **Submit Button**: For steps requiring teacher validation
   - **Next Step**: For navigation to next step when accessible
-  - **Complete/Final**: For final steps
+  - **Final Step Submit**: For final steps that require submission
+  - **Game Ended**: For completed/validated games
+  - **Awaiting Validation**: For games pending teacher validation
 
 ### 5. Common Styling
 - Bootstrap-based responsive design
@@ -40,7 +42,7 @@ The `gamepage.html` template provides a standardized base template for all AI ga
 ### Basic Template Structure
 
 ```django
-{% extends 'overlap/gamepage.html' %}
+{% extends 'aigames/gamepage.html' %}
 {% load static %}
 
 {% block extra_step_css %}
@@ -80,8 +82,10 @@ context = {
     'submit_button_text': 'Submit for Teacher Validation',
     'submit_disabled_text': 'Complete requirements to submit',
     
-    # Final step
-    'completion_url': reverse('overlap:complete_step', args=[matchup.id]),
+    # Final step variables
+    'show_final_submit': True,  # If final step requires submission
+    'game_validated': False,  # If game has been validated by teacher
+}
 }
 ```
 
@@ -91,13 +95,22 @@ If you need custom navigation buttons, override the `navigation_buttons` block:
 
 ```django
 {% block navigation_buttons %}
-    <a href="{% url 'overlap:step3' matchup.id %}" class="btn btn-outline-light">
-        <i class="fas fa-arrow-left me-1"></i> Previous Step
-    </a>
+    <!-- Previous Step Button -->
+    {% if current_step > 1 %}
+        <a href="{% url 'overlap:step1' matchup.id %}" class="btn btn-outline-light">
+            <i class="fas fa-arrow-left me-1"></i> Previous Step
+        </a>
+    {% endif %}
     
+    <!-- Custom Submit Button -->
     <button type="button" class="btn btn-light" onclick="submitStep()">
-        Submit for Teacher Validation
+        <i class="fas fa-paper-plane me-1"></i> Submit for Teacher Validation
     </button>
+    
+    <!-- Or Custom Next Step Button -->
+    <a href="{% url 'overlap:step3' matchup.id %}" class="btn btn-light">
+        Next Step <i class="fas fa-arrow-right ms-1"></i>
+    </a>
 {% endblock %}
 ```
 
@@ -119,6 +132,19 @@ For steps that require submission, override the `submit_function` block:
     }
 {% endblock %}
 ```
+
+### Navigation Button Logic
+
+The template automatically handles different navigation scenarios:
+
+1. **Regular Steps**: Shows "Previous Step" (if not step 1) and either "Next Step" or submit button
+2. **Steps with Submission**: Shows submit button with validation state
+3. **Final Steps**: Shows different buttons based on game state:
+   - **Final Submit**: If `show_final_submit` is True and step can be submitted
+   - **Game Ended**: If `game_validated` is True (game completed)
+   - **Awaiting Validation**: Default state for final steps pending teacher review
+
+The navigation automatically adapts based on the context variables provided.
 
 ### Available CSS Classes
 
@@ -157,7 +183,7 @@ To convert existing step templates:
    {% extends 'syllabus/base.html' %}
    
    <!-- To -->
-   {% extends 'overlap/gamepage.html' %}
+   {% extends 'aigames/gamepage.html' %}
    ```
 
 2. **Move step-specific CSS:**
@@ -188,7 +214,7 @@ To convert existing step templates:
 
 ## Example Implementation
 
-See `step1_new.html` and `step4_new.html` for complete examples of how to implement different types of steps using this base template.
+See the overlap app's step templates for complete examples of how to implement different types of steps using this base template.
 
 ## Benefits
 
