@@ -204,6 +204,7 @@ def student_dashboard(request):
                         try:
                             game_step = GameStep.objects.get(ai_game=matchup.ai_game, step_number=current_step_number)
                             current_step_url = game_step.get_url(matchup.id)
+                            
                         except GameStep.DoesNotExist:
                             current_step_url = None
                         

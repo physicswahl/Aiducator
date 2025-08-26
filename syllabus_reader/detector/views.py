@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.urls import reverse
 from django.db import transaction
 import json
 
@@ -12,44 +13,10 @@ from .models import TeamDetectorData, DetectorSubmission
 from .constants import TOTAL_STEPS, STEP_NAMES
 
 
-def check_step_access(matchup, user, requested_step_number):
-    """
-    Check if a user can access a specific step in a matchup.
-    Returns (can_access, current_step, error_message)
-    """
-    # Get the user's team from the matchup
-    user_team = None
-    if user in matchup.team1.members.all():
-        user_team = matchup.team1
-    elif user in matchup.team2.members.all():
-        user_team = matchup.team2
-    
-    if not user_team:
-        return False, 1, "You are not part of this game."
-    
-    # Get or create team detector data
-    team_data, created = TeamDetectorData.objects.get_or_create(
-        matchup=matchup,
-        team=user_team
-    )
-    
-    # Check if the requested step is accessible
-    if not team_data.is_step_accessible(requested_step_number):
-        return False, team_data.current_step, f"You must complete previous steps before accessing Step {requested_step_number}."
-    
-    return True, team_data.current_step, None
-
-
 @login_required
 def step1(request, matchup_id):
     """Step 1: Setup & Configuration"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
-    
-    # Check access
-    can_access, current_step, error_msg = check_step_access(matchup, request.user, 1)
-    if not can_access:
-        messages.error(request, error_msg)
-        return redirect('aigames:student_dashboard')
     
     # Get user's team
     user_team = None
@@ -105,8 +72,11 @@ def step1(request, matchup_id):
         'current_step': 1,
         'step_name': STEP_NAMES.get(1, 'Step 1'),
         'has_next_step': True,
-        'next_step_accessible': team_data.is_step_accessible(2),
+        'next_step_accessible': True,  # Let aigames dashboard control navigation
         'instructions': instructions,
+        
+        # Variables for gamepage template
+        'next_step_url': reverse('detector:step2', kwargs={'matchup_id': matchup.id}),
     }
     
     return render(request, 'detector/step1.html', context)
@@ -116,12 +86,6 @@ def step1(request, matchup_id):
 def step2(request, matchup_id):
     """Step 2: Data Collection"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
-    
-    # Check access
-    can_access, current_step, error_msg = check_step_access(matchup, request.user, 2)
-    if not can_access:
-        messages.error(request, error_msg)
-        return redirect('aigames:student_dashboard')
     
     # Get user's team
     user_team = None
@@ -169,8 +133,12 @@ def step2(request, matchup_id):
         'step_name': STEP_NAMES.get(2, 'Step 2'),
         'has_previous_step': True,
         'has_next_step': True,
-        'next_step_accessible': team_data.is_step_accessible(3),
+        'next_step_accessible': True,  # Let aigames dashboard control navigation
         'instructions': instructions,
+        
+        # Variables for gamepage template
+        'previous_step_url': reverse('detector:step1', kwargs={'matchup_id': matchup_id}),
+        'next_step_url': reverse('detector:step3', kwargs={'matchup_id': matchup_id}) if 2 < TOTAL_STEPS else None,
     }
     
     return render(request, 'detector/step2.html', context)
@@ -180,12 +148,6 @@ def step2(request, matchup_id):
 def step3(request, matchup_id):
     """Step 3: Analysis & Detection"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
-    
-    # Check access
-    can_access, current_step, error_msg = check_step_access(matchup, request.user, 3)
-    if not can_access:
-        messages.error(request, error_msg)
-        return redirect('aigames:student_dashboard')
     
     # Get user's team
     user_team = None
@@ -233,7 +195,7 @@ def step3(request, matchup_id):
         'step_name': STEP_NAMES.get(3, 'Step 3'),
         'has_previous_step': True,
         'has_next_step': True,
-        'next_step_accessible': team_data.is_step_accessible(4),
+        'next_step_accessible': True,  # Let aigames dashboard control navigation
         'instructions': instructions,
     }
     
@@ -244,12 +206,6 @@ def step3(request, matchup_id):
 def step4(request, matchup_id):
     """Step 4: Results & Validation"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
-    
-    # Check access
-    can_access, current_step, error_msg = check_step_access(matchup, request.user, 4)
-    if not can_access:
-        messages.error(request, error_msg)
-        return redirect('aigames:student_dashboard')
     
     # Get user's team
     user_team = None
