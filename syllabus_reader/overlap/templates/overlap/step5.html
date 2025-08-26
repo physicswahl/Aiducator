@@ -1,4 +1,4 @@
-{% extends 'aigames/base.html' %}
+{% extends 'syllabus/base.html' %}
 {% load static %}
 
 {% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
@@ -194,6 +194,14 @@
         background: linear-gradient(135deg, #6f42c1, #5a32a3);
         color: white;
     }
+    
+    .performance-metric {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 0 8px 8px 0;
+    }
 </style>
 {% endblock %}
 
@@ -251,132 +259,102 @@
                         <div class="step-progress-bar"></div>
                     </div>
 
-                    <!-- Card 1: Team Scores -->
-                    <div class="game-card">
-                        <div class="card-header-custom">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-circle icon-trophy">
-                                    <i class="fas fa-trophy"></i>
-                                </div>
-                                <div>
-                                    <h5 class="card-title">Final Scores</h5>
-                                    <p class="card-subtitle">Performance summary for both teams</p>
-                                </div>
-                            </div>
+                    <!-- Card 1: Game Results -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-bullseye"></i> Final Game Results
+                            </h5>
                         </div>
-
-                        <!-- Result Banner -->
-                        {% if game_result == "victory" %}
-                            <div class="result-banner victory-banner">
-                                <i class="fas fa-crown"></i> Congratulations! Your team won!
-                            </div>
-                        {% elif game_result == "defeat" %}
-                            <div class="result-banner defeat-banner">
-                                <i class="fas fa-handshake"></i> Good game! Better luck next time!
-                            </div>
-                        {% else %}
-                            <div class="result-banner tie-banner">
-                                <i class="fas fa-balance-scale"></i> It's a tie! Both teams performed equally well!
-                            </div>
-                        {% endif %}
-
-                        <!-- Score Display -->
-                        <div class="score-display">
-                            <div class="score-team your-team-score">
-                                <div class="team-name">{{ team.name }}</div>
-                                <div class="score-number">{{ team_score }}</div>
-                                <div>Points</div>
-                            </div>
-                            <div class="score-team opponent-team-score">
-                                <div class="team-name">{{ opponent_team.name }}</div>
-                                <div class="score-number">{{ opponent_score }}</div>
-                                <div>Points</div>
-                            </div>
-                        </div>
-
-                        <!-- Score Breakdown -->
-                        <div class="mt-4">
-                            <h6><i class="fas fa-chart-line"></i> Scoring Breakdown</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <small class="text-muted">
-                                        <strong>Points are awarded for:</strong><br>
-                                        • Step Completion (8 pts per step)<br>
-                                        • Strategy Quality (up to 30 pts)<br>
-                                        • Engagement Level (up to 20 pts)<br>
-                                        • Circle Placement (up to 10 pts)
-                                    </small>
+                        <div class="card-body">
+                            <!-- Result Banner -->
+                            {% if game_result == "victory" %}
+                                <div class="result-banner victory-banner">
+                                    <i class="fas fa-crown"></i> Congratulations! Your team won!
                                 </div>
-                                <div class="col-md-6">
-                                    <small class="text-muted">
-                                        <strong>Your team's highlights:</strong><br>
-                                        • {{ team_data.click_count }} evaluation clicks made<br>
-                                        • {% if team_data.placement_notes %}Strategic placement documented{% else %}Basic placement approach{% endif %}<br>
-                                        • {% if team_data.evaluation_strategy %}Detailed evaluation strategy{% else %}Simple evaluation approach{% endif %}
-                                    </small>
+                            {% elif game_result == "defeat" %}
+                                <div class="result-banner defeat-banner">
+                                    <i class="fas fa-handshake"></i> Good game! Better luck next time!
+                                </div>
+                            {% else %}
+                                <div class="result-banner tie-banner">
+                                    <i class="fas fa-balance-scale"></i> It's a tie! Both teams performed equally well!
+                                </div>
+                            {% endif %}
+
+                            <!-- Score Display -->
+                            <div class="score-display">
+                                <div class="score-team your-team-score">
+                                    <div class="team-name">{{ team.name }}</div>
+                                    <div class="score-number">{{ team_score }}</div>
+                                    <div>Final Score</div>
+                                </div>
+                                <div class="score-team opponent-team-score">
+                                    <div class="team-name">{{ opponent_team.name }}</div>
+                                    <div class="score-number">{{ opponent_score }}</div>
+                                    <div>Final Score</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Game Analysis & Learning -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-graduation-cap"></i> Game Analysis & Learning
+                            </h5>
+                        </div>
+                        <div class="card-body">
+
+
+
+                        <!-- Key Lessons Learned -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-lightbulb"></i> Key Lessons Learned</h6>
+                            
+                            <div class="lesson-item">
+                                <div class="lesson-title">Strategic Planning is Essential</div>
+                                <div class="lesson-content">
+                                    Successful overlap detection requires careful consideration of placement strategy. Teams that documented their approach and reasoning typically performed better than those who placed circles randomly.
+                                </div>
+                            </div>
+
+                            <div class="lesson-item">
+                                <div class="lesson-title">Systematic Evaluation Beats Random Clicking</div>
+                                <div class="lesson-content">
+                                    Teams that used systematic approaches (like grid patterns or boundary testing) were more effective at evaluating opponent circles than those who clicked randomly. Pattern recognition and methodical testing are key skills in data analysis.
+                                </div>
+                            </div>
+
+                            <div class="lesson-item">
+                                <div class="lesson-title">Computational Thinking in Action</div>
+                                <div class="lesson-content">
+                                    This game demonstrates core computational thinking concepts: decomposition (breaking the problem into steps), pattern recognition (identifying optimal placement areas), abstraction (representing complex overlap calculations), and algorithms (systematic approaches to evaluation).
+                                </div>
+                            </div>
+
+                            <div class="lesson-item">
+                                <div class="lesson-title">Real-World Applications</div>
+                                <div class="lesson-content">
+                                    Overlap detection algorithms are used in many real-world scenarios: image processing, collision detection in games, geographic information systems (GIS), medical imaging analysis, and optimization problems in logistics and manufacturing.
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Card 2: Main Lessons Learned -->
-                    <div class="game-card">
-                        <div class="card-header-custom">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-circle icon-lightbulb">
-                                    <i class="fas fa-lightbulb"></i>
-                                </div>
-                                <div>
-                                    <h5 class="card-title">Key Lessons Learned</h5>
-                                    <p class="card-subtitle">Important insights from the overlap detection game</p>
-                                </div>
-                            </div>
+                    <!-- Card 3: Algorithmic Approach -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-code"></i> Algorithmic Approach
+                            </h5>
                         </div>
-
-                        <div class="lesson-item">
-                            <div class="lesson-title">Strategic Planning is Essential</div>
-                            <div class="lesson-content">
-                                Successful overlap detection requires careful consideration of placement strategy. Teams that documented their approach and reasoning typically performed better than those who placed circles randomly.
-                            </div>
-                        </div>
-
-                        <div class="lesson-item">
-                            <div class="lesson-title">Systematic Evaluation Beats Random Clicking</div>
-                            <div class="lesson-content">
-                                Teams that used systematic approaches (like grid patterns or boundary testing) were more effective at evaluating opponent circles than those who clicked randomly. Pattern recognition and methodical testing are key skills in data analysis.
-                            </div>
-                        </div>
-
-                        <div class="lesson-item">
-                            <div class="lesson-title">Computational Thinking in Action</div>
-                            <div class="lesson-content">
-                                This game demonstrates core computational thinking concepts: decomposition (breaking the problem into steps), pattern recognition (identifying optimal placement areas), abstraction (representing complex overlap calculations), and algorithms (systematic approaches to evaluation).
-                            </div>
-                        </div>
-
-                        <div class="lesson-item">
-                            <div class="lesson-title">Real-World Applications</div>
-                            <div class="lesson-content">
-                                Overlap detection algorithms are used in many real-world scenarios: image processing, collision detection in games, geographic information systems (GIS), medical imaging analysis, and optimization problems in logistics and manufacturing.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 3: Pseudocode for Optimal Overlap Detection -->
-                    <div class="game-card">
-                        <div class="card-header-custom">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-circle icon-code">
-                                    <i class="fas fa-code"></i>
-                                </div>
-                                <div>
-                                    <h5 class="card-title">Algorithmic Approach</h5>
-                                    <p class="card-subtitle">Pseudocode for finding optimal overlap placement</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="pseudocode-container">
+                        <div class="card-body">
+                            <p class="text-muted mb-3">Pseudocode for finding optimal overlap placement:</p>
+                            
+                            <div class="pseudocode-container">
 <span class="code-comment">// Algorithm to find optimal circle placement for maximum overlap</span>
 <span class="code-keyword">function</span> <span class="code-function">findOptimalOverlap</span>(<span class="code-variable">targetArea</span>, <span class="code-variable">circleRadius</span>) {
     <span class="code-variable">bestScore</span> = <span class="code-number">0</span>
@@ -421,15 +399,16 @@
     
     <span class="code-keyword">return</span> <span class="code-variable">overlapPixels</span>
 }
-                        </div>
+                            </div>
 
-                        <div class="mt-3">
-                            <h6><i class="fas fa-info-circle"></i> Algorithm Explanation</h6>
-                            <p class="text-muted">
-                                This pseudocode demonstrates a <strong>grid search algorithm</strong> combined with <strong>local optimization</strong>. 
-                                It systematically tests different positions, calculates overlap scores, and refines the search around promising areas. 
-                                This approach balances thoroughness with computational efficiency, similar to algorithms used in computer vision and optimization problems.
-                            </p>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    This pseudocode demonstrates a <strong>grid search algorithm</strong> combined with <strong>local optimization</strong>. 
+                                    It systematically tests different positions, calculates overlap scores, and refines the search around promising areas. 
+                                    This approach balances thoroughness with computational efficiency, similar to algorithms used in computer vision and optimization problems.
+                                </small>
+                            </div>
                         </div>
                     </div>
 

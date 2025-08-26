@@ -372,8 +372,8 @@ def step4(request, matchup_id):
         # Validation: must have 12 clicks and 100+ character strategy
         if team_data.click_count < 12:
             messages.error(request, "You must complete all 12 evaluation clicks before submitting.")
-        elif len(team_data.evaluation_strategy.strip()) < 100:
-            messages.error(request, "Your strategy must be at least 100 characters long before submitting.")
+        elif len(team_data.evaluation_strategy.strip()) < 70:
+            messages.error(request, "Your strategy must be at least 70 characters long before submitting.")
         else:
             team_data.step4_submitted = True
             team_data.save()
@@ -438,50 +438,61 @@ def step5(request, matchup_id):
     opponent_team = matchup.team1 if user_team == matchup.team2 else matchup.team2
     opponent_team_data = TeamOverlapData.objects.filter(team=opponent_team, matchup=matchup).first()
     
-    # Calculate team scores based on game performance
-    def calculate_team_score(team_data):
-        """Calculate team score based on various game metrics"""
-        score = 0
+    # Calculate final scores based on step 4 evaluation performance
+    def calculate_final_score(team_data, opponent_team_data):
+        """Calculate the final score based on step 4 evaluation performance"""
+        if not team_data.evaluation_clicks or not opponent_team_data:
+            return 0
         
-        # Base completion points (40 points max)
-        completion_steps = sum([
-            team_data.step1_completed,
-            team_data.step2_completed,
-            team_data.step3_completed,
-            team_data.step4_completed,
-            team_data.step5_completed
-        ])
-        score += completion_steps * 8  # 8 points per completed step
+        # Get opponent's circle position
+        if opponent_team_data.circle_x is None or opponent_team_data.circle_y is None:
+            return 0
+            
+        opponent_x = opponent_team_data.circle_x
+        opponent_y = opponent_team_data.circle_y
+        circle_radius = 40  # Standard circle radius
         
-        # Strategy quality points (30 points max)
-        if team_data.placement_notes and len(team_data.placement_notes.strip()) >= 50:
-            score += 15  # Good placement strategy
-        if team_data.evaluation_strategy and len(team_data.evaluation_strategy.strip()) >= 100:
-            score += 15  # Good evaluation strategy
+        # Calculate how many clicks hit the opponent's circle
+        hits = 0
+        total_clicks = len(team_data.evaluation_clicks)
+        
+        for click in team_data.evaluation_clicks:
+            click_x = click.get('x', 0)
+            click_y = click.get('y', 0)
             
-        # Engagement points (20 points max)
-        if team_data.click_count >= 12:
-            score += 20  # Completed all evaluation clicks
-        elif team_data.click_count >= 8:
-            score += 15  # Most evaluation clicks
-        elif team_data.click_count >= 4:
-            score += 10  # Some evaluation clicks
+            # Calculate distance from click to circle center
+            distance = ((click_x - opponent_x)**2 + (click_y - opponent_y)**2)**0.5
             
-        # Circle placement accuracy (10 points max)
-        if team_data.circle_x is not None and team_data.circle_y is not None:
-            # Bonus points for strategic placement (closer to center gets more points)
-            distance_from_center = ((team_data.circle_x - 200)**2 + (team_data.circle_y - 150)**2)**0.5
-            max_distance = 250  # approximate max distance from center
-            placement_score = max(0, 10 - (distance_from_center / max_distance) * 10)
-            score += placement_score
+            if distance <= circle_radius:
+                hits += 1
+        
+        # Calculate score: (hits / total_clicks) * 100, with bonus for completing all clicks
+        if total_clicks == 0:
+            return 0
             
-        return min(100, score)  # Cap at 100 points
+        base_score = (hits / total_clicks) * 70  # 70% of score from accuracy
+        completion_bonus = 30 if total_clicks >= 12 else (total_clicks / 12) * 30  # 30% for completion
+        
+        return min(100, base_score + completion_bonus)
     
-    # Calculate scores for both teams
-    team_score = calculate_team_score(team_data)
-    opponent_score = calculate_team_score(opponent_team_data) if opponent_team_data else 0
+    # Calculate final scores for both teams
+    team_final_score = calculate_final_score(team_data, opponent_team_data)
+    opponent_final_score = calculate_final_score(opponent_team_data, team_data) if opponent_team_data else 0
     
-    # Determine winner
+    # Store the final score if not already stored
+    if team_data.final_score is None:
+        team_data.final_score = team_final_score
+        team_data.save()
+    
+    if opponent_team_data and opponent_team_data.final_score is None:
+        opponent_team_data.final_score = opponent_final_score
+        opponent_team_data.save()
+    
+    # Use stored scores if available, otherwise use calculated
+    team_score = team_data.final_score if team_data.final_score is not None else team_final_score
+    opponent_score = opponent_team_data.final_score if (opponent_team_data and opponent_team_data.final_score is not None) else opponent_final_score
+    
+    # Determine winner based on final scores
     if team_score > opponent_score:
         game_result = "victory"
     elif opponent_score > team_score:
@@ -489,24 +500,36 @@ def step5(request, matchup_id):
     else:
         game_result = "tie"
     
+    # Calculate additional metrics for display
+    def get_hit_accuracy(team_data, opponent_team_data):
+        """Calculate hit accuracy percentage"""
+        if not team_data.evaluation_clicks or not opponent_team_data:
+            return 0
+            
+        if opponent_team_data.circle_x is None or opponent_team_data.circle_y is None:
+            return 0
+            
+        opponent_x = opponent_team_data.circle_x
+        opponent_y = opponent_team_data.circle_y
+        circle_radius = 40
+        
+        hits = 0
+        for click in team_data.evaluation_clicks:
+            click_x = click.get('x', 0)
+            click_y = click.get('y', 0)
+            distance = ((click_x - opponent_x)**2 + (click_y - opponent_y)**2)**0.5
+            if distance <= circle_radius:
+                hits += 1
+                
+        return (hits / len(team_data.evaluation_clicks)) * 100 if team_data.evaluation_clicks else 0
+    
+    team_hit_accuracy = get_hit_accuracy(team_data, opponent_team_data)
+    opponent_hit_accuracy = get_hit_accuracy(opponent_team_data, team_data) if opponent_team_data else 0
+    
     # Check if form submission should be allowed (not for teachers viewing)
     allow_form_submission = should_allow_form_submission(request)
     
-    # Automatically mark step 5 as completed since this is the final results step
-    if not team_data.step5_completed and not hasattr(request, 'teacher_viewing_mode'):
-        team_data.step5_completed = True
-        team_data.save()
-        
-        # Update step progress
-        step_progress, created = MatchupStepProgress.objects.get_or_create(
-            matchup=matchup,
-            step_number=5,
-            defaults={'is_completed': True, 'completed_at': timezone.now()}
-        )
-        if not step_progress.is_completed:
-            step_progress.is_completed = True
-            step_progress.completed_at = timezone.now()
-            step_progress.save()
+    # Note: Step 5 completion is handled by teacher validation, not automatic completion
     
     # Get instructions for this step
     instructions = []
@@ -529,6 +552,8 @@ def step5(request, matchup_id):
         'team_score': round(team_score, 1),
         'opponent_score': round(opponent_score, 1),
         'game_result': game_result,
+        'team_hit_accuracy': round(team_hit_accuracy, 1),
+        'opponent_hit_accuracy': round(opponent_hit_accuracy, 1),
     }
     
     return render(request, 'overlap/step5.html', context)
