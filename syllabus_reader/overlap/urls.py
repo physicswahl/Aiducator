@@ -11,8 +11,7 @@ urlpatterns = [
     path('matchup/<int:matchup_id>/step4/', views.step4, name='step4'),
     path('matchup/<int:matchup_id>/step5/', views.step5, name='step5'),
     
-    # Step completion and navigation
-    path('matchup/<int:matchup_id>/complete/', views.complete_step, name='complete_step'),
+    # Game management
     path('matchup/<int:matchup_id>/reset/', views.reset_game, name='reset_game'),
     
     # Strategy saving

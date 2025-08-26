@@ -1,10 +1,7 @@
-{% extends 'syllabus/base.html' %}
+{% extends 'overlap/gamepage.html' %}
 {% load static %}
 
-{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
-
-{% block extra_css %}
-<style>
+{% block extra_step_css %}
     .game-card {
         background: white;
         border: 1px solid #dee2e6;
@@ -127,8 +124,6 @@
         color: #495057;
         line-height: 1.5;
     }
-    
-    /* Pseudocode styling defined at end of CSS block */
     
     .step-progress {
         background: #e9ecef;
@@ -284,156 +279,103 @@
         color: #ffd700 !important;
         font-weight: 600;
     }
-</style>
 {% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <!-- Instructions Button -->
-    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
-        <button class="btn btn-primary" 
-                type="button" 
-                data-bs-toggle="offcanvas" 
-                data-bs-target="#instructionsOffcanvas"
-                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
-            Instructions
-        </button>
-    </div>
-
-    <!-- Instructions Offcanvas -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Step Instructions</h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body">
-            {% if instructions %}
-                {% for instruction in instructions %}
-                    <div class="mb-3">
-                        <p>{{ instruction.content|linebreaks }}</p>
+{% block step_content %}
+    <!-- Step 5 Specific Content -->
+    <div class="overlap-form-section">
+        <!-- Card 1: Game Results -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bullseye"></i> Final Game Results
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Result Banner -->
+                {% if game_result == "victory" %}
+                    <div class="result-banner victory-banner">
+                        <i class="fas fa-crown"></i> Congratulations! Your team won!
                     </div>
-                {% endfor %}
-            {% else %}
-                <p>Review the final results of your overlap detection game. This step shows your team's performance, key lessons learned, and the algorithmic approach to finding optimal overlaps.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="mb-0">{{ step_name }}</h4>
-                        <small class="text-muted">Step {{ current_step }} of {{ total_steps }} - Final Results</small>
+                {% elif game_result == "defeat" %}
+                    <div class="result-banner defeat-banner">
+                        <i class="fas fa-handshake"></i> Good game! Better luck next time!
                     </div>
-                    <div class="text-right">
-                        <span class="badge badge-info">{{ team.name }}</span>
-                        {% if matchup.ai_game.school %}
-                            <span class="badge badge-secondary">{{ matchup.ai_game.school.name }}</span>
-                        {% endif %}
+                {% else %}
+                    <div class="result-banner tie-banner">
+                        <i class="fas fa-balance-scale"></i> It's a tie! Both teams performed equally well!
+                    </div>
+                {% endif %}
+
+                <!-- Score Display -->
+                <div class="score-display">
+                    <div class="score-team your-team-score">
+                        <div class="team-name">{{ team.name }}</div>
+                        <div class="score-number">{{ team_score }}</div>
+                        <div>Final Score</div>
+                    </div>
+                    <div class="score-team opponent-team-score">
+                        <div class="team-name">{{ opponent_team.name }}</div>
+                        <div class="score-number">{{ opponent_score }}</div>
+                        <div>Final Score</div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="card-body">
-
-                    <!-- Card 1: Game Results -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-bullseye"></i> Final Game Results
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- Result Banner -->
-                            {% if game_result == "victory" %}
-                                <div class="result-banner victory-banner">
-                                    <i class="fas fa-crown"></i> Congratulations! Your team won!
-                                </div>
-                            {% elif game_result == "defeat" %}
-                                <div class="result-banner defeat-banner">
-                                    <i class="fas fa-handshake"></i> Good game! Better luck next time!
-                                </div>
-                            {% else %}
-                                <div class="result-banner tie-banner">
-                                    <i class="fas fa-balance-scale"></i> It's a tie! Both teams performed equally well!
-                                </div>
-                            {% endif %}
-
-                            <!-- Score Display -->
-                            <div class="score-display">
-                                <div class="score-team your-team-score">
-                                    <div class="team-name">{{ team.name }}</div>
-                                    <div class="score-number">{{ team_score }}</div>
-                                    <div>Final Score</div>
-                                </div>
-                                <div class="score-team opponent-team-score">
-                                    <div class="team-name">{{ opponent_team.name }}</div>
-                                    <div class="score-number">{{ opponent_score }}</div>
-                                    <div>Final Score</div>
-                                </div>
-                            </div>
-
+        <!-- Card 2: Game Analysis & Learning -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-graduation-cap"></i> Game Analysis & Learning
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Key Lessons Learned -->
+                <div class="mb-4">
+                    <h6><i class="fas fa-lightbulb"></i> Key Lessons Learned</h6>
+                    
+                    <div class="lesson-item">
+                        <div class="lesson-title">A Pattern Is Anything You Can Recognise</div>
+                        <div class="lesson-content">
+                            Our (simple) pattern was a circle on a fixed place on a screen.
                         </div>
                     </div>
 
-                    <!-- Card 2: Game Analysis & Learning -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-graduation-cap"></i> Game Analysis & Learning
-                            </h5>
+                    <div class="lesson-item">
+                        <div class="lesson-title">You Can Measure How Well Two Patterns Match</div>
+                        <div class="lesson-content">
+                            For our circle game, we used the area of overlap between the our circle and a hidden circle.
                         </div>
-                        <div class="card-body">
+                    </div>
 
+                    <div class="lesson-item">
+                        <div class="lesson-title">If You Can Measure It You Can Improve It</div>
+                        <div class="lesson-content">
+                            Once we had our measure, we could figure out how to do better, especially if we knew the direction which improved our measure.
+                        </div>
+                    </div>
 
-
-                        <!-- Key Lessons Learned -->
-                        <div class="mb-4">
-                            <h6><i class="fas fa-lightbulb"></i> Key Lessons Learned</h6>
-                            
-                            <div class="lesson-item">
-                                <div class="lesson-title">A Pattern Is Anything You Can Recognise</div>
-                                <div class="lesson-content">
-                                    Our (simple) pattern was a circle on a fixed place on a screen.
-                                </div>
-                            </div>
-
-                            <div class="lesson-item">
-                                <div class="lesson-title">You Can Measure How Well Two Patterns Match</div>
-                                <div class="lesson-content">
-                                    For our circle game, we used the area of overlap between the our circle and a hidden circle.
-                                </div>
-                            </div>
-
-                            <div class="lesson-item">
-                                <div class="lesson-title">If You Can Measure It You Can Improve It</div>
-                                <div class="lesson-content">
-                                    Once we had our measure, we could figure out how to do better, especially if we knew the direction which improved our measure.
-                                </div>
-                            </div>
-
-                            <div class="lesson-item">
-                                <div class="lesson-title">And That's AI in a (Very Small) Nutshell</div>
-                                <div class="lesson-content">
-                                    Try other games to dive into more advanced AI concepts and applications.    
-                                </div>
-                            </div>
+                    <div class="lesson-item">
+                        <div class="lesson-title">And That's AI in a (Very Small) Nutshell</div>
+                        <div class="lesson-content">
+                            Try other games to dive into more advanced AI concepts and applications.    
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                    <!-- Card 3: Algorithmic Approach -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-code"></i> Can you code a pattern finder?
-                            </h5>
-                        </div>
-                        <div class="card-body">
-
-                            <div class="pseudocode-container">
-                                <div class="code-content">
+        <!-- Card 3: Algorithmic Approach -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-code"></i> Can you code a pattern finder?
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="pseudocode-container">
+                    <div class="code-content">
 <div class="code-line"><span class="code-comment">// Algorithm to find optimal circle placement for maximum overlap</span></div>
 <div class="code-line"><span class="code-keyword">function</span> <span class="code-function">findOptimalOverlap</span><span class="code-bracket">(</span><span class="code-variable">targetArea</span>, <span class="code-variable">circleRadius</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestScore</span> <span class="code-operator">=</span> <span class="code-number">0</span></div>
@@ -451,39 +393,9 @@
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
 <div class="code-line"><span class="code-bracket">}</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                                                    </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Navigation -->
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        <div>
-                            <a href="{% url 'overlap:step4' matchup.id %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left"></i>
-                                ← Back to Step 4
-                            </a>
-                        </div>
-                        <div class="text-center">
-                            <span class="badge badge-success px-3 py-2">
-                                <i class="fas fa-flag-checkered"></i> Game Complete!
-                            </span>
-                        </div>
-                        <div>
-                            <a href="{% url 'overlap:complete_step' matchup.id %}" class="btn btn-primary">
-                                <i class="fas fa-trophy"></i>
-                                View Final Results →
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

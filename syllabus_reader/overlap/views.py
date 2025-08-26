@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.urls import reverse
 import json
 
-from aigames.models import Team, GameMatchup, MatchupStepProgress, GameStep
+from aigames.models import Team, GameMatchup, MatchupStepProgress, GameStep, TeamStepValidation
 from aigames.decorators import teacher_can_view_team, get_user_team_or_viewing_team, should_allow_form_submission
 from .models import TeamOverlapData
 
@@ -105,6 +105,11 @@ def step1(request, matchup_id):
         'current_sensitivity': sensitivity_level,
         'current_threshold': threshold_value,
         'current_mode': overlap_mode,
+        # Navigation context - not final step
+        'show_final_submit': False,
+        'can_submit': False,
+        'game_validated': False,
+        'step_submitted': step1_completed,
     }
     
     return render(request, 'overlap/step1.html', context)
@@ -186,6 +191,11 @@ def step2(request, matchup_id):
         'instructions': instructions,
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': should_allow_form_submission(request),
+        # Navigation context - not final step
+        'show_final_submit': False,
+        'can_submit': False,
+        'game_validated': False,
+        'step_submitted': step2_completed,
     }
     
     return render(request, 'overlap/step2.html', context)
@@ -312,6 +322,11 @@ def step3(request, matchup_id):
         'other_team_ready': other_team_ready,
         'instructions': instructions,
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
+        # Navigation context - not final step
+        'show_final_submit': False,
+        'can_submit': False,
+        'game_validated': False,
+        'step_submitted': step3_completed,
     }
     
     return render(request, 'overlap/step3.html', context)
@@ -421,6 +436,10 @@ def step4(request, matchup_id):
         'current_team_ready': current_team_ready,
         'other_team_ready': other_team_ready,
         'next_step_accessible': next_step_accessible,
+        # Navigation context - not final step
+        'show_final_submit': False,
+        'game_validated': False,
+        'step_submitted': step4_completed,
     }
     
     return render(request, 'overlap/step4.html', context)
@@ -542,7 +561,25 @@ def step5(request, matchup_id):
     # Check if form submission should be allowed (not for teachers viewing)
     allow_form_submission = should_allow_form_submission(request)
     
-    # Note: Step 5 completion is handled by teacher validation, not automatic completion
+    # Get step 5 game step
+    step5_game_step = matchup.ai_game.get_step_by_number(5)
+    
+    # Check if this step has been submitted and validated
+    step5_progress = MatchupStepProgress.objects.filter(
+        matchup=matchup, 
+        game_step=step5_game_step
+    ).first()
+    
+    # Check if this team's step 5 work has been validated by teacher
+    step5_validation = TeamStepValidation.objects.filter(
+        matchup=matchup,
+        team=user_team,
+        game_step=step5_game_step
+    ).first()
+    
+    # Step 5 is the final step - determine submission and validation status
+    step5_submitted = step5_progress.is_completed if step5_progress else False
+    step5_validated = step5_validation.is_validated if step5_validation else False
     
     # Get instructions for this step
     instructions = []
@@ -561,7 +598,6 @@ def step5(request, matchup_id):
         'total_steps': get_overlap_game_total_steps(),
         'has_next_step': False,
         'previous_step_url': reverse('overlap:step4', args=[matchup.id]),
-        'completion_url': reverse('overlap:complete_step', args=[matchup.id]),
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': allow_form_submission,
         'instructions': instructions,
@@ -570,32 +606,14 @@ def step5(request, matchup_id):
         'game_result': game_result,
         'team_hit_accuracy': round(team_hit_accuracy, 1),
         'opponent_hit_accuracy': round(opponent_hit_accuracy, 1),
+        # Navigation context for final step
+        'show_final_submit': not step5_submitted and allow_form_submission,
+        'can_submit': allow_form_submission,  # Can submit if requirements are met
+        'game_validated': step5_validated,
+        'step_submitted': step5_submitted,
     }
     
     return render(request, 'overlap/step5.html', context)
-
-
-@login_required
-def complete_step(request, matchup_id):
-    """Game completion page"""
-    matchup = get_object_or_404(GameMatchup, id=matchup_id)
-    
-    user_team = Team.objects.filter(members=request.user, matchups_as_team1=matchup).first() or \
-                Team.objects.filter(members=request.user, matchups_as_team2=matchup).first()
-    if not user_team:
-        messages.error(request, "You are not part of a team for this game.")
-        return redirect('aigames:student_dashboard')
-    
-    team_data = get_object_or_404(TeamOverlapData, team=user_team, matchup=matchup)
-    
-    context = {
-        'matchup': matchup,
-        'team': user_team,
-        'team_data': team_data,
-        'completion_percentage': team_data.get_completion_percentage(),
-    }
-    
-    return render(request, 'overlap/complete.html', context)
 
 
 @login_required

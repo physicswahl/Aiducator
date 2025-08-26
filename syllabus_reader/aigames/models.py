@@ -477,9 +477,9 @@ class GameMatchup(models.Model):
         
         if completed_steps.exists():
             last_completed = completed_steps.first().game_step.step_number
-            # Return the next step
+            # Try to return the next step
             next_step = self.ai_game.get_step_by_number(last_completed + 1)
-            return next_step
+            return next_step  # Returns None if no next step (all completed)
         else:
             # Return the first step if none completed
             return self.ai_game.get_step_by_number(1)
@@ -512,6 +512,10 @@ class GameMatchup(models.Model):
             )
             if not created and not progress.is_completed:
                 progress.complete_step()
+            
+            # Check if all steps are now completed and mark matchup as complete
+            self.check_and_complete_matchup()
+            
             return progress
         return None
     
@@ -538,6 +542,35 @@ class GameMatchup(models.Model):
                         completed_steps.append(game_step.step_number)
         
         return completed_steps
+    
+    def check_and_complete_matchup(self):
+        """
+        Check if all steps are completed and mark the matchup as complete if so.
+        Returns True if the matchup was completed, False otherwise.
+        """
+        from django.utils import timezone
+        
+        # Don't check if already completed
+        if self.completed_at:
+            return False
+        
+        # Get all game steps
+        game_steps = self.ai_game.get_ordered_steps()
+        if not game_steps.exists():
+            return False
+        
+        # Check if all steps are completed
+        total_steps = game_steps.count()
+        completed_steps = self.step_progress.filter(is_completed=True).count()
+        
+        if completed_steps >= total_steps:
+            # All steps are completed - mark matchup as complete
+            self.status = 'completed'
+            self.completed_at = timezone.now()
+            self.save()
+            return True
+        
+        return False
     
     def get_last_activity(self):
         """Get the most recent activity for this matchup"""

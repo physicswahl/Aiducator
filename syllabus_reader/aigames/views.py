@@ -764,6 +764,8 @@ def game_matchups_list(request):
 @user_passes_test(can_create_teams)
 def game_matchup_detail(request, matchup_id):
     """View details of a specific game matchup and track progress"""
+    from django.contrib import messages
+    
     user_school = request.user.profile.school
     matchup = get_object_or_404(GameMatchup, id=matchup_id, school=user_school)
     
@@ -771,8 +773,12 @@ def game_matchup_detail(request, matchup_id):
     if hasattr(request.user, 'profile') and (request.user.profile.is_teacher or request.user.profile.is_admin):
         completed_steps = matchup.check_and_complete_validation_steps()
         if completed_steps:
-            from django.contrib import messages
             messages.info(request, f"Steps {', '.join(map(str, completed_steps))} were automatically marked as complete based on team validations.")
+        
+        # Check if the matchup should be marked as complete
+        matchup_completed = matchup.check_and_complete_matchup()
+        if matchup_completed:
+            messages.success(request, f"🎉 Game completed! All steps have been finished for {matchup.team1.name} vs {matchup.team2.name}.")
     
     # Get progress for both teams if it's a multi-step game
     team1_progress = []
@@ -799,7 +805,8 @@ def game_matchup_detail(request, matchup_id):
                 if current_step and hasattr(current_step, 'step_number'):
                     current_step_number = current_step.step_number
                 else:
-                    current_step_number = 1
+                    # No current step (all completed) - set to None or last step
+                    current_step_number = None
             except:
                 current_step_number = 1
                 
@@ -820,9 +827,9 @@ def game_matchup_detail(request, matchup_id):
                 'game_step': game_step,  # Include the actual GameStep object
                 'step_url': game_step.get_url(matchup.id),  # Generate the dynamic URL
                 'is_completed': progress and progress.is_completed if progress else False,
-                'is_current': step_num == current_step_number,
+                'is_current': current_step_number is not None and step_num == current_step_number,
                 'completed_at': progress.completed_at if progress and progress.is_completed else None,
-                'can_complete': is_teacher and step_num == current_step_number and (not progress or not progress.is_completed),
+                'can_complete': is_teacher and current_step_number is not None and step_num == current_step_number and (not progress or not progress.is_completed),
                 # Add team validation status
                 'team1_validated': matchup.is_team_validated_for_step(matchup.team1, step_num),
                 'team2_validated': matchup.is_team_validated_for_step(matchup.team2, step_num),

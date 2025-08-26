@@ -290,11 +290,25 @@
                             </button>
                         {% endif %}
                     {% else %}
-                        <!-- Final step -->
-                        {% if completion_url %}
-                            <a href="{{ completion_url }}" class="btn btn-light">
-                                <i class="fas fa-trophy me-1"></i> View Final Results
-                            </a>
+                        <!-- Final step - show submit or game ended status -->
+                        {% if show_final_submit %}
+                            {% if can_submit %}
+                                <button type="button" class="btn btn-light" onclick="submitStep()">
+                                    <i class="fas fa-paper-plane me-1"></i> Submit
+                                </button>
+                            {% else %}
+                                <button class="btn btn-outline-light" disabled>
+                                    Complete requirements to submit <i class="fas fa-lock ms-1"></i>
+                                </button>
+                            {% endif %}
+                        {% elif game_validated %}
+                            <button class="btn btn-light" disabled>
+                                <i class="fas fa-flag-checkered me-1"></i> Game Ended
+                            </button>
+                        {% else %}
+                            <button class="btn btn-outline-light" disabled>
+                                <i class="fas fa-clock me-1"></i> Awaiting Teacher Validation
+                            </button>
                         {% endif %}
                     {% endif %}
                 {% endblock %}
