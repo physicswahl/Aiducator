@@ -39,32 +39,38 @@
     }
     
     .score-display {
-        text-align: center;
-        padding: 20px;
-        border-radius: 8px;
-        margin: 15px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: stretch;
+        gap: 15px;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 10px 0;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
     }
     
     .score-team {
-        display: inline-block;
-        width: 45%;
-        margin: 0 2.5%;
-        padding: 20px;
-        border-radius: 10px;
-        color: white;
-        font-weight: bold;
+        flex: 1;
+        padding: 15px;
+        border-radius: 6px;
+        color: #495057;
+        font-weight: 500;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        text-align: center;
     }
     
     .your-team-score {
-        background: linear-gradient(135deg, #007bff, #0056b3);
+        border-left: 3px solid #007bff;
     }
     
     .opponent-team-score {
-        background: linear-gradient(135deg, #dc3545, #a71e2a);
+        border-left: 3px solid #6c757d;
     }
     
     .tie-score {
-        background: linear-gradient(135deg, #6c757d, #495057);
+        border-left: 3px solid #6c757d;
     }
     
     .score-number {
@@ -93,8 +99,9 @@
     }
     
     .defeat-banner {
-        background: linear-gradient(135deg, #dc3545, #a71e2a);
-        color: white;
+        background: #f8f9fa;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
     }
     
     .tie-banner {
@@ -121,38 +128,7 @@
         line-height: 1.5;
     }
     
-    .pseudocode-container {
-        background: #2d3748;
-        color: #e2e8f0;
-        border-radius: 8px;
-        padding: 20px;
-        font-family: 'Courier New', monospace;
-        font-size: 0.9rem;
-        line-height: 1.6;
-        overflow-x: auto;
-    }
-    
-    .code-comment {
-        color: #68d391;
-        font-style: italic;
-    }
-    
-    .code-keyword {
-        color: #63b3ed;
-        font-weight: bold;
-    }
-    
-    .code-function {
-        color: #f6ad55;
-    }
-    
-    .code-variable {
-        color: #d6f5d6;
-    }
-    
-    .code-number {
-        color: #fbb6ce;
-    }
+    /* Pseudocode styling defined at end of CSS block */
     
     .step-progress {
         background: #e9ecef;
@@ -181,8 +157,9 @@
     }
     
     .icon-trophy {
-        background: linear-gradient(135deg, #ffc107, #e0a800);
-        color: #212529;
+        background: #f8f9fa;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
     }
     
     .icon-lightbulb {
@@ -201,6 +178,111 @@
         padding: 15px;
         margin: 10px 0;
         border-radius: 0 8px 8px 0;
+    }
+    
+    /* Dark Mode IDE Styling - OVERRIDE ALL */
+    div.pseudocode-container {
+        background: #1e1e1e !important;
+        color: #d4d4d4 !important;
+        border-radius: 8px !important;
+        padding: 24px !important;
+        font-family: 'Fira Code', 'Consolas', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+        overflow-x: auto;
+        border: 1px solid #3c3c3c !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+        position: relative;
+        margin: 20px 0 !important;
+    }
+    
+    div.pseudocode-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 32px;
+        background: linear-gradient(180deg, #2d2d30 0%, #252526 100%) !important;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid #3c3c3c;
+        z-index: 1;
+    }
+    
+    div.pseudocode-container::after {
+        content: "● ● ●";
+        position: absolute;
+        top: 8px;
+        left: 12px;
+        font-size: 12px;
+        color: #ff5f57 !important;
+        letter-spacing: 4px;
+        z-index: 2;
+    }
+    
+    div.pseudocode-container .code-content {
+        margin-top: 40px;
+        position: relative;
+        z-index: 0;
+        counter-reset: line-numbering;
+    }
+    
+    div.pseudocode-container .code-content .code-line {
+        counter-increment: line-numbering;
+        position: relative;
+        padding-left: 50px;
+        margin: 2px 0;
+        color: #d4d4d4 !important;
+    }
+    
+    div.pseudocode-container .code-content .code-line::before {
+        content: counter(line-numbering);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 40px;
+        color: #858585 !important;
+        font-size: 12px;
+        text-align: right;
+        user-select: none;
+        padding-right: 10px;
+    }
+    
+    div.pseudocode-container .code-comment {
+        color: #6a9955 !important;
+        font-style: italic;
+    }
+    
+    div.pseudocode-container .code-keyword {
+        color: #569cd6 !important;
+        font-weight: 600;
+    }
+    
+    div.pseudocode-container .code-function {
+        color: #dcdcaa !important;
+        font-weight: 600;
+    }
+    
+    div.pseudocode-container .code-variable {
+        color: #9cdcfe !important;
+    }
+    
+    div.pseudocode-container .code-number {
+        color: #b5cea8 !important;
+    }
+    
+    div.pseudocode-container .code-string {
+        color: #ce9178 !important;
+    }
+    
+    div.pseudocode-container .code-operator {
+        color: #d4d4d4 !important;
+        font-weight: 500;
+    }
+    
+    div.pseudocode-container .code-bracket {
+        color: #ffd700 !important;
+        font-weight: 600;
     }
 </style>
 {% endblock %}
@@ -254,10 +336,6 @@
                 </div>
 
                 <div class="card-body">
-                    <!-- Progress Bar -->
-                    <div class="step-progress">
-                        <div class="step-progress-bar"></div>
-                    </div>
 
                     <!-- Card 1: Game Results -->
                     <div class="card mb-4">
@@ -355,59 +433,52 @@
                             <p class="text-muted mb-3">Pseudocode for finding optimal overlap placement:</p>
                             
                             <div class="pseudocode-container">
-<span class="code-comment">// Algorithm to find optimal circle placement for maximum overlap</span>
-<span class="code-keyword">function</span> <span class="code-function">findOptimalOverlap</span>(<span class="code-variable">targetArea</span>, <span class="code-variable">circleRadius</span>) {
-    <span class="code-variable">bestScore</span> = <span class="code-number">0</span>
-    <span class="code-variable">bestPosition</span> = <span class="code-keyword">null</span>
-    
-    <span class="code-comment">// Grid search approach - test multiple positions</span>
-    <span class="code-keyword">for</span> (<span class="code-variable">x</span> = <span class="code-number">0</span>; <span class="code-variable">x</span> < <span class="code-variable">canvasWidth</span>; <span class="code-variable">x</span> += <span class="code-variable">stepSize</span>) {
-        <span class="code-keyword">for</span> (<span class="code-variable">y</span> = <span class="code-number">0</span>; <span class="code-variable">y</span> < <span class="code-variable">canvasHeight</span>; <span class="code-variable">y</span> += <span class="code-variable">stepSize</span>) {
-            
-            <span class="code-comment">// Calculate overlap score for this position</span>
-            <span class="code-variable">overlapScore</span> = <span class="code-function">calculateOverlap</span>(<span class="code-variable">x</span>, <span class="code-variable">y</span>, <span class="code-variable">circleRadius</span>, <span class="code-variable">targetArea</span>)
-            
-            <span class="code-comment">// Keep track of best position found so far</span>
-            <span class="code-keyword">if</span> (<span class="code-variable">overlapScore</span> > <span class="code-variable">bestScore</span>) {
-                <span class="code-variable">bestScore</span> = <span class="code-variable">overlapScore</span>
-                <span class="code-variable">bestPosition</span> = {<span class="code-variable">x</span>: <span class="code-variable">x</span>, <span class="code-variable">y</span>: <span class="code-variable">y</span>}
-            }
-        }
-    }
-    
-    <span class="code-comment">// Refine search around best position found</span>
-    <span class="code-variable">refinedPosition</span> = <span class="code-function">localSearch</span>(<span class="code-variable">bestPosition</span>, <span class="code-variable">circleRadius</span>, <span class="code-variable">targetArea</span>)
-    
-    <span class="code-keyword">return</span> <span class="code-variable">refinedPosition</span>
-}
-
-<span class="code-keyword">function</span> <span class="code-function">calculateOverlap</span>(<span class="code-variable">circleX</span>, <span class="code-variable">circleY</span>, <span class="code-variable">radius</span>, <span class="code-variable">targetArea</span>) {
-    <span class="code-variable">overlapPixels</span> = <span class="code-number">0</span>
-    
-    <span class="code-comment">// Sample points within the circle</span>
-    <span class="code-keyword">for</span> (<span class="code-variable">i</span> = -<span class="code-variable">radius</span>; <span class="code-variable">i</span> <= <span class="code-variable">radius</span>; <span class="code-variable">i</span>++) {
-        <span class="code-keyword">for</span> (<span class="code-variable">j</span> = -<span class="code-variable">radius</span>; <span class="code-variable">j</span> <= <span class="code-variable">radius</span>; <span class="code-variable">j</span>++) {
-            <span class="code-comment">// Check if point is inside circle</span>
-            <span class="code-keyword">if</span> (<span class="code-variable">i</span>*<span class="code-variable">i</span> + <span class="code-variable">j</span>*<span class="code-variable">j</span> <= <span class="code-variable">radius</span>*<span class="code-variable">radius</span>) {
-                <span class="code-comment">// Check if this point overlaps with target area</span>
-                <span class="code-keyword">if</span> (<span class="code-function">isInTargetArea</span>(<span class="code-variable">circleX</span> + <span class="code-variable">i</span>, <span class="code-variable">circleY</span> + <span class="code-variable">j</span>, <span class="code-variable">targetArea</span>)) {
-                    <span class="code-variable">overlapPixels</span>++
-                }
-            }
-        }
-    }
-    
-    <span class="code-keyword">return</span> <span class="code-variable">overlapPixels</span>
-}
-                            </div>
-
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle"></i> 
-                                    This pseudocode demonstrates a <strong>grid search algorithm</strong> combined with <strong>local optimization</strong>. 
-                                    It systematically tests different positions, calculates overlap scores, and refines the search around promising areas. 
-                                    This approach balances thoroughness with computational efficiency, similar to algorithms used in computer vision and optimization problems.
-                                </small>
+                                <div class="code-content">
+<div class="code-line"><span class="code-comment">// Algorithm to find optimal circle placement for maximum overlap</span></div>
+<div class="code-line"><span class="code-keyword">function</span> <span class="code-function">findOptimalOverlap</span><span class="code-bracket">(</span><span class="code-variable">targetArea</span>, <span class="code-variable">circleRadius</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestScore</span> <span class="code-operator">=</span> <span class="code-number">0</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestPosition</span> <span class="code-operator">=</span> <span class="code-keyword">null</span></div>
+<div class="code-line"></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Grid search approach - test multiple positions</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">x</span> <span class="code-operator">=</span> <span class="code-number">0</span>; <span class="code-variable">x</span> <span class="code-operator">&lt;</span> <span class="code-variable">canvasWidth</span>; <span class="code-variable">x</span> <span class="code-operator">+=</span> <span class="code-variable">stepSize</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">y</span> <span class="code-operator">=</span> <span class="code-number">0</span>; <span class="code-variable">y</span> <span class="code-operator">&lt;</span> <span class="code-variable">canvasHeight</span>; <span class="code-variable">y</span> <span class="code-operator">+=</span> <span class="code-variable">stepSize</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line"></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Calculate overlap score for this position</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">overlapScore</span> <span class="code-operator">=</span> <span class="code-function">calculateOverlap</span><span class="code-bracket">(</span><span class="code-variable">x</span>, <span class="code-variable">y</span>, <span class="code-variable">circleRadius</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span></div>
+<div class="code-line"></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Keep track of best position found so far</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">if</span> <span class="code-bracket">(</span><span class="code-variable">overlapScore</span> <span class="code-operator">&gt;</span> <span class="code-variable">bestScore</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestScore</span> <span class="code-operator">=</span> <span class="code-variable">overlapScore</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestPosition</span> <span class="code-operator">=</span> <span class="code-bracket">{</span><span class="code-variable">x</span>: <span class="code-variable">x</span>, <span class="code-variable">y</span>: <span class="code-variable">y</span><span class="code-bracket">}</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
+<div class="code-line"></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Refine search around best position found</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">refinedPosition</span> <span class="code-operator">=</span> <span class="code-function">localSearch</span><span class="code-bracket">(</span><span class="code-variable">bestPosition</span>, <span class="code-variable">circleRadius</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span></div>
+<div class="code-line"></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">return</span> <span class="code-variable">refinedPosition</span></div>
+<div class="code-line"><span class="code-bracket">}</span></div>
+<div class="code-line"></div>
+<div class="code-line"><span class="code-keyword">function</span> <span class="code-function">calculateOverlap</span><span class="code-bracket">(</span><span class="code-variable">circleX</span>, <span class="code-variable">circleY</span>, <span class="code-variable">radius</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">overlapPixels</span> <span class="code-operator">=</span> <span class="code-number">0</span></div>
+<div class="code-line"></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Sample points within the circle</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">i</span> <span class="code-operator">=</span> <span class="code-operator">-</span><span class="code-variable">radius</span>; <span class="code-variable">i</span> <span class="code-operator">&lt;=</span> <span class="code-variable">radius</span>; <span class="code-variable">i</span><span class="code-operator">++</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">j</span> <span class="code-operator">=</span> <span class="code-operator">-</span><span class="code-variable">radius</span>; <span class="code-variable">j</span> <span class="code-operator">&lt;=</span> <span class="code-variable">radius</span>; <span class="code-variable">j</span><span class="code-operator">++</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Check if point is inside circle</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">if</span> <span class="code-bracket">(</span><span class="code-variable">i</span><span class="code-operator">*</span><span class="code-variable">i</span> <span class="code-operator">+</span> <span class="code-variable">j</span><span class="code-operator">*</span><span class="code-variable">j</span> <span class="code-operator">&lt;=</span> <span class="code-variable">radius</span><span class="code-operator">*</span><span class="code-variable">radius</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Check if this point overlaps with target area</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">if</span> <span class="code-bracket">(</span><span class="code-function">isInTargetArea</span><span class="code-bracket">(</span><span class="code-variable">circleX</span> <span class="code-operator">+</span> <span class="code-variable">i</span>, <span class="code-variable">circleY</span> <span class="code-operator">+</span> <span class="code-variable">j</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">overlapPixels</span><span class="code-operator">++</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
+<div class="code-line"></div>
+<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">return</span> <span class="code-variable">overlapPixels</span></div>
+<div class="code-line"><span class="code-bracket">}</span></div>
+                                </div>
                             </div>
                         </div>
                     </div>
