@@ -1,0 +1,370 @@
+{% extends 'syllabus/base.html' %}
+{% load static %}
+
+{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Fixed Navbar for Game Pages */
+    .navbar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1030;
+    }
+    
+    /* Adjust body to account for fixed navbar */
+    body {
+        padding-top: 76px; /* Approximate navbar height */
+    }
+    
+    /* Main Game Card Styling */
+    .step-card {
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 100px; /* Space for fixed footer */
+    }
+    
+    .step-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+    
+    .matchup-info {
+        margin-top: 0.5rem;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    /* Instructions Button - Fixed on Left */
+    .instructions-button {
+        position: fixed;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%);
+        z-index: 99999;
+        border-radius: 0 10px 10px 0;
+        border-left: none;
+        padding: 20px 10px;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: 11px;
+        font-weight: bold;
+        min-height: 120px;
+    }
+    
+    /* Fixed Footer Navigation */
+    .game-footer-navigation {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        {% if navbar_color %}
+        background-color: {{ navbar_color }} !important;
+        {% else %}
+        background-color: #007bff; /* Fallback to Bootstrap primary */
+        {% endif %}
+        color: white;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 1000;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .game-footer-navigation .btn {
+        margin: 0 0.25rem;
+    }
+    
+    .game-footer-navigation .btn-outline-light {
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+    }
+    
+    .game-footer-navigation .btn-outline-light:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: white;
+        color: white;
+    }
+    
+    .game-footer-navigation .btn-light {
+        background-color: white;
+        color: #667eea;
+        border-color: white;
+    }
+    
+    .game-footer-navigation .btn-light:hover {
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #667eea;
+    }
+    
+    /* Progress Indicators */
+    .step-progress {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-step {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        border-radius: 0.25rem;
+        border: 2px solid #dee2e6;
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .progress-step.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .progress-step.completed {
+        background-color: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+    
+    /* Common Section Styling */
+    .config-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .canvas-container {
+        text-align: center;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 0.5rem;
+    }
+    
+    .display-section {
+        text-align: center;
+        padding: 1rem;
+        background-color: #e3f2fd;
+        border-radius: 0.5rem;
+        border: 2px solid #2196f3;
+    }
+    
+    .display-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #1976d2;
+        display: block;
+    }
+    
+    .display-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+    
+    /* Instructions Offcanvas */
+    .instruction-step {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        border-left: 4px solid #007bff;
+    }
+    
+    .instruction-step h6 {
+        color: #007bff;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Status Messages */
+    .status-message {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .status-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    
+    .status-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+    
+    .status-info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+    }
+    
+    /* Step content blocks */
+    {% block extra_step_css %}{% endblock %}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Instructions Button -->
+    <div>
+        <button class="btn btn-primary instructions-button" 
+                type="button" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#instructionsOffcanvas">
+            Instructions
+        </button>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card step-card">
+                <div class="card-header">
+                    <h4>{{ matchup.ai_game.title }} - {{ step_name }}</h4>
+                    <div class="matchup-info">
+                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% block step_content %}
+                    <!-- Step-specific content goes here -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This is the base game page template. Override the step_content block to add step-specific content.
+                    </div>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fixed Footer Navigation -->
+<div class="game-footer-navigation">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <!-- Left side - Step info -->
+            <div>
+                <span class="text-light">Step {{ current_step }} of {{ total_steps }}</span>
+            </div>
+            
+            <!-- Right side - Navigation buttons -->
+            <div class="d-flex gap-2">
+                {% block navigation_buttons %}
+                    <!-- Previous Step Button -->
+                    {% if current_step > 1 %}
+                        <a href="{{ previous_step_url }}" class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left me-1"></i> Previous Step
+                        </a>
+                    {% endif %}
+                    
+                    <!-- Submit/Next Step Button -->
+                    {% if show_submit_button %}
+                        {% if can_submit %}
+                            <button type="button" class="btn btn-light" onclick="submitStep()">
+                                {{ submit_button_text|default:"Submit for Teacher Validation" }}
+                            </button>
+                        {% else %}
+                            <button class="btn btn-outline-light" disabled>
+                                {{ submit_disabled_text|default:"Complete requirements to submit" }}
+                            </button>
+                        {% endif %}
+                    {% elif has_next_step %}
+                        {% if next_step_accessible %}
+                            <a href="{{ next_step_url }}" class="btn btn-light">
+                                Next Step <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-light" disabled>
+                                Complete this step to continue <i class="fas fa-lock ms-1"></i>
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <!-- Final step -->
+                        {% if completion_url %}
+                            <a href="{{ completion_url }}" class="btn btn-light">
+                                <i class="fas fa-trophy me-1"></i> View Final Results
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instructions Offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
+            <i class="fas fa-clipboard-list me-2"></i>{{ step_name }} Instructions
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        {% if instructions %}
+            {% for instruction in instructions %}
+                <div class="instruction-step">
+                    <h6 class="fw-bold">
+                        <i class="fas fa-circle-check me-2"></i>{{ instruction.title }}
+                    </h6>
+                    <div class="instruction-content">
+                        {{ instruction.content|safe }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-light">
+                <i class="fas fa-info-circle me-2"></i>No instructions available for this step.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block step_scripts %}
+<!-- Step-specific JavaScript goes here -->
+{% endblock %}
+
+<script>
+// Default submit function - override in step-specific templates
+function submitStep() {
+    {% block submit_function %}
+        // Default implementation - override in step templates
+        console.log('Submit function not implemented for this step');
+        alert('Submit functionality not implemented for this step');
+    {% endblock %}
+}
+
+// Common utility functions
+function showMessage(message, type = 'info') {
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'warning' ? 'alert-warning' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    const messageHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insert at top of card body
+    const cardBody = document.querySelector('.card-body');
+    cardBody.insertAdjacentHTML('afterbegin', messageHtml);
+}
+
+{% block common_scripts %}
+<!-- Common JavaScript functionality -->
+{% endblock %}
+</script>
+{% endblock %}

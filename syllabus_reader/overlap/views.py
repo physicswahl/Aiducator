@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.urls import reverse
 import json
 
 from aigames.models import Team, GameMatchup, MatchupStepProgress, GameStep
@@ -94,6 +95,7 @@ def step1(request, matchup_id):
         'total_steps': get_overlap_game_total_steps(),
         'has_next_step': True,
         'next_step_accessible': step1_completed,
+        'next_step_url': reverse('overlap:step2', args=[matchup.id]),
         'sensitivity_levels': range(1, 101),
         'threshold_options': [i/100 for i in range(50, 101, 5)],
         'mode_options': ['standard', 'enhanced', 'advanced'],
@@ -179,6 +181,8 @@ def step2(request, matchup_id):
         'total_steps': get_overlap_game_total_steps(),
         'has_next_step': True,
         'next_step_accessible': step2_completed,
+        'previous_step_url': reverse('overlap:step1', args=[matchup.id]),
+        'next_step_url': reverse('overlap:step3', args=[matchup.id]),
         'instructions': instructions,
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': should_allow_form_submission(request),
@@ -265,6 +269,8 @@ def step3(request, matchup_id):
                 'total_steps': get_overlap_game_total_steps(),
                 'has_next_step': True,
                 'next_step_accessible': next_step_accessible,
+                'previous_step_url': reverse('overlap:step2', args=[matchup.id]),
+                'next_step_url': reverse('overlap:step4', args=[matchup.id]),
                 'step3_completed': step3_completed,
                 'current_team_ready': current_team_ready,
                 'other_team_ready': other_team_ready,
@@ -299,6 +305,8 @@ def step3(request, matchup_id):
         'total_steps': get_overlap_game_total_steps(),
         'has_next_step': True,
         'next_step_accessible': next_step_accessible,
+        'previous_step_url': reverse('overlap:step2', args=[matchup.id]),
+        'next_step_url': reverse('overlap:step4', args=[matchup.id]),
         'step3_completed': step3_completed,
         'current_team_ready': current_team_ready,
         'other_team_ready': other_team_ready,
@@ -397,6 +405,11 @@ def step4(request, matchup_id):
         'step_name': get_overlap_game_step_info(4),
         'current_step': 4,
         'total_steps': get_overlap_game_total_steps(),
+        'has_next_step': True,
+        'previous_step_url': reverse('overlap:step3', args=[matchup.id]),
+        'next_step_url': reverse('overlap:step5', args=[matchup.id]),
+        'show_submit_button': True,
+        'can_submit': allow_form_submission and not team_data.step4_submitted,
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': allow_form_submission,
         'opponent_circle_x': int(opponent_circle_x),
@@ -546,6 +559,9 @@ def step5(request, matchup_id):
         'step_name': get_overlap_game_step_info(5),
         'current_step': 5,
         'total_steps': get_overlap_game_total_steps(),
+        'has_next_step': False,
+        'previous_step_url': reverse('overlap:step4', args=[matchup.id]),
+        'completion_url': reverse('overlap:complete_step', args=[matchup.id]),
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': allow_form_submission,
         'instructions': instructions,
