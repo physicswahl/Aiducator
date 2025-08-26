@@ -421,31 +421,28 @@
                             </div>
                         </div>
                     </div>
+                </div>
 
                     <!-- Card 3: Algorithmic Approach -->
                     <div class="card mb-4">
                         <div class="card-header">
                             <h5 class="card-title mb-0">
-                                <i class="fas fa-code"></i> Algorithmic Approach
+                                <i class="fas fa-code"></i> Can you code a pattern finder?
                             </h5>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted mb-3">Pseudocode for finding optimal overlap placement:</p>
-                            
+
                             <div class="pseudocode-container">
                                 <div class="code-content">
 <div class="code-line"><span class="code-comment">// Algorithm to find optimal circle placement for maximum overlap</span></div>
 <div class="code-line"><span class="code-keyword">function</span> <span class="code-function">findOptimalOverlap</span><span class="code-bracket">(</span><span class="code-variable">targetArea</span>, <span class="code-variable">circleRadius</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestScore</span> <span class="code-operator">=</span> <span class="code-number">0</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestPosition</span> <span class="code-operator">=</span> <span class="code-keyword">null</span></div>
-<div class="code-line"></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Grid search approach - test multiple positions</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">x</span> <span class="code-operator">=</span> <span class="code-number">0</span>; <span class="code-variable">x</span> <span class="code-operator">&lt;</span> <span class="code-variable">canvasWidth</span>; <span class="code-variable">x</span> <span class="code-operator">+=</span> <span class="code-variable">stepSize</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">y</span> <span class="code-operator">=</span> <span class="code-number">0</span>; <span class="code-variable">y</span> <span class="code-operator">&lt;</span> <span class="code-variable">canvasHeight</span>; <span class="code-variable">y</span> <span class="code-operator">+=</span> <span class="code-variable">stepSize</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
-<div class="code-line"></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Calculate overlap score for this position</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">overlapScore</span> <span class="code-operator">=</span> <span class="code-function">calculateOverlap</span><span class="code-bracket">(</span><span class="code-variable">x</span>, <span class="code-variable">y</span>, <span class="code-variable">circleRadius</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span></div>
-<div class="code-line"></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Keep track of best position found so far</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">if</span> <span class="code-bracket">(</span><span class="code-variable">overlapScore</span> <span class="code-operator">&gt;</span> <span class="code-variable">bestScore</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">bestScore</span> <span class="code-operator">=</span> <span class="code-variable">overlapScore</span></div>
@@ -453,32 +450,13 @@
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
 <div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
-<div class="code-line"></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Refine search around best position found</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">refinedPosition</span> <span class="code-operator">=</span> <span class="code-function">localSearch</span><span class="code-bracket">(</span><span class="code-variable">bestPosition</span>, <span class="code-variable">circleRadius</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span></div>
-<div class="code-line"></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">return</span> <span class="code-variable">refinedPosition</span></div>
-<div class="code-line"><span class="code-bracket">}</span></div>
-<div class="code-line"></div>
-<div class="code-line"><span class="code-keyword">function</span> <span class="code-function">calculateOverlap</span><span class="code-bracket">(</span><span class="code-variable">circleX</span>, <span class="code-variable">circleY</span>, <span class="code-variable">radius</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">overlapPixels</span> <span class="code-operator">=</span> <span class="code-number">0</span></div>
-<div class="code-line"></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Sample points within the circle</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">i</span> <span class="code-operator">=</span> <span class="code-operator">-</span><span class="code-variable">radius</span>; <span class="code-variable">i</span> <span class="code-operator">&lt;=</span> <span class="code-variable">radius</span>; <span class="code-variable">i</span><span class="code-operator">++</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> <span class="code-bracket">(</span><span class="code-variable">j</span> <span class="code-operator">=</span> <span class="code-operator">-</span><span class="code-variable">radius</span>; <span class="code-variable">j</span> <span class="code-operator">&lt;=</span> <span class="code-variable">radius</span>; <span class="code-variable">j</span><span class="code-operator">++</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Check if point is inside circle</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">if</span> <span class="code-bracket">(</span><span class="code-variable">i</span><span class="code-operator">*</span><span class="code-variable">i</span> <span class="code-operator">+</span> <span class="code-variable">j</span><span class="code-operator">*</span><span class="code-variable">j</span> <span class="code-operator">&lt;=</span> <span class="code-variable">radius</span><span class="code-operator">*</span><span class="code-variable">radius</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Check if this point overlaps with target area</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">if</span> <span class="code-bracket">(</span><span class="code-function">isInTargetArea</span><span class="code-bracket">(</span><span class="code-variable">circleX</span> <span class="code-operator">+</span> <span class="code-variable">i</span>, <span class="code-variable">circleY</span> <span class="code-operator">+</span> <span class="code-variable">j</span>, <span class="code-variable">targetArea</span><span class="code-bracket">)</span><span class="code-bracket">)</span> <span class="code-bracket">{</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-variable">overlapPixels</span><span class="code-operator">++</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-bracket">}</span></div>
-<div class="code-line"></div>
-<div class="code-line">&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">return</span> <span class="code-variable">overlapPixels</span></div>
 <div class="code-line"><span class="code-bracket">}</span></div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                                                    </div>
                             </div>
                         </div>
                     </div>
