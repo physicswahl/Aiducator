@@ -507,17 +507,37 @@ class GameMatchup(models.Model):
                 game_step=game_step,
                 defaults={
                     'is_completed': True, 
-                    'completed_at': timezone.now(),
-                    'completed_by': completed_by
+                    'completed_at': timezone.now()
                 }
             )
             if not created and not progress.is_completed:
                 progress.complete_step()
-                if completed_by:
-                    progress.completed_by = completed_by
-                    progress.save()
             return progress
         return None
+    
+    def check_and_complete_validation_steps(self):
+        """
+        Integrity check: Mark steps as complete if both teams are validated.
+        This ensures consistency in case the step wasn't automatically completed.
+        """
+        game_steps = self.ai_game.get_ordered_steps()
+        completed_steps = []
+        
+        for game_step in game_steps:
+            if game_step.requires_validation:
+                # Check if both teams are validated for this step
+                team1_validated = self.is_team_validated_for_step(self.team1, game_step.step_number)
+                team2_validated = self.is_team_validated_for_step(self.team2, game_step.step_number)
+                
+                if team1_validated and team2_validated:
+                    # Check if step is already completed
+                    progress = self.get_progress_for_step(game_step.step_number)
+                    if not progress or not progress.is_completed:
+                        # Complete the step
+                        self.complete_step(game_step.step_number)
+                        completed_steps.append(game_step.step_number)
+        
+        return completed_steps
     
     def get_last_activity(self):
         """Get the most recent activity for this matchup"""
@@ -720,7 +740,12 @@ class TeamStepValidation(models.Model):
         
         if other_validation.is_validated:
             # Both teams validated - complete the step
-            self.matchup.complete_step(self.game_step.step_number)
+            progress = self.matchup.complete_step(self.game_step.step_number)
+            if progress:
+                # Log that the step was completed
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Step {self.game_step.step_number} completed for matchup {self.matchup.id} - both teams validated")
     
     def __str__(self):
         status = "Validated" if self.is_validated else "Pending"

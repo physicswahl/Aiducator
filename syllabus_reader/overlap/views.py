@@ -416,7 +416,7 @@ def step4(request, matchup_id):
 @login_required
 @teacher_can_view_team
 def step5(request, matchup_id):
-    """Step 5: Final Reflection"""
+    """Step 5: Final Reflection with Scoring and Analysis"""
     matchup = get_object_or_404(GameMatchup, id=matchup_id)
     
     # Get the appropriate team (user's team or teacher's viewing team)
@@ -438,33 +438,75 @@ def step5(request, matchup_id):
     opponent_team = matchup.team1 if user_team == matchup.team2 else matchup.team2
     opponent_team_data = TeamOverlapData.objects.filter(team=opponent_team, matchup=matchup).first()
     
+    # Calculate team scores based on game performance
+    def calculate_team_score(team_data):
+        """Calculate team score based on various game metrics"""
+        score = 0
+        
+        # Base completion points (40 points max)
+        completion_steps = sum([
+            team_data.step1_completed,
+            team_data.step2_completed,
+            team_data.step3_completed,
+            team_data.step4_completed,
+            team_data.step5_completed
+        ])
+        score += completion_steps * 8  # 8 points per completed step
+        
+        # Strategy quality points (30 points max)
+        if team_data.placement_notes and len(team_data.placement_notes.strip()) >= 50:
+            score += 15  # Good placement strategy
+        if team_data.evaluation_strategy and len(team_data.evaluation_strategy.strip()) >= 100:
+            score += 15  # Good evaluation strategy
+            
+        # Engagement points (20 points max)
+        if team_data.click_count >= 12:
+            score += 20  # Completed all evaluation clicks
+        elif team_data.click_count >= 8:
+            score += 15  # Most evaluation clicks
+        elif team_data.click_count >= 4:
+            score += 10  # Some evaluation clicks
+            
+        # Circle placement accuracy (10 points max)
+        if team_data.circle_x is not None and team_data.circle_y is not None:
+            # Bonus points for strategic placement (closer to center gets more points)
+            distance_from_center = ((team_data.circle_x - 200)**2 + (team_data.circle_y - 150)**2)**0.5
+            max_distance = 250  # approximate max distance from center
+            placement_score = max(0, 10 - (distance_from_center / max_distance) * 10)
+            score += placement_score
+            
+        return min(100, score)  # Cap at 100 points
+    
+    # Calculate scores for both teams
+    team_score = calculate_team_score(team_data)
+    opponent_score = calculate_team_score(opponent_team_data) if opponent_team_data else 0
+    
+    # Determine winner
+    if team_score > opponent_score:
+        game_result = "victory"
+    elif opponent_score > team_score:
+        game_result = "defeat"
+    else:
+        game_result = "tie"
+    
     # Check if form submission should be allowed (not for teachers viewing)
     allow_form_submission = should_allow_form_submission(request)
     
-    if request.method == 'POST' and allow_form_submission:
-        # Handle step 5 completion - no validation required for this step
-        reflection_notes = request.POST.get('reflection_notes', '').strip()
+    # Automatically mark step 5 as completed since this is the final results step
+    if not team_data.step5_completed and not hasattr(request, 'teacher_viewing_mode'):
+        team_data.step5_completed = True
+        team_data.save()
         
-        if len(reflection_notes) < 50:
-            messages.error(request, "Your reflection must be at least 50 characters long.")
-        else:
-            team_data.step5_completed = True
-            team_data.reflection_notes = reflection_notes
-            team_data.save()
-            
-            # Update step progress
-            step_progress, created = MatchupStepProgress.objects.get_or_create(
-                matchup=matchup,
-                step_number=5,
-                defaults={'is_completed': True, 'completed_at': timezone.now()}
-            )
-            if not step_progress.is_completed:
-                step_progress.is_completed = True
-                step_progress.completed_at = timezone.now()
-                step_progress.save()
-            
-            messages.success(request, "Step 5 completed successfully!")
-            return redirect('overlap:complete_step', matchup_id=matchup_id)
+        # Update step progress
+        step_progress, created = MatchupStepProgress.objects.get_or_create(
+            matchup=matchup,
+            step_number=5,
+            defaults={'is_completed': True, 'completed_at': timezone.now()}
+        )
+        if not step_progress.is_completed:
+            step_progress.is_completed = True
+            step_progress.completed_at = timezone.now()
+            step_progress.save()
     
     # Get instructions for this step
     instructions = []
@@ -484,6 +526,9 @@ def step5(request, matchup_id):
         'is_teacher_viewing': hasattr(request, 'teacher_viewing_mode') and request.teacher_viewing_mode,
         'allow_form_submission': allow_form_submission,
         'instructions': instructions,
+        'team_score': round(team_score, 1),
+        'opponent_score': round(opponent_score, 1),
+        'game_result': game_result,
     }
     
     return render(request, 'overlap/step5.html', context)

@@ -767,6 +767,13 @@ def game_matchup_detail(request, matchup_id):
     user_school = request.user.profile.school
     matchup = get_object_or_404(GameMatchup, id=matchup_id, school=user_school)
     
+    # Integrity check: Ensure validation-required steps are marked complete if both teams are validated
+    if hasattr(request.user, 'profile') and (request.user.profile.is_teacher or request.user.profile.is_admin):
+        completed_steps = matchup.check_and_complete_validation_steps()
+        if completed_steps:
+            from django.contrib import messages
+            messages.info(request, f"Steps {', '.join(map(str, completed_steps))} were automatically marked as complete based on team validations.")
+    
     # Get progress for both teams if it's a multi-step game
     team1_progress = []
     team2_progress = []
@@ -909,6 +916,11 @@ def validate_team_step(request, matchup_id, step_number, team_id):
         messages.error(request, f"Step {step_number} not found.")
         return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
     
+    # Check if step requires validation
+    if not game_step.requires_validation:
+        messages.warning(request, f"Step {step_number} does not require validation.")
+        return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
+    
     # Get or create team validation record
     from .models import TeamStepValidation
     validation, created = TeamStepValidation.objects.get_or_create(
@@ -916,6 +928,11 @@ def validate_team_step(request, matchup_id, step_number, team_id):
         team=team,
         game_step=game_step
     )
+    
+    # Check if already validated
+    if validation.is_validated:
+        messages.info(request, f"Step {step_number} for {team.name} is already validated.")
+        return redirect('aigames:game_matchup_detail', matchup_id=matchup_id)
     
     # Mark as validated
     try:
@@ -926,6 +943,12 @@ def validate_team_step(request, matchup_id, step_number, team_id):
         step_progress = matchup.get_progress_for_step(step_number)
         if step_progress and step_progress.is_completed:
             messages.info(request, f"Step {step_number} is now complete - both teams validated!")
+        else:
+            # Check the other team's validation status
+            other_team = matchup.team2 if team == matchup.team1 else matchup.team1
+            other_team_validated = matchup.is_team_validated_for_step(other_team, step_number)
+            if not other_team_validated:
+                messages.info(request, f"Waiting for {other_team.name} validation to complete step {step_number}.")
             
     except Exception as e:
         messages.error(request, f"Error validating step: {str(e)}")
