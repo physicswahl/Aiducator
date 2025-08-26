@@ -1,79 +1,7 @@
-{% extends 'syllabus/base.html' %}
+{% extends 'overlap/gamepage.html' %}
 {% load static %}
 
-{% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
-
-{% block extra_css %}
-<style>
-    .step-card {
-        border: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    
-    .step-card .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-bottom: none;
-        padding: 1.5rem;
-    }
-    
-    .matchup-info {
-        margin-top: 0.5rem;
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
-    
-    .step-navigation {
-        background-color: #f8f9fa;
-        padding: 1rem 1.5rem;
-        border-top: 1px solid #dee2e6;
-        margin-top: 0;
-    }
-    
-    .step-progress {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .progress-step {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        margin: 0.25rem;
-        border-radius: 0.25rem;
-        border: 2px solid #dee2e6;
-        background-color: white;
-        transition: all 0.3s ease;
-    }
-    
-    .progress-step.active {
-        background-color: #007bff;
-        color: white;
-        border-color: #007bff;
-    }
-    
-    .progress-step.completed {
-        background-color: #28a745;
-        color: white;
-        border-color: #28a745;
-    }
-    
-    .config-section {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .range-display {
-        font-weight: bold;
-        color: #007bff;
-        margin-left: 0.5rem;
-    }
-    
+{% block extra_step_css %}
     .overlap-canvas-container {
         text-align: center;
         padding: 1rem;
@@ -109,19 +37,22 @@
         margin-top: 0.5rem;
     }
     
-    .overlap-instructions {
-        display: flex;
-        align-items: center;
-        height: 100%;
-        padding: 1rem;
-    }
-    
     #overlapCanvas {
         transition: cursor 0.2s ease;
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+        background-color: #f8f9fa;
+        cursor: grab;
     }
     
     #overlapCanvas:active {
         cursor: grabbing;
+    }
+    
+    #heatmapCanvas {
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+        background-color: #f8f9fa;
     }
     
     .canvas-section {
@@ -134,141 +65,60 @@
         margin-bottom: 1rem;
         color: #333;
     }
-</style>
+    
+    .view-mode-toggle {
+        text-align: center;
+    }
 {% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <!-- Instructions Button -->
-    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
-        <button class="btn btn-primary" 
-                type="button" 
-                data-bs-toggle="offcanvas" 
-                data-bs-target="#instructionsOffcanvas"
-                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
-            Instructions
-        </button>
-    </div>
-
-    <!-- Main Content Card -->
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="card step-card">
-                <div class="card-header">
-                    <h4>{{ matchup.ai_game.title }} - {{ step_name }}</h4>
-                    <div class="matchup-info">
-                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <!-- Step 2 Specific Content -->
-                    <div class="overlap-form-section">
-                        <!-- Dual Canvas Visualization -->
-                        <div class="config-section">
-
-                            <div class="row">
-                                <!-- Left Canvas: Interactive Overlap -->
-                                <div class="col-md-6">
-                                    <div class="canvas-section">
-                                        <div class="canvas-title">Interactive Overlap Detection</div>
-                                        <div class="overlap-canvas-container">
-                                            <canvas id="overlapCanvas" width="400" height="300" style="border: 2px solid #dee2e6; border-radius: 0.5rem; background-color: #f8f9fa; cursor: grab;"></canvas>
-                                            <div class="overlap-info mt-3">
-                                                <div class="overlap-display">
-                                                    <span class="overlap-value" id="overlapPercentage">0%</span>
-                                                    <div class="overlap-label">Current Overlap Coverage</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Right Canvas: Heatmap/Cross-section -->
-                                <div class="col-md-6">
-                                    <div class="canvas-section">
-                                        <div class="canvas-title" id="rightCanvasTitle">X-Section: Overlap vs X-coordinate</div>
-                                        <div class="heatmap-canvas-container">
-                                            <canvas id="heatmapCanvas" width="400" height="300" style="border: 2px solid #dee2e6; border-radius: 0.5rem; background-color: #f8f9fa;"></canvas>
-                                            
-                                            <!-- View Mode Toggle -->
-                                            <div class="view-mode-toggle mt-3">
-                                                <div class="btn-group" role="group" aria-label="View mode selection">
-                                                    <input type="radio" class="btn-check" name="viewMode" id="xSectionMode" value="x-section" checked>
-                                                    <label class="btn btn-outline-primary" for="xSectionMode">X-Section</label>
-                                                    
-                                                    <input type="radio" class="btn-check" name="viewMode" id="ySectionMode" value="y-section">
-                                                    <label class="btn btn-outline-primary" for="ySectionMode">Y-Section</label>
-                                                </div>
-                                            </div>
-                                            
-                                        </div>
-                                    </div>
+{% block step_content %}
+    <!-- Step 2 Specific Content -->
+    <div class="overlap-form-section">
+        <!-- Dual Canvas Visualization -->
+        <div class="config-section">
+            <div class="row">
+                <!-- Left Canvas: Interactive Overlap -->
+                <div class="col-md-6">
+                    <div class="canvas-section">
+                        <div class="canvas-title">Interactive Overlap Detection</div>
+                        <div class="overlap-canvas-container">
+                            <canvas id="overlapCanvas" width="400" height="300"></canvas>
+                            <div class="overlap-info mt-3">
+                                <div class="overlap-display">
+                                    <span class="overlap-value" id="overlapPercentage">0%</span>
+                                    <div class="overlap-label">Current Overlap Coverage</div>
                                 </div>
                             </div>
-                            
                         </div>
                     </div>
                 </div>
                 
-                <!-- Navigation -->
-                <div class="step-navigation">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="text-muted">Step {{ current_step }} of {{ total_steps }}</span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{% url 'overlap:step1' matchup.id %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i> Previous Step
-                            </a>
-                            {% if has_next_step %}
-                                {% if next_step_accessible %}
-                                    <a href="{% url 'overlap:step3' matchup.id %}" class="btn btn-outline-primary">
-                                        Next Step <i class="fas fa-arrow-right ms-1"></i>
-                                    </a>
-                                {% else %}
-                                    <button class="btn btn-outline-secondary" disabled>
-                                        Complete this step to continue <i class="fas fa-lock ms-1"></i>
-                                    </button>
-                                {% endif %}
-                            {% endif %}
+                <!-- Right Canvas: Heatmap/Cross-section -->
+                <div class="col-md-6">
+                    <div class="canvas-section">
+                        <div class="canvas-title" id="rightCanvasTitle">X-Section: Overlap vs X-coordinate</div>
+                        <div class="heatmap-canvas-container">
+                            <canvas id="heatmapCanvas" width="400" height="300"></canvas>
+                            
+                            <!-- View Mode Toggle -->
+                            <div class="view-mode-toggle mt-3">
+                                <div class="btn-group" role="group" aria-label="View mode selection">
+                                    <input type="radio" class="btn-check" name="viewMode" id="xSectionMode" value="x-section" checked>
+                                    <label class="btn btn-outline-primary" for="xSectionMode">X-Section</label>
+                                    
+                                    <input type="radio" class="btn-check" name="viewMode" id="ySectionMode" value="y-section">
+                                    <label class="btn btn-outline-primary" for="ySectionMode">Y-Section</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+{% endblock %}
 
-    <!-- Instructions Offcanvas -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
-                <i class="fas fa-clipboard-list me-2"></i>Step 2 Instructions
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            {% if instructions %}
-                {% for instruction in instructions %}
-                    <div class="instruction-step mb-4">
-                        <h6 class="fw-bold text-primary">
-                            <i class="fas fa-circle-check me-2"></i>{{ instruction.title }}
-                        </h6>
-                        <div class="instruction-content">
-                            {{ instruction.content|safe }}
-                        </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <div class="alert alert-light">
-                    <i class="fas fa-info-circle me-2"></i>No instructions available for this step.
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
+{% block step_scripts %}
 <script>
 // Overlap Canvas Functionality
 document.addEventListener('DOMContentLoaded', function() {
