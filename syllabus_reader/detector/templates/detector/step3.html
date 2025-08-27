@@ -1,299 +1,466 @@
-{% extends 'syllabus/base.html' %}
+{% extends 'aigames/gamepage.html' %}
 {% load static %}
 
 {% block title %}{{ step_name }} - {{ matchup.ai_game.title }}{% endblock %}
 
-{% block extra_css %}
+{% block extra_step_css %}
 <link rel="stylesheet" href="{% static 'detector/css/steps.css' %}">
+<style>
+    .map-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .map-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+    }
+    
+    .map-wrapper {
+        width: 100%;
+        height: 500px;
+        position: relative;
+        overflow: hidden;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    #schoolMap {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border: none;
+        display: block;
+    }
+    
+    .school-info {
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-top: 3px solid #667eea;
+    }
+    
+    .school-info h5 {
+        color: #495057;
+        margin-bottom: 1rem;
+    }
+    
+    .info-item {
+        margin-bottom: 0.75rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 6px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .info-item strong {
+        color: #495057;
+    }
+    
+    .detection-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .detection-status {
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        border-left: 4px solid #28a745;
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    /* Ensure no conflicts with gamepage template */
+    .step-content {
+        overflow: visible !important;
+    }
+    
+    .detector-form-section {
+        width: 100%;
+        overflow: visible;
+    }
+</style>
 {% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <!-- Instructions Button -->
-    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
-        <button class="btn btn-primary" 
-                type="button" 
-                data-bs-toggle="offcanvas" 
-                data-bs-target="#instructionsOffcanvas"
-                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
-            Instructions
-        </button>
-    </div>
-
-    <!-- Main Content Card -->
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="card step-card">
-                <div class="card-header">
-                    <h4>{{ ai_game.title }} - {{ step_name }}</h4>
-                    <div class="matchup-info">
-                        <strong>{{ matchup.team1.name }}</strong> vs <strong>{{ matchup.team2.name }}</strong>
-                    </div>
-                    <div class="mt-2">
-                        <small class="text-light">Step {{ current_step }} of {{ total_steps }}</small>
-                    </div>
-                </div>
+{% block step_content %}
+<!-- Step 3 Specific Content - Map Analysis -->
+<div class="detector-form-section">
+    <!-- School Location Map -->
+    <div class="map-container">
+        <div class="map-header">
+            <h5><i class="fas fa-map-marker-alt me-2"></i>Target Location Analysis</h5>
+            <p class="mb-0">Analyzing the geographic location and environment of {{ school_data.name }}</p>
+        </div>
+        
+        <div class="map-wrapper">
+            <div class="map-container-with-overlay" style="position: relative; width: 100%; height: 100%;">
+                <img id="schoolMap" 
+                     src="{% static 'detector/images/LGB.png' %}"
+                     alt="Map of {{ school_data.name }}"
+                     style="width: 100%; height: 100%; object-fit: cover; border: none; display: block;">
                 
-                <div class="card-body">
-                    <!-- Step Progress Indicator -->
-                    <div class="step-indicator">
-                        {% for step_num in "1234"|make_list %}
-                            {% if not forloop.first %}
-                                <div class="step-connector {% if step_num|add:0 <= current_step %}completed{% endif %}"></div>
-                            {% endif %}
-                            <div class="step 
-                                {% if step_num|add:0 < current_step %}completed
-                                {% elif step_num|add:0 == current_step %}current
-                                {% else %}pending{% endif %}">
-                                {% if step_num|add:0 < current_step %}
-                                    <i class="fas fa-check"></i>
-                                {% else %}
-                                    {{ step_num }}
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Step 3 Specific Content -->
-                    <div class="detector-form-section">
-                        <h5><i class="fas fa-search me-2"></i>Analysis & Detection</h5>
-                        <p class="text-muted">Run detection algorithms and analyze the results.</p>
-                        
-                        <form method="post" id="step3Form">
-                            {% csrf_token %}
-                            
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="analysis-panel">
-                                        <h6><i class="fas fa-cogs me-2"></i>Analysis Configuration</h6>
-                                        
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="algorithm" class="form-label">Detection Algorithm</label>
-                                                    <select class="form-select" id="algorithm" name="algorithm" required>
-                                                        <option value="">Choose algorithm...</option>
-                                                        <option value="pattern_matching">Pattern Matching</option>
-                                                        <option value="statistical">Statistical Analysis</option>
-                                                        <option value="machine_learning">Machine Learning</option>
-                                                        <option value="hybrid">Hybrid Approach</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="threshold" class="form-label">Detection Threshold</label>
-                                                    <input type="range" class="form-range" id="threshold" name="threshold" 
-                                                           min="0.1" max="1.0" step="0.1" value="0.5" 
-                                                           oninput="updateThresholdValue(this.value)">
-                                                    <small class="text-muted">Current: <span id="thresholdValue">0.5</span></small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="parameters" class="form-label">Additional Parameters</label>
-                                            <textarea class="form-control" id="parameters" name="parameters" 
-                                                      rows="3" placeholder="Enter additional analysis parameters..."></textarea>
-                                        </div>
-                                        
-                                        <button type="button" class="btn btn-primary" onclick="runAnalysis()">
-                                            <i class="fas fa-play me-1"></i>Run Analysis
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-4">
-                                    <div class="analysis-panel">
-                                        <h6><i class="fas fa-tachometer-alt me-2"></i>Progress</h6>
-                                        <div class="progress mb-3" style="height: 25px;">
-                                            <div class="progress-bar" id="analysisProgress" role="progressbar" 
-                                                 style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                                                0%
-                                            </div>
-                                        </div>
-                                        <div class="small text-muted" id="analysisStatus">
-                                            Ready to start analysis
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="detection-result mt-4" id="analysisResults" style="display: none;">
-                                <h6><i class="fas fa-chart-line me-2"></i>Analysis Results</h6>
-                                <div id="resultsContent">
-                                    <!-- Results will be populated here -->
-                                </div>
-                                
-                                <div class="row mt-3">
-                                    <div class="col-md-4">
-                                        <div class="text-center">
-                                            <h6>Confidence Level</h6>
-                                            <div class="confidence-meter">
-                                                <div class="confidence-bar confidence-high" id="confidenceBar" style="width: 0%"></div>
-                                            </div>
-                                            <small class="text-muted" id="confidenceText">0%</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-center">
-                                            <h6>Detections Found</h6>
-                                            <div class="display-6 text-primary" id="detectionsCount">0</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-center">
-                                            <h6>Accuracy Score</h6>
-                                            <div class="display-6 text-success" id="accuracyScore">0%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex gap-2 mt-3">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i>Save Analysis
-                                </button>
-                                <button type="button" class="btn btn-success" onclick="completeStep(3)" id="completeBtn" disabled>
-                                    <i class="fas fa-check me-1"></i>Complete Step 3
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <!-- SVG Overlay for polygon -->
+                <svg id="polygonOverlay" 
+                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
+                    <defs>
+                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.3)"/>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Detection area polygon -->
+                    <polygon id="detectionPolygon" 
+                             points="200,150 300,100, 400,150 400,350 200,350" 
+                             fill="rgba(34, 197, 94, 0.5)" 
+                             stroke="rgba(34, 197, 94, 0.8)" 
+                             stroke-width="2"
+                             filter="url(#shadow)"
+                             style="pointer-events: auto; cursor: pointer;"/>
+                    
+                    <!-- Vertex circles -->
+                    <g id="vertexGroup">
+                        <circle class="vertex" data-index="0" cx="200" cy="150" r="6" 
+                                fill="white" stroke="rgba(34, 197, 94, 1)" stroke-width="2" 
+                                style="pointer-events: auto; cursor: move;" filter="url(#shadow)"/>
+                        <circle class="vertex" data-index="1" cx="300" cy="100" r="6" 
+                                fill="white" stroke="rgba(34, 197, 94, 1)" stroke-width="2" 
+                                style="pointer-events: auto; cursor: move;" filter="url(#shadow)"/>
+                        <circle class="vertex" data-index="2" cx="400" cy="150" r="6" 
+                                fill="white" stroke="rgba(34, 197, 94, 1)" stroke-width="2" 
+                                style="pointer-events: auto; cursor: move;" filter="url(#shadow)"/>
+                        <circle class="vertex" data-index="3" cx="400" cy="350" r="6" 
+                                fill="white" stroke="rgba(34, 197, 94, 1)" stroke-width="2" 
+                                style="pointer-events: auto; cursor: move;" filter="url(#shadow)"/>
+                        <circle class="vertex" data-index="4" cx="200" cy="350" r="6" 
+                                fill="white" stroke="rgba(34, 197, 94, 1)" stroke-width="2" 
+                                style="pointer-events: auto; cursor: move;" filter="url(#shadow)"/>
+                    </g>
+                </svg>
                 
-                <!-- Navigation -->
-                <div class="step-navigation">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <a href="{% url 'detector:step2' matchup.id %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i>Previous Step
-                            </a>
-                        </div>
-                        <div>
-                            <span class="text-muted">Step {{ current_step }} of {{ total_steps }}</span>
-                        </div>
-                        <div>
-                            {% if has_next_step %}
-                                {% if next_step_accessible %}
-                                    <a href="{% url 'detector:step4' matchup.id %}" class="btn btn-outline-primary">
-                                        Next Step <i class="fas fa-arrow-right ms-1"></i>
-                                    </a>
-                                {% else %}
-                                    <button class="btn btn-outline-secondary" disabled>
-                                        Complete this step to continue <i class="fas fa-lock ms-1"></i>
-                                    </button>
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+        
+        <div class="school-info">
+            <h5><i class="fas fa-info-circle me-2"></i>Location Details</h5>
+            <div class="info-item">
+                <strong>School Name:</strong> {{ school_data.name }}
+            </div>
+            <div class="info-item">
+                <strong>OpenStreetMap Way ID:</strong> {{ school_data.osm_way_id }}
+            </div>
+            <div class="info-item">
+                <strong>Coordinates:</strong> {{ school_data.latitude }}°N, {{ school_data.longitude }}°E
+            </div>
+            <div class="info-item">
+                <strong>Address:</strong> {{ school_data.address }}
             </div>
         </div>
     </div>
-
-    <!-- Instructions Offcanvas -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
-                <i class="fas fa-clipboard-list me-2"></i>Step 3 Instructions
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    
+    <!-- Detection Analysis Panel -->
+    <div class="detection-panel">
+        <h5><i class="fas fa-search me-2"></i>Environmental Detection Analysis</h5>
+        <p>Based on the location data and environmental factors, analyze the detection parameters for this educational facility.</p>
+        
+        <div class="detection-status">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Location Loaded:</strong> Successfully identified target location with OpenStreetMap integration.
         </div>
-        <div class="offcanvas-body">
-            {% if instructions %}
-                {% for instruction in instructions %}
-                    <div class="instruction-step mb-4">
-                        <h6 class="fw-bold text-primary">
-                            <i class="fas fa-circle-check me-2"></i>{{ instruction.title }}
-                        </h6>
-                        <div class="instruction-content">
-                            {{ instruction.content|safe }}
-                        </div>
+        
+        <form method="post" id="step3Form">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="environmental_factors" class="form-label">
+                            <i class="fas fa-leaf me-1"></i>Environmental Factors Observed
+                        </label>
+                        <textarea class="form-control" 
+                                id="environmental_factors" 
+                                name="environmental_factors" 
+                                rows="4" 
+                                placeholder="Describe environmental factors visible on the map that could affect detection...">{{ team_data.analysis_data.environmental_factors|default:"" }}</textarea>
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="alert alert-info">
-                    <h6>Analysis & Detection</h6>
-                    <p>In this step, you will analyze the data:</p>
-                    <ul>
-                        <li>Choose detection algorithms</li>
-                        <li>Set analysis parameters</li>
-                        <li>Run the detection process</li>
-                        <li>Review confidence levels and results</li>
-                    </ul>
                 </div>
-            {% endif %}
-        </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="location_analysis" class="form-label">
+                            <i class="fas fa-chart-line me-1"></i>Location Analysis Notes
+                        </label>
+                        <textarea class="form-control" 
+                                id="location_analysis" 
+                                name="location_analysis" 
+                                rows="4" 
+                                placeholder="Analyze the geographic context and how it relates to your detection objectives...">{{ team_data.analysis_data.location_analysis|default:"" }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="detection_parameters" class="form-label">
+                    <i class="fas fa-cogs me-1"></i>Updated Detection Parameters
+                </label>
+                <select class="form-select" id="detection_parameters" name="detection_parameters">
+                    <option value="">Select detection parameters based on location analysis...</option>
+                    <option value="urban_environment" {% if team_data.analysis_data.detection_parameters == "urban_environment" %}selected{% endif %}>Urban Environment - High Traffic</option>
+                    <option value="educational_facility" {% if team_data.analysis_data.detection_parameters == "educational_facility" %}selected{% endif %}>Educational Facility - Moderate Activity</option>
+                    <option value="residential_area" {% if team_data.analysis_data.detection_parameters == "residential_area" %}selected{% endif %}>Residential Area - Low Background</option>
+                    <option value="mixed_use" {% if team_data.analysis_data.detection_parameters == "mixed_use" %}selected{% endif %}>Mixed Use - Variable Conditions</option>
+                </select>
+            </div>
+            
+            <div class="form-group mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="location_verified" name="location_verified" 
+                           {% if team_data.analysis_data.location_verified %}checked{% endif %}>
+                    <label class="form-check-label" for="location_verified">
+                        <i class="fas fa-map-pin me-1"></i>I have verified the target location on the map
+                    </label>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Save Analysis
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+{% endblock %}
 
+{% block step_scripts %}
 <script>
-function updateThresholdValue(value) {
-    document.getElementById('thresholdValue').textContent = value;
+// Form validation
+function checkFormCompletion() {
+    const environmentalFactors = document.getElementById('environmental_factors').value.trim();
+    const locationAnalysis = document.getElementById('location_analysis').value.trim();
+    const detectionParameters = document.getElementById('detection_parameters').value;
+    const locationVerified = document.getElementById('location_verified').checked;
+    
+    const completeBtn = document.getElementById('completeBtn');
+    
+    if (environmentalFactors && locationAnalysis && detectionParameters && locationVerified) {
+        if (completeBtn) {
+            completeBtn.disabled = false;
+            completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Step 3';
+            completeBtn.classList.remove('btn-secondary');
+            completeBtn.classList.add('btn-success');
+        }
+    } else {
+        if (completeBtn) {
+            completeBtn.disabled = true;
+            completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Step 3';
+            completeBtn.classList.remove('btn-success');
+            completeBtn.classList.add('btn-secondary');
+        }
+    }
 }
 
-function runAnalysis() {
-    const algorithm = document.getElementById('algorithm').value;
-    if (!algorithm) {
-        alert('Please select a detection algorithm first.');
-        return;
+// Add event listeners for form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const formElements = ['environmental_factors', 'location_analysis', 'detection_parameters', 'location_verified'];
+    formElements.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.addEventListener('change', checkFormCompletion);
+            element.addEventListener('input', checkFormCompletion);
+        }
+    });
+    
+    // Initial check
+    checkFormCompletion();
+    
+    // Initialize polygon interaction
+    initializePolygonEditor();
+});
+
+// Polygon editing functionality
+function initializePolygonEditor() {
+    let isDragging = false;
+    let currentVertex = null;
+    let vertices = [
+        {x: 200, y: 150},
+        {x: 400, y: 150},
+        {x: 400, y: 350},
+        {x: 200, y: 350}
+    ];
+    
+    function updatePolygon() {
+        const polygon = document.getElementById('detectionPolygon');
+        const vertexGroup = document.getElementById('vertexGroup');
+        
+        // Update polygon points
+        const points = vertices.map(v => `${v.x},${v.y}`).join(' ');
+        polygon.setAttribute('points', points);
+        
+        // Update vertex positions
+        const vertexCircles = vertexGroup.querySelectorAll('.vertex');
+        vertexCircles.forEach((circle, index) => {
+            if (vertices[index]) {
+                circle.setAttribute('cx', vertices[index].x);
+                circle.setAttribute('cy', vertices[index].y);
+                circle.setAttribute('data-index', index);
+            }
+        });
+        
+        // Save polygon data to form
+        savePolygonData();
     }
     
-    // Simulate analysis process
-    const progressBar = document.getElementById('analysisProgress');
-    const statusText = document.getElementById('analysisStatus');
-    const resultsDiv = document.getElementById('analysisResults');
-    
-    let progress = 0;
-    statusText.textContent = 'Initializing analysis...';
-    
-    const interval = setInterval(() => {
-        progress += Math.random() * 15;
-        if (progress > 100) progress = 100;
+    function savePolygonData() {
+        // Store polygon coordinates in a hidden form field or save via AJAX
+        const polygonData = {
+            vertices: vertices,
+            timestamp: new Date().toISOString()
+        };
         
-        progressBar.style.width = progress + '%';
-        progressBar.textContent = Math.round(progress) + '%';
+        // You can save this to your form data
+        console.log('Polygon data:', polygonData);
         
-        if (progress < 30) {
-            statusText.textContent = 'Processing data...';
-        } else if (progress < 70) {
-            statusText.textContent = 'Running detection algorithms...';
-        } else if (progress < 95) {
-            statusText.textContent = 'Analyzing results...';
-        } else {
-            statusText.textContent = 'Analysis complete!';
-            clearInterval(interval);
-            showResults();
+        // Optional: Auto-save to backend
+        // saveFormData();
+    }
+    
+    function addVertex() {
+        if (vertices.length >= 10) {
+            alert('Maximum 10 vertices allowed');
+            return;
         }
-    }, 500);
-}
-
-function showResults() {
-    // Simulate analysis results
-    const confidence = Math.random() * 100;
-    const detections = Math.floor(Math.random() * 50) + 1;
-    const accuracy = Math.random() * 100;
+        
+        // Add new vertex at center of existing polygon
+        const centerX = vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length;
+        const centerY = vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length;
+        
+        vertices.push({x: centerX, y: centerY});
+        
+        // Create new vertex circle
+        const vertexGroup = document.getElementById('vertexGroup');
+        const newCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        newCircle.classList.add('vertex');
+        newCircle.setAttribute('r', '6');
+        newCircle.setAttribute('fill', 'white');
+        newCircle.setAttribute('stroke', 'rgba(34, 197, 94, 1)');
+        newCircle.setAttribute('stroke-width', '2');
+        newCircle.setAttribute('filter', 'url(#shadow)');
+        newCircle.style.pointerEvents = 'auto';
+        newCircle.style.cursor = 'move';
+        
+        addVertexEventListeners(newCircle);
+        vertexGroup.appendChild(newCircle);
+        
+        updatePolygon();
+    }
     
-    document.getElementById('confidenceBar').style.width = confidence + '%';
-    document.getElementById('confidenceText').textContent = Math.round(confidence) + '%';
-    document.getElementById('detectionsCount').textContent = detections;
-    document.getElementById('accuracyScore').textContent = Math.round(accuracy) + '%';
+    function removeVertex() {
+        if (vertices.length <= 3) {
+            alert('Minimum 3 vertices required');
+            return;
+        }
+        
+        vertices.pop();
+        const vertexGroup = document.getElementById('vertexGroup');
+        const lastVertex = vertexGroup.lastElementChild;
+        if (lastVertex) {
+            vertexGroup.removeChild(lastVertex);
+        }
+        
+        updatePolygon();
+    }
     
-    // Update confidence bar color based on level
-    const confidenceBar = document.getElementById('confidenceBar');
-    confidenceBar.className = 'confidence-bar ' + 
-        (confidence > 70 ? 'confidence-high' : 
-         confidence > 40 ? 'confidence-medium' : 'confidence-low');
+    function resetPolygon() {
+        vertices = [
+            {x: 200, y: 150},
+            {x: 400, y: 150},
+            {x: 400, y: 350},
+            {x: 200, y: 350}
+        ];
+        
+        // Remove extra vertices
+        const vertexGroup = document.getElementById('vertexGroup');
+        while (vertexGroup.children.length > 4) {
+            vertexGroup.removeChild(vertexGroup.lastChild);
+        }
+        
+        updatePolygon();
+    }
     
-    document.getElementById('resultsContent').innerHTML = `
-        <p><strong>Algorithm:</strong> ${document.getElementById('algorithm').value}</p>
-        <p><strong>Threshold:</strong> ${document.getElementById('threshold').value}</p>
-        <p><strong>Status:</strong> <span class="text-success">Analysis completed successfully</span></p>
-    `;
+    function addVertexEventListeners(vertex) {
+        vertex.addEventListener('mousedown', startDrag);
+        vertex.addEventListener('touchstart', startDrag);
+    }
     
-    document.getElementById('analysisResults').style.display = 'block';
-    document.getElementById('completeBtn').disabled = false;
+    function startDrag(e) {
+        e.preventDefault();
+        isDragging = true;
+        currentVertex = parseInt(e.target.getAttribute('data-index'));
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchmove', drag);
+        document.addEventListener('touchend', stopDrag);
+    }
+    
+    function drag(e) {
+        if (!isDragging || currentVertex === null) return;
+        
+        e.preventDefault();
+        const svg = document.getElementById('polygonOverlay');
+        const rect = svg.getBoundingClientRect();
+        
+        let clientX, clientY;
+        if (e.type.includes('touch')) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        const x = ((clientX - rect.left) / rect.width) * svg.viewBox.baseVal.width || (clientX - rect.left);
+        const y = ((clientY - rect.top) / rect.height) * svg.viewBox.baseVal.height || (clientY - rect.top);
+        
+        // Constrain to SVG bounds
+        const constrainedX = Math.max(0, Math.min(svg.clientWidth, x));
+        const constrainedY = Math.max(0, Math.min(svg.clientHeight, y));
+        
+        vertices[currentVertex] = {x: constrainedX, y: constrainedY};
+        updatePolygon();
+    }
+    
+    function stopDrag() {
+        isDragging = false;
+        currentVertex = null;
+        
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchmove', drag);
+        document.removeEventListener('touchend', stopDrag);
+    }
+    
+    // Add event listeners to existing vertices
+    document.querySelectorAll('.vertex').forEach(addVertexEventListeners);
+    
+    // Add event listeners to control buttons
+    document.getElementById('addVertex').addEventListener('click', addVertex);
+    document.getElementById('removeVertex').addEventListener('click', removeVertex);
+    document.getElementById('resetPolygon').addEventListener('click', resetPolygon);
+    
+    // Initial polygon setup
+    updatePolygon();
 }
 
 function completeStep(stepNumber) {
@@ -305,12 +472,58 @@ function completeStep(stepNumber) {
                 'Content-Type': 'application/json',
             },
         })
-        .then(response => {
-            if (response.ok) {
-                window.location.href = `{% url 'detector:step4' matchup.id %}`;
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Error completing step: ' + data.error);
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while completing the step.');
         });
     }
 }
+
+// Auto-save form data
+function saveFormData() {
+    const formData = new FormData(document.getElementById('step3Form'));
+    
+    fetch(`{% url 'detector:save_step_data' matchup.id %}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Form data saved successfully');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving form data:', error);
+    });
+}
+
+// Auto-save when form changes (with debouncing)
+let saveTimeout;
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('step3Form');
+    if (form) {
+        form.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveFormData, 2000); // Save 2 seconds after user stops typing
+        });
+        
+        form.addEventListener('change', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveFormData, 1000); // Save 1 second after dropdown/checkbox change
+        });
+    }
+});
 </script>
 {% endblock %}

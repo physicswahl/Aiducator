@@ -165,10 +165,15 @@ def step3(request, matchup_id):
         analysis_data = {
             'timestamp': timezone.now().isoformat(),
             'user': request.user.username,
-            # Add specific step 3 fields here
+            'environmental_factors': request.POST.get('environmental_factors', ''),
+            'location_analysis': request.POST.get('location_analysis', ''),
+            'detection_parameters': request.POST.get('detection_parameters', ''),
+            'location_verified': request.POST.get('location_verified') == 'on'
         }
         
-        team_data.analysis_data = analysis_data
+        if not hasattr(team_data, 'analysis_data') or team_data.analysis_data is None:
+            team_data.analysis_data = {}
+        team_data.analysis_data.update(analysis_data)
         team_data.save()
         
         messages.success(request, "Step 3 analysis saved successfully!")
@@ -197,6 +202,19 @@ def step3(request, matchup_id):
         'has_next_step': True,
         'next_step_accessible': True,  # Let aigames dashboard control navigation
         'instructions': instructions,
+        
+        # Variables for gamepage template
+        'previous_step_url': reverse('detector:step2', kwargs={'matchup_id': matchup_id}),
+        'next_step_url': reverse('detector:step4', kwargs={'matchup_id': matchup_id}) if 3 < TOTAL_STEPS else None,
+        
+        # OpenStreetMap data for École internationale de Genève
+        'school_data': {
+            'name': 'École internationale de Genève (La Grande Boissière)',
+            'osm_way_id': '85537703',
+            'latitude': 46.2187,
+            'longitude': 6.1456,
+            'address': 'Route de Chêne 62, 1208 Genève, Switzerland'
+        }
     }
     
     return render(request, 'detector/step3.html', context)
@@ -310,19 +328,41 @@ def save_step_data(request, matchup_id):
         
         team_data = get_object_or_404(TeamDetectorData, matchup=matchup, team=user_team)
         
-        # Parse the posted data
-        data = json.loads(request.body)
-        step_number = data.get('step_number')
-        step_data = data.get('data', {})
+        # Handle both JSON and form data
+        if request.content_type == 'application/json':
+            # Parse JSON data
+            data = json.loads(request.body)
+            step_number = data.get('step_number')
+            step_data = data.get('data', {})
+        else:
+            # Handle form data for step 3
+            step_data = {
+                'timestamp': timezone.now().isoformat(),
+                'user': request.user.username,
+                'environmental_factors': request.POST.get('environmental_factors', ''),
+                'location_analysis': request.POST.get('location_analysis', ''),
+                'detection_parameters': request.POST.get('detection_parameters', ''),
+                'location_verified': request.POST.get('location_verified') == 'on'
+            }
+            # Assume step 3 for form submissions
+            step_number = 3
         
         # Save to appropriate field based on step
         if step_number == 1:
+            if not hasattr(team_data, 'setup_data') or team_data.setup_data is None:
+                team_data.setup_data = {}
             team_data.setup_data.update(step_data)
         elif step_number == 2:
+            if not hasattr(team_data, 'collection_data') or team_data.collection_data is None:
+                team_data.collection_data = {}
             team_data.collection_data.update(step_data)
         elif step_number == 3:
+            if not hasattr(team_data, 'analysis_data') or team_data.analysis_data is None:
+                team_data.analysis_data = {}
             team_data.analysis_data.update(step_data)
         elif step_number == 4:
+            if not hasattr(team_data, 'results_data') or team_data.results_data is None:
+                team_data.results_data = {}
             team_data.results_data.update(step_data)
         
         team_data.save()
