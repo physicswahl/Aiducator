@@ -438,8 +438,18 @@ def step4(request, matchup_id):
         game_step__step_number=4
     )
     
+    # Navigation context for gamepage template
+    ai_game = matchup.ai_game
+    total_steps = ai_game.steps.count()
+    has_next_step = 4 < total_steps
+    
+    # Check if step 4 is complete to allow access to step 5
+    step4_progress = matchup.get_progress_for_step(4)
+    next_step_accessible = all_approved  # Step 4 is complete when all texts are approved
+
     context = {
         'matchup': matchup,
+        'ai_game': ai_game,
         'step4_data': step4_data,
         'text_data': text_data,
         'selected_phoneme': step4_data.selected_phoneme,
@@ -449,6 +459,16 @@ def step4(request, matchup_id):
         'all_approved': all_approved,
         'can_submit': can_submit,
         'instructions': instructions,
+        # Navigation context for gamepage template
+        'step_number': 4,
+        'step_title': 'Create Your Texts',
+        'total_steps': total_steps,
+        'current_step': 4,
+        'step_name': 'Step 4: Create Your Texts',
+        'has_next_step': has_next_step,
+        'next_step_accessible': next_step_accessible,
+        'previous_step_url': reverse('phoneme_density:step3', kwargs={'matchup_id': matchup.id}),
+        'next_step_url': reverse('phoneme_density:step5', kwargs={'matchup_id': matchup.id}) if has_next_step else None,
     }
     
     return render(request, 'phoneme_density/step4.html', context)
@@ -866,6 +886,116 @@ def text_analysis(request, matchup_id, text_number):
             }
             for phoneme in phoneme_list
         ],
+    }
+    
+    return render(request, 'phoneme_density/text_analysis.html', context)
+
+
+def analyze_combined_text(request, matchup_id):
+    """Analyze combined text from texts 1, 3, 5, 7"""
+    matchup = get_object_or_404(GameMatchup, id=matchup_id)
+    
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('phoneme_density:step4', matchup_id=matchup_id)
+    
+    # Get combined text from form
+    combined_text = request.POST.get('combined_text', '')
+    selected_phoneme = request.POST.get('selected_phoneme', '')
+    text_numbers = request.POST.get('text_numbers', '1,3,5,7')
+    
+    if not combined_text.strip():
+        messages.error(request, "No text content found.")
+        return redirect('phoneme_density:step4', matchup_id=matchup_id)
+    
+    # Get the user's team
+    user_team = None
+    if request.user in matchup.team1.members.all():
+        user_team = matchup.team1
+    elif request.user in matchup.team2.members.all():
+        user_team = matchup.team2
+    else:
+        # Teachers can view any team's data
+        user_team = matchup.team1  # Default for teachers
+    
+    # Calculate frequencies for all phonemes
+    text_frequencies = {}
+    english_frequencies = {}
+    phoneme_list = list(ENGLISH_PHONEME_FREQUENCIES.keys())
+    
+    for phoneme in phoneme_list:
+        text_freq = calculate_phoneme_frequency(combined_text, phoneme)
+        english_freq = ENGLISH_PHONEME_FREQUENCIES[phoneme]
+        
+        text_frequencies[phoneme] = text_freq
+        english_frequencies[phoneme] = english_freq
+    
+    # Calculate standard error for English frequencies using actual text length
+    actual_text_length = len(combined_text.replace(' ', ''))  # Character count excluding spaces
+    standard_errors = {}
+    
+    for phoneme in phoneme_list:
+        p = english_frequencies[phoneme] / 100  # Convert percentage to proportion
+        se = math.sqrt(p * (1 - p) / actual_text_length) * 100  # Convert back to percentage
+        standard_errors[phoneme] = se * 1.96  # 95% confidence interval
+    
+    # Calculate likelihood that each phoneme is the "overweight" target phoneme
+    phoneme_likelihoods = {}
+    z_scores = {}
+    
+    for phoneme in phoneme_list:
+        observed_freq = text_frequencies[phoneme]
+        expected_freq = english_frequencies[phoneme]
+        se_single = standard_errors[phoneme] / 1.96  # Get single standard error (not 95% CI)
+        
+        # Calculate z-score (how many standard deviations above baseline)
+        z_score = (observed_freq - expected_freq) / se_single if se_single > 0 else 0
+        z_scores[phoneme] = z_score
+        
+        # Convert z-score to likelihood using normal distribution
+        likelihood_score = max(0, z_score)
+        phoneme_likelihoods[phoneme] = likelihood_score
+    
+    # Normalize likelihoods to percentages (sum to 100%)
+    total_likelihood = sum(phoneme_likelihoods.values())
+    if total_likelihood > 0:
+        phoneme_probabilities = {
+            phoneme: (likelihood / total_likelihood) * 100 
+            for phoneme, likelihood in phoneme_likelihoods.items()
+        }
+    else:
+        # If no phonemes are above baseline, assign equal probabilities
+        phoneme_probabilities = {phoneme: 100/len(phoneme_list) for phoneme in phoneme_list}
+
+    # Create a mock text object for template compatibility
+    mock_text = type('MockText', (), {
+        'content': combined_text,
+        'text_number': text_numbers,
+    })()
+
+    context = {
+        'matchup': matchup,
+        'team': user_team,
+        'text_number': f"Combined ({text_numbers})",
+        'team_text': mock_text,
+        'selected_phoneme': selected_phoneme,
+        'phoneme_list': json.dumps(phoneme_list),
+        'text_frequencies': json.dumps(list(text_frequencies.values())),
+        'english_frequencies': json.dumps(list(english_frequencies.values())),
+        'standard_errors': json.dumps(list(standard_errors.values())),
+        'phoneme_labels': json.dumps([f"/{p}/" for p in phoneme_list]),
+        'z_scores': z_scores,
+        'phoneme_probabilities': phoneme_probabilities,
+        'phoneme_analysis': [
+            {
+                'phoneme': phoneme,
+                'probability': phoneme_probabilities[phoneme],
+                'z_score': z_scores[phoneme]
+            }
+            for phoneme in phoneme_list
+        ],
+        'is_combined_analysis': True,  # Flag to indicate this is combined analysis
+        'combined_text_numbers': text_numbers,
     }
     
     return render(request, 'phoneme_density/text_analysis.html', context)

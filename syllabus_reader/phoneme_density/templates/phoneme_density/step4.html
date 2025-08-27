@@ -1,104 +1,13 @@
-{% extends 'syllabus/base.html' %}
+{% extends 'aigames/gamepage.html' %}
 {% load static %}
 
 {% block title %}Step 4: Create Your Texts - {{ matchup.ai_game.title }}{% endblock %}
 
-{% block extra_css %}
+{% block extra_step_css %}
 <link rel="stylesheet" href="{% static 'phoneme_density/css/steps.css' %}">
 {% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <!-- Simple Instructions Button - Left Side -->
-    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
-        <button class="btn btn-primary" 
-                type="button" 
-                data-bs-toggle="offcanvas" 
-                data-bs-target="#instructionsOffcanvas" 
-                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
-            Instructions
-        </button>
-    </div>
-
-    <!-- Instructions Offcanvas -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
-                <i class="fas fa-clipboard-list me-2"></i>Step 4 Instructions
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            {% for instruction in instructions %}
-                <div class="instruction-step mb-4">
-                    <h6 class="fw-bold text-primary">
-                        <i class="fas fa-circle-check me-2"></i>Step {{ forloop.counter }}
-                    </h6>
-                    <div class="instruction-content">
-                        {{ instruction.content|safe }}
-                    </div>
-                </div>
-            {% empty %}
-                <div class="alert alert-info">
-                    <h6><i class="fas fa-info-circle me-2"></i>Default Instructions</h6>
-                    <ul class="mb-0">
-                        <li>Choose a phoneme from the dropdown below</li>
-                        <li>Write 8 original texts, each using your chosen phoneme</li>
-                        <li>Aim for good phoneme density in your texts</li>
-                        <li>All texts must be approved by your teacher before proceeding</li>
-                        <li>Your texts are automatically saved as you type</li>
-                    </ul>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <!-- Main Card -->
-            <div class="card step-card">
-                <!-- Card Header -->
-                <div class="card-header bg-primary text-white">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h2 class="card-title mb-0">
-                                <i class="fas fa-edit me-2"></i>Step 4: Create Your Own Texts
-                            </h2>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <div class="matchup-info">
-                                <small class="d-block opacity-75">{{ matchup.team1.name }} vs {{ matchup.team2.name }}</small>
-                                <small class="d-block opacity-75">Game: {{ matchup.ai_game.title }}</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Progress Section -->
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="progress-info">
-                                    <span class="badge bg-light text-dark me-2">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Last saved: <span id="lastSavedTime">{% if team_data.updated_at %}{{ team_data.updated_at|date:"M d, H:i" }}{% else %}Never{% endif %}</span>
-                                    </span>
-                                    {% if team_data.approval_status %}
-                                        <span class="badge bg-{% if team_data.approval_status == 'approved' %}success{% elif team_data.approval_status == 'rejected' %}danger{% else %}warning{% endif %}">
-                                            <i class="fas fa-{% if team_data.approval_status == 'approved' %}check{% elif team_data.approval_status == 'rejected' %}times{% else %}clock{% endif %} me-1"></i>
-                                            {{ team_data.approval_status|title }}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <span class="badge bg-light text-dark">Step 4 of 6</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Card Body -->
-                <div class="card-body">
+{% block step_content %}
                     <form id="step4Form" method="post">
                         {% csrf_token %}
                         
@@ -171,38 +80,19 @@
         <!-- Action Buttons -->
         <div class="d-flex justify-content-between align-items-center border-top pt-3">
             <div>
-                <a href="{% url 'phoneme_density:step3' matchup_id=matchup.id %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Step 3
-                </a>
-            </div>
-            <div>
                 <button type="button" class="btn btn-info me-2" onclick="saveTextsManually()">
                     <i class="fas fa-save me-2"></i>Save Texts
                 </button>
-                {% if can_submit %}
-                <button type="submit" class="btn btn-success me-2" name="submit_for_review">
-                    <i class="fas fa-paper-plane me-2"></i>Submit for Teacher Review
+                <button type="button" class="btn btn-outline-primary me-2" onclick="analyzeOddTexts()">
+                    <i class="fas fa-chart-line me-2"></i>Analyze Texts
                 </button>
-                {% endif %}
-                
-                {% if all_approved %}
-                <a href="{% url 'phoneme_density:step5' matchup_id=matchup.id %}" class="btn btn-primary">
-                    Continue to Step 5<i class="fas fa-arrow-right ms-2"></i>
-                </a>
-                {% else %}
-                <button type="button" class="btn btn-secondary" disabled>
-                    <i class="fas fa-lock me-2"></i>Complete Teacher Review First
-                </button>
-                {% endif %}
             </div>
         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                    
+{% endblock step_content %}
 
+{% block step_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let selectedPhoneme = document.getElementById('phoneme-select').value;
@@ -427,5 +317,100 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 });
+
+// Function to analyze texts 1, 3, 5, 7 by concatenating them
+function analyzeOddTexts() {
+    // Get the texts for positions 1, 3, 5, 7
+    const oddTexts = [];
+    const textNumbers = [1, 3, 5, 7];
+    
+    textNumbers.forEach(num => {
+        const textarea = document.getElementById(`text-${num}`);
+        if (textarea && textarea.value.trim()) {
+            oddTexts.push(textarea.value.trim());
+        }
+    });
+    
+    if (oddTexts.length === 0) {
+        alert('No content found in texts 1, 3, 5, or 7. Please add some text first.');
+        return;
+    }
+    
+    // Concatenate all odd texts with double line breaks
+    const concatenatedText = oddTexts.join('\n\n');
+    
+    // Create a form to submit the concatenated text for analysis
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "phoneme_density:analyze_combined_text" matchup_id=matchup.id %}';
+    form.target = '_blank';
+    
+    // Add CSRF token
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = 'csrfmiddlewaretoken';
+    csrfToken.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    form.appendChild(csrfToken);
+    
+    // Add the concatenated text
+    const textInput = document.createElement('textarea');
+    textInput.name = 'combined_text';
+    textInput.value = concatenatedText;
+    textInput.style.display = 'none';
+    form.appendChild(textInput);
+    
+    // Add selected phoneme
+    const phonemeInput = document.createElement('input');
+    phonemeInput.type = 'hidden';
+    phonemeInput.name = 'selected_phoneme';
+    phonemeInput.value = document.getElementById('phoneme-select').value || '';
+    form.appendChild(phonemeInput);
+    
+    // Add text numbers for reference
+    const textNumbersInput = document.createElement('input');
+    textNumbersInput.type = 'hidden';
+    textNumbersInput.name = 'text_numbers';
+    textNumbersInput.value = textNumbers.join(',');
+    form.appendChild(textNumbersInput);
+    
+    // Append form to body and submit
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Keyboard shortcut for instructions (Alt+I)
+document.addEventListener('keydown', function(e) {
+    if (e.altKey && e.key === 'i') {
+        e.preventDefault();
+        // Toggle Bootstrap offcanvas
+        const offcanvasElement = document.getElementById('instructionsOffcanvas');
+        const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
+        offcanvas.toggle();
+    }
+});
+
+// Enhanced print functionality
+function printPage() {
+    // Set print-friendly title
+    const originalTitle = document.title;
+    document.title = 'Step4_CreateTexts_{{ ai_game.title|escapejs }}_Matchup{{ matchup.id }}';
+    
+    // Trigger print dialog
+    window.print();
+    
+    // Restore original title
+    setTimeout(() => {
+        document.title = originalTitle;
+    }, 1000);
+}
+
+// Keyboard shortcut for printing (Ctrl+P or Cmd+P)
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        printPage();
+    }
+});
 </script>
-{% endblock %}
+{% endblock step_scripts %}
