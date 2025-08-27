@@ -139,8 +139,12 @@ def step1(request, matchup_id):
         'step_number': 1,
         'step_title': 'Text Analysis',
         'total_steps': total_steps,
+        'current_step': 1,
+        'step_name': 'Step 1: Text Analysis',
         'has_next_step': has_next_step,
         'next_step_accessible': next_step_accessible,
+        # Variables for gamepage template footer navigation
+        'next_step_url': reverse('phoneme_density:step2', kwargs={'matchup_id': matchup.id}) if has_next_step else None,
     }
     
     return render(request, 'phoneme_density/step1.html', context)
@@ -215,8 +219,13 @@ def step2(request, matchup_id):
         'step_number': 2,
         'step_title': 'Label Reveal',
         'total_steps': total_steps,
+        'current_step': 2,
+        'step_name': 'Step 2: Label Reveal',
         'has_next_step': has_next_step,
         'next_step_accessible': next_step_accessible,
+        # Variables for gamepage template footer navigation
+        'next_step_url': reverse('phoneme_density:step3', kwargs={'matchup_id': matchup.id}) if has_next_step else None,
+        'previous_step_url': reverse('phoneme_density:step1', kwargs={'matchup_id': matchup.id}),
     }
     
     return render(request, 'phoneme_density/step2.html', context)

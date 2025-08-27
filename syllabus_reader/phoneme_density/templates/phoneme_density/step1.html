@@ -1,103 +1,13 @@
-{% extends 'syllabus/base.html' %}
+{% extends 'aigames/gamepage.html' %}
 {% load static %}
 
-{% block title %}Step 1: Text Analysis - {{ ai_game.title }}{% endblock %}
+{% block title %}Step 1: Text Analysis - {{ matchup.ai_game.title }}{% endblock %}
 
-{% block extra_css %}
+{% block extra_step_css %}
 <link rel="stylesheet" href="{% static 'phoneme_density/css/steps.css' %}">
 {% endblock %}
 
-{% block content %}
-<!-- Instructions Offcanvas -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="instructionsOffcanvas" aria-labelledby="instructionsOffcanvasLabel">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="instructionsOffcanvasLabel">
-            <i class="fas fa-book-open me-2"></i>Instructions
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body">
-        {% if instructions %}
-            {% for instruction in instructions %}
-                <div class="instruction-step mb-4">
-                    <h6 class="text-primary fw-bold">{{ instruction.title }}</h6>
-                    <div class="instruction-content">
-                        {{ instruction.content|linebreaks }}
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="text-muted">
-                <p>No specific instructions available for this step.</p>
-                <p>Follow the general game instructions and analyze the provided texts.</p>
-            </div>
-        {% endif %}
-    </div>
-</div>
-
-<div class="container-fluid">
-    <!-- Simple Instructions Button - Left Side -->
-    <div style="position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 99999;">
-        <button class="btn btn-primary" 
-                type="button" 
-                data-bs-toggle="offcanvas" 
-                data-bs-target="#instructionsOffcanvas" 
-                style="border-radius: 0 10px 10px 0; border-left: none; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: bold; min-height: 120px;">
-            Instructions
-        </button>
-    </div>
-
-    <!-- Main Content Card -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <!-- Card Header with Title, Matchup Info, Progress, and PDF Button -->
-                <div class="card-header bg-primary text-white">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h1 class="h4 mb-1">
-                                <i class="fas fa-search me-2"></i>Step 1: Text Analysis
-                            </h1>
-                            <div class="d-flex align-items-center gap-3">
-                                <span><strong>{{ team1.name }}</strong> vs <strong>{{ team2.name }}</strong></span>
-                                <span class="badge bg-light text-dark">Step 1 of {{ total_steps }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <div class="d-flex align-items-center justify-content-md-end gap-2 mt-2 mt-md-0">
-                                <!-- Progress Tracker -->
-                                {% if is_teacher %}
-                                    <div class="me-3">
-                                        {% if can_complete_step %}
-                                            <span class="badge bg-warning">In Progress</span>
-                                            <form method="post" action="{% url 'phoneme_density:complete_matchup_step' matchup_id=matchup.id step_number=1 %}" class="d-inline ms-2">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-success btn-sm">
-                                                    <i class="fas fa-check me-1"></i>Complete
-                                                </button>
-                                            </form>
-                                        {% else %}
-                                            <span class="badge bg-success">Completed</span>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                                
-                                <!-- PDF Export Button -->
-                                <a href="{% url 'phoneme_density:export_step1_pdf' matchup_id=matchup.id %}" 
-                                   class="btn btn-light btn-sm">
-                                    <i class="fas fa-file-pdf me-1"></i>PDF
-                                </a>
-                                
-                                {% if is_teacher %}
-                                    <small class="text-light opacity-75">ID: {{ matchup.id }}</small>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Card Body with Text Areas -->
-                <div class="card-body">
+{% block step_content %}
                     <div class="row">
                         <!-- Text Area 1 -->
                         <div class="col-md-6 mb-4">
@@ -132,33 +42,9 @@
                         </div>
                     </div>
                     
-                    <!-- Action Buttons -->
-                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
-                        <div>
-                            <!-- No previous step for Step 1 -->
-                        </div>
-                        <div>
-                            {% if has_next_step %}
-                                {% if next_step_accessible %}
-                                    <a href="{% url 'phoneme_density:step2' matchup_id=matchup.id %}" class="btn btn-success">
-                                        <i class="fas fa-arrow-right me-2"></i>Continue to Step 2
-                                    </a>
-                                {% else %}
-                                    <button class="btn btn-outline-success" disabled title="Complete this step to continue">
-                                        <i class="fas fa-lock me-2"></i>Step 2 (Locked)
-                                    </button>
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+{% endblock step_content %}
 
-{% block extra_js %}
+{% block step_scripts %}
 <script>
 // Keyboard shortcut for instructions (Alt+I)
 document.addEventListener('keydown', function(e) {
