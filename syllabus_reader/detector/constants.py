@@ -15,8 +15,8 @@ TOTAL_STEPS = 4
 
 # Game phases or categories can be defined here
 STEP_NAMES = {
-    1: "Setup & Configuration",
-    2: "Data Collection", 
-    3: "Analysis & Detection",
-    4: "Results & Validation"
+    1: "Configuration et Paramétrage",
+    2: "Collecte de Données", 
+    3: "Analyse et Détection",
+    4: "Résultats et Validation"
 }

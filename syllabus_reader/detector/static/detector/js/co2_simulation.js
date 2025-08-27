@@ -255,12 +255,12 @@ class CO2Simulator {
         // Axis titles
         this.ctx.textAlign = 'center';
         this.ctx.font = '14px Arial';
-        this.ctx.fillText('Time (minutes)', this.margin.left + this.graphWidth / 2, this.canvas.height - 20);
+        this.ctx.fillText('Temps (minutes)', this.margin.left + this.graphWidth / 2, this.canvas.height - 20);
         
         this.ctx.save();
         this.ctx.translate(20, this.margin.top + this.graphHeight / 2);
         this.ctx.rotate(-Math.PI / 2);
-        this.ctx.fillText('CO₂ Concentration (PPM)', 0, 0);
+        this.ctx.fillText('Concentration CO₂ (PPM)', 0, 0);
         this.ctx.restore();
     }
     
@@ -340,12 +340,12 @@ class CO2Simulator {
         const statusX = this.margin.left + this.graphWidth - 145;
         const statusY = this.margin.top + 25;
         
-        this.ctx.fillText(`Status: ${this.isRunning ? (this.isPaused ? 'Paused' : 'Running') : 'Stopped'}`, statusX, statusY);
-        this.ctx.fillText(`Time: ${Math.floor(this.currentTime / 60)}:${String(Math.floor(this.currentTime % 60)).padStart(2, '0')}`, statusX, statusY + 15);
+        this.ctx.fillText(`Statut: ${this.isRunning ? (this.isPaused ? 'En Pause' : 'En Cours') : 'Arrêté'}`, statusX, statusY);
+        this.ctx.fillText(`Temps: ${Math.floor(this.currentTime / 60)}:${String(Math.floor(this.currentTime % 60)).padStart(2, '0')}`, statusX, statusY + 15);
         
         if (this.spikeActive) {
             this.ctx.fillStyle = '#dc3545';
-            this.ctx.fillText('SPIKE ACTIVE', statusX, statusY + 30);
+            this.ctx.fillText('PIC ACTIF', statusX, statusY + 30);
         }
     }
     
@@ -362,7 +362,7 @@ class CO2Simulator {
         resetBtn.disabled = this.isRunning && !this.isPaused;
         spikeBtn.disabled = !this.isRunning || this.spikeActive;
         
-        pauseBtn.textContent = this.isPaused ? 'Resume' : 'Pause';
+        pauseBtn.textContent = this.isPaused ? 'Reprendre' : 'Pause';
     }
 }
 

@@ -16,25 +16,25 @@ class MultiEnvironmentCO2Simulator {
         // Define environments with their characteristics
         this.environments = {
             'classroom': {
-                name: 'Classroom',
+                name: 'Salle de Classe',
                 color: '#007bff',
                 baseline: 450,
                 patterns: this.getClassroomPattern()
             },
             'park': {
-                name: 'Park',
+                name: 'Parc',
                 color: '#28a745',
                 baseline: 380,
                 patterns: this.getParkPattern()
             },
             'road': {
-                name: 'Road',
+                name: 'Route',
                 color: '#dc3545',
                 baseline: 420,
                 patterns: this.getRoadPattern()
             },
             'corridor': {
-                name: 'School Corridor',
+                name: 'Couloir d\'École',
                 color: '#ffc107',
                 baseline: 480,
                 patterns: this.getCorridorPattern()
@@ -309,7 +309,7 @@ class MultiEnvironmentCO2Simulator {
         
         // Axis titles
         ctx.textAlign = 'center';
-        ctx.fillText('Time (Hours)', margin + width / 2, canvas.height - 5);
+        ctx.fillText('Temps (Heures)', margin + width / 2, canvas.height - 5);
         
         ctx.save();
         ctx.translate(15, margin + height / 2);
@@ -368,14 +368,14 @@ class MultiEnvironmentCO2Simulator {
         if (startBtn) {
             startBtn.disabled = this.isRunning && !this.isPaused;
             startBtn.innerHTML = this.isRunning ? 
-                '<i class="fas fa-play me-1"></i>Resume' : 
-                '<i class="fas fa-play me-1"></i>Start Monitoring';
+                '<i class="fas fa-play me-1"></i>Reprendre' : 
+                '<i class="fas fa-play me-1"></i>Démarrer la Surveillance';
         }
         
         if (pauseBtn) {
             pauseBtn.disabled = !this.isRunning;
             pauseBtn.innerHTML = this.isPaused ? 
-                '<i class="fas fa-play me-1"></i>Resume' : 
+                '<i class="fas fa-play me-1"></i>Reprendre' : 
                 '<i class="fas fa-pause me-1"></i>Pause';
         }
         

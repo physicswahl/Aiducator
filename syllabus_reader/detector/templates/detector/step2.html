@@ -99,8 +99,8 @@
     <!-- Step 2 Specific Content -->
     <div class="detector-form-section">
         <div class="mb-4 text-center">
-            <h5><i class="fas fa-chart-line me-2"></i>Daily CO₂ Monitoring - Multiple Environments</h5>
-            <p>Compare CO₂ levels across four different environments over a 24-hour period (accelerated simulation)</p>
+            <h5><i class="fas fa-chart-line me-2"></i>Surveillance Quotidienne du CO₂ - Environnements Multiples</h5>
+            <p>Comparez les niveaux de CO₂ dans quatre environnements différents sur une période de 24 heures (simulation accélérée)</p>
         </div>
 
         <!-- Four Environment Grid using Bootstrap -->
@@ -110,8 +110,8 @@
                 <div class="col-md-6 mb-3">
                     <div class="environment-panel park">
                         <div class="environment-header">
-                            <h6><i class="fas fa-tree me-2"></i>City Park</h6>
-                            <div class="subtitle">Open outdoor space with vegetation</div>
+                            <h6><i class="fas fa-tree me-2"></i>Parc de la Ville</h6>
+                            <div class="subtitle">Espace extérieur ouvert avec végétation</div>
                         </div>
                         <div class="canvas-container">
                             <canvas id="parkCanvas" class="environment-canvas"></canvas>
@@ -123,8 +123,8 @@
                 <div class="col-md-6 mb-3">
                     <div class="environment-panel classroom">
                         <div class="environment-header">
-                            <h6><i class="fas fa-chalkboard-teacher me-2"></i>Classroom</h6>
-                            <div class="subtitle">Indoor learning environment</div>
+                            <h6><i class="fas fa-chalkboard-teacher me-2"></i>Salle de Classe</h6>
+                            <div class="subtitle">Environnement d'apprentissage intérieur</div>
                         </div>
                         <div class="canvas-container">
                             <canvas id="classroomCanvas" class="environment-canvas"></canvas>
@@ -138,8 +138,8 @@
                 <div class="col-md-6 mb-3">
                     <div class="environment-panel road">
                         <div class="environment-header">
-                            <h6><i class="fas fa-road me-2"></i>Busy Road</h6>
-                            <div class="subtitle">High traffic urban street</div>
+                            <h6><i class="fas fa-road me-2"></i>Route Fréquentée</h6>
+                            <div class="subtitle">Rue urbaine à fort trafic</div>
                         </div>
                         <div class="canvas-container">
                             <canvas id="roadCanvas" class="environment-canvas"></canvas>
@@ -151,8 +151,8 @@
                 <div class="col-md-6 mb-3">
                     <div class="environment-panel corridor">
                         <div class="environment-header">
-                            <h6><i class="fas fa-school me-2"></i>School Corridor</h6>
-                            <div class="subtitle">Indoor hallway with foot traffic</div>
+                            <h6><i class="fas fa-school me-2"></i>Couloir d'École</h6>
+                            <div class="subtitle">Couloir intérieur avec circulation piétonnière</div>
                         </div>
                         <div class="canvas-container">
                             <canvas id="corridorCanvas" class="environment-canvas"></canvas>
@@ -166,22 +166,22 @@
         <div class="simulation-controls">
             <div class="btn-group" role="group">
                 <button type="button" class="btn btn-success" id="startAllBtn">
-                    <i class="fas fa-play me-1"></i>Start All Monitors
+                    <i class="fas fa-play me-1"></i>Démarrer Tous les Moniteurs
                 </button>
                 <button type="button" class="btn btn-warning" id="pauseAllBtn" disabled>
                     <i class="fas fa-pause me-1"></i>Pause
                 </button>
                 <button type="button" class="btn btn-danger" id="stopAllBtn" disabled>
-                    <i class="fas fa-stop me-1"></i>Stop
+                    <i class="fas fa-stop me-1"></i>Arrêter
                 </button>
                 <button type="button" class="btn btn-secondary" id="resetAllBtn">
-                    <i class="fas fa-undo me-1"></i>Reset All
+                    <i class="fas fa-undo me-1"></i>Tout Réinitialiser
                 </button>
             </div>
             
             <div class="mt-3">
                 <small class="text-muted">
-                    Simulation Speed: 1 second = 1 hour of real time
+                    Vitesse de simulation : 1 seconde = 1 heure de temps réel
                 </small>
             </div>
         </div>
@@ -422,7 +422,7 @@ class EnvironmentSimulator {
         // X-axis label
         ctx.textAlign = 'center';
         ctx.font = '12px Arial';
-        ctx.fillText('Time (24-hour)', width / 2, height - 5);
+        ctx.fillText('Temps (24 heures)', width / 2, height - 5);
     }
     
     getEnvironmentColor() {
@@ -444,10 +444,10 @@ class EnvironmentSimulator {
     }
     
     getTimeLabel(hour) {
-        if (hour === 0) return '(Midnight)';
-        if (hour === 6) return '(Dawn)';
-        if (hour === 12) return '(Noon)';
-        if (hour === 18) return '(Evening)';
+        if (hour === 0) return '(Minuit)';
+        if (hour === 6) return '(Aube)';
+        if (hour === 12) return '(Midi)';
+        if (hour === 18) return '(Soir)';
         if (hour < 12) return '(Morning)';
         if (hour < 18) return '(Afternoon)';
         return '(Night)';

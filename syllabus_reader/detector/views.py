@@ -49,7 +49,7 @@ def step1(request, matchup_id):
         team_data.setup_data = setup_data
         team_data.save()
         
-        messages.success(request, "Step 1 configuration saved successfully!")
+        messages.success(request, "Configuration de l'étape 1 sauvegardée avec succès !")
         return redirect('detector:step1', matchup_id=matchup.id)
     
     # Get instructions for step 1 - filter by user role
@@ -109,7 +109,7 @@ def step2(request, matchup_id):
         team_data.collection_data = collection_data
         team_data.save()
         
-        messages.success(request, "Step 2 data collection saved successfully!")
+        messages.success(request, "Collecte de données de l'étape 2 sauvegardée avec succès !")
         return redirect('detector:step2', matchup_id=matchup.id)
     
     # Get instructions for step 2 - filter by user role
@@ -176,7 +176,7 @@ def step3(request, matchup_id):
         team_data.analysis_data.update(analysis_data)
         team_data.save()
         
-        messages.success(request, "Step 3 analysis saved successfully!")
+        messages.success(request, "Analyse de l'étape 3 sauvegardée avec succès !")
         return redirect('detector:step3', matchup_id=matchup.id)
     
     # Get instructions for step 3 - filter by user role
@@ -247,7 +247,7 @@ def step4(request, matchup_id):
         team_data.results_data = results_data
         team_data.save()
         
-        messages.success(request, "Step 4 results saved successfully!")
+        messages.success(request, "Résultats de l'étape 4 sauvegardés avec succès !")
         return redirect('detector:step4', matchup_id=matchup.id)
     
     # Get instructions for step 4 - filter by user role
@@ -291,7 +291,7 @@ def complete_step(request, matchup_id, step_number):
         user_team = matchup.team2
     
     if not user_team:
-        messages.error(request, "You are not part of this game.")
+        messages.error(request, "Vous ne faites pas partie de ce jeu.")
         return redirect('aigames:student_dashboard')
     
     # Get team data
@@ -300,7 +300,7 @@ def complete_step(request, matchup_id, step_number):
     # Complete the step
     team_data.complete_step(step_number)
     
-    messages.success(request, f"Step {step_number} completed successfully!")
+    messages.success(request, f"Étape {step_number} terminée avec succès !")
     
     # Redirect to next step or current step
     if step_number < TOTAL_STEPS:
@@ -386,7 +386,7 @@ def reset_game(request, matchup_id):
         user_team = matchup.team2
     
     if not user_team:
-        messages.error(request, "You are not part of this game.")
+        messages.error(request, "Vous ne faites pas partie de ce jeu.")
         return redirect('aigames:student_dashboard')
     
     # Reset team data
@@ -406,9 +406,9 @@ def reset_game(request, matchup_id):
         # Delete any submissions
         DetectorSubmission.objects.filter(team_data=team_data).delete()
         
-        messages.success(request, "Game progress has been reset successfully!")
+        messages.success(request, "Le progrès du jeu a été réinitialisé avec succès !")
         
     except TeamDetectorData.DoesNotExist:
-        messages.info(request, "No game data to reset.")
+        messages.info(request, "Aucune donnée de jeu à réinitialiser.")
     
     return redirect('detector:step1', matchup_id=matchup.id)

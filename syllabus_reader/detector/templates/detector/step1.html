@@ -16,8 +16,8 @@
                         <!-- CO2 Simulation Container -->
                         <div class="co2-simulation-container">
                             <div class="co2-simulation-header">
-                                <h5><i class="fas fa-chart-line me-2"></i>Classroom CO₂ Monitor Simulation</h5>
-                                <p>Experience how CO₂ levels change in a classroom environment over 30 minutes (accelerated simulation)</p>
+                                <h5><i class="fas fa-chart-line me-2"></i>Simulation du Moniteur CO₂ de Classe</h5>
+                                <p>Découvrez comment les niveaux de CO₂ changent dans un environnement de classe sur 30 minutes (simulation accélérée)</p>
                             </div>
                             
                             <div class="co2-chart-container">
@@ -28,19 +28,19 @@
  
                                     <div class="co2-controls">
                                         <button type="button" class="btn btn-success" id="startBtn">
-                                            <i class="fas fa-play me-1"></i>Start Monitoring
+                                            <i class="fas fa-play me-1"></i>Démarrer la Surveillance
                                         </button>
                                         <button type="button" class="btn btn-warning" id="pauseBtn" onclick="co2Simulator.pause()" disabled>
                                             <i class="fas fa-pause me-1"></i>Pause
                                         </button>
                                         <button type="button" class="btn btn-danger" id="stopBtn" onclick="co2Simulator.stop()" disabled>
-                                            <i class="fas fa-stop me-1"></i>Stop
+                                            <i class="fas fa-stop me-1"></i>Arrêter
                                         </button>
                                         <button type="button" class="btn btn-secondary" id="resetBtn" onclick="co2Simulator.reset()">
-                                            <i class="fas fa-undo me-1"></i>Reset
+                                            <i class="fas fa-undo me-1"></i>Réinitialiser
                                         </button>
                                         <button type="button" class="btn btn-info" id="spikeBtn" onclick="co2Simulator.triggerSpike()" disabled>
-                                            <i class="fas fa-exclamation-triangle me-1"></i>Trigger Spike
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Déclencher un Pic
                                         </button>
                                     </div>
 
@@ -51,7 +51,7 @@
 {% endblock %}
 
 {% block step_scripts %}
-<script src="{% static 'detector/js/co2_simulation.js' %}?v=13"></script>
+<script src="{% static 'detector/js/co2_simulation.js' %}?v=14"></script>
 <script>
 function updateSensitivityValue(value) {
     document.getElementById('sensitivityValue').textContent = value;
@@ -76,17 +76,17 @@ function checkFormCompletion() {
     
     if (mode && parameters.trim() && simulationRun) {
         completeBtn.disabled = false;
-        completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Step 1';
+        completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Terminer l\'Étape 1';
         completeBtn.classList.remove('btn-secondary');
         completeBtn.classList.add('btn-success');
     } else {
         completeBtn.disabled = true;
         if (!simulationRun && mode && parameters.trim()) {
-            completeBtn.innerHTML = '<i class="fas fa-play me-1"></i>Run simulation to continue';
+            completeBtn.innerHTML = '<i class="fas fa-play me-1"></i>Exécuter la simulation pour continuer';
             completeBtn.classList.remove('btn-success');
             completeBtn.classList.add('btn-secondary');
         } else {
-            completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Complete Step 1';
+            completeBtn.innerHTML = '<i class="fas fa-check me-1"></i>Terminer l\'Étape 1';
             completeBtn.classList.remove('btn-success');
             completeBtn.classList.add('btn-secondary');
         }
@@ -94,7 +94,7 @@ function checkFormCompletion() {
 }
 
 function completeStep(stepNumber) {
-    if (confirm('Are you sure you want to complete this step?')) {
+    if (confirm('Êtes-vous sûr de vouloir terminer cette étape ?')) {
         fetch(`{% url 'detector:complete_step' matchup.id 0 %}`.replace('0', stepNumber), {
             method: 'POST',
             headers: {
