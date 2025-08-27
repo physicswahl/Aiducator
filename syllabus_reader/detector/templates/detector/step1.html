@@ -51,7 +51,7 @@
 {% endblock %}
 
 {% block step_scripts %}
-<script src="{% static 'detector/js/co2_simulation.js' %}?v=11"></script>
+<script src="{% static 'detector/js/co2_simulation.js' %}?v=13"></script>
 <script>
 function updateSensitivityValue(value) {
     document.getElementById('sensitivityValue').textContent = value;
@@ -119,10 +119,8 @@ if (typeof CO2Simulator !== 'undefined') {
                 console.log('Initializing with baselinePPM:', co2Simulator.baselinePPM);
                 // Add initial baseline data point so chart is visible from start
                 co2Simulator.data = [{ time: 0, ppm: co2Simulator.baselinePPM }];
-                co2Simulator.parkData = [{ time: 0, ppm: co2Simulator.baselinePPM }];
                 co2Simulator.currentPPM = co2Simulator.baselinePPM;
-                co2Simulator.currentParkPPM = co2Simulator.baselinePPM;
-                console.log('Initial data:', co2Simulator.data, 'Park data:', co2Simulator.parkData);
+                console.log('Initial data:', co2Simulator.data);
                 co2Simulator.drawGraph();
                 
                 const originalUpdateButtonStates = co2Simulator.updateButtonStates;
