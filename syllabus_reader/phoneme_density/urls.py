@@ -24,4 +24,5 @@ urlpatterns = [
     # Text analysis
     path('matchup/<int:matchup_id>/text/<int:text_number>/analysis/', views.text_analysis, name='text_analysis'),
     path('matchup/<int:matchup_id>/analyze-combined/', views.analyze_combined_text, name='analyze_combined_text'),
+    path('matchup/<int:matchup_id>/phoneme-scatter-plot/', views.phoneme_scatter_plot, name='phoneme_scatter_plot'),
 ]

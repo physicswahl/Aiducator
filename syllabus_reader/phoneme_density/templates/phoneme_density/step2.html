@@ -1,72 +1,148 @@
 {% extends 'aigames/gamepage.html' %}
 {% load static %}
 
-{% block title %}Step 2: Text Comparison - {{ matchup.ai_game.title }}{% endblock %}
+{% block title %}Step 2: Rule Application - {{ matchup.ai_game.title }}{% endblock %}
 
 {% block extra_step_css %}
 <link rel="stylesheet" href="{% static 'phoneme_density/css/steps.css' %}">
+<style>
+    .text-analysis-panel {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+    }
+    
+    .provider-text {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        resize: none;
+        width: 100%;
+        min-height: 120px;
+    }
+    
+    .text-counter {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+    
+    .instruction-content {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* Bold formatting for letter R - with high specificity */
+    .textarea-like .bold-r,
+    .bold-r {
+        font-weight: bold !important;
+    }
+    
+    /* Textarea-like styling for divs */
+    .textarea-like {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-image: none;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        resize: vertical;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .textarea-like:focus {
+        color: #212529;
+        background-color: #fff;
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .print-only {
+            display: block !important;
+        }
+        
+        .provider-text {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+        }
+        
+        .step-header {
+            break-inside: avoid;
+        }
+    }
+    
+    .print-only {
+        display: none;
+    }
+</style>
 {% endblock %}
 
 {% block step_content %}
                     <div class="row">
-                        <!-- Text Area 1 - HIGHLIGHTED -->
+                        <!-- Text Area 1 - HIGHLIGHTED WITH R BOLD -->
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-file-text me-2"></i>Text 1
                             </label>
-                            <textarea class="form-control" 
-                                      style="background-color: #d4edda; border: 2px solid #c3e6cb;" 
-                                      rows="8" placeholder="Enter or paste text for analysis...">Rosemary arranged a rare garden tour, where visitors could explore vibrant flowers growing near rivers and rustic terraces. The air carried crisp aromas of herbs, encouraging everyone to breathe deeply. Around every corner, intricate pathways curved gracefully, revealing serene retreats and orchard rows. Children were learning about rare birds residing in trees, while artists practiced drawing remarkable landscapes. As the sun lowered, curious guests enjoyed stories of local traditions and folklore. Rosemary's remarkable efforts created a treasured space for relaxation and discovery, cherished by all.</textarea>
+                            <div class="textarea-like" 
+                                 style="background-color: #d4edda; border: 2px solid #c3e6cb; height: 145px;"><span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">R</span>osema<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>y a<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span><span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>anged a <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>a<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>e ga<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>den tou<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>, whe<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>e visito<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s could explo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>e vib<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ant flowe<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s g<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>owing nea<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span> <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ive<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s and <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ustic te<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span><span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>aces. The ai<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span> ca<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span><span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ied c<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>isp a<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>omas of he<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>bs, encou<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>aging eve<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>yone to b<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eathe deeply. A<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ound eve<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>y co<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ne<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>, int<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>icate pathways cu<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ved g<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>acefully, <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>evealing se<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ene <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>et<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eats and o<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>cha<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>d <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ows.</div>
                         </div>
                         
-                        <!-- Text Area 2 - NORMAL -->
+                        <!-- Text Area 2 - NORMAL WITH R BOLD -->
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-chart-bar me-2"></i>Text 2
                             </label>
-                            <textarea class="form-control" rows="8" placeholder="Analysis results will appear here...">Cooking is a creative process that blends skill, practice, and patience. Chefs and home cooks alike experiment with flavors, textures, and techniques to craft delicious meals. Selecting fresh ingredients is essential for building taste, whether preparing a simple salad or a complex stew. As food simmers or bakes, aromas fill the kitchen, encouraging anticipation. Sharing dishes with friends or family brings people together and creates lasting memories. Over time, people develop favorite recipes and traditions, learning from each success and failure. Through cooking, generations pass on knowledge, nourishing both body and spirit with every meal.</textarea>
+                            <div class="textarea-like" style="height: 145px;">Cooking is a c<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eative p<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ocess that blends skill, p<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>actice, and patience. Chefs and home cooks alike expe<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>iment with flavo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s, textu<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>es, and techniques to c<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>aft delicious meals. Selecting f<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>esh ing<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>edients is essential fo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span> building taste, whethe<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span> p<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>epa<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ing a simple salad o<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span> a complex stew.</div>
                         </div>
                         
-                        <!-- Text Area 3 - NORMAL -->
+                        <!-- Text Area 3 - NORMAL WITH R BOLD -->
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-lightbulb me-2"></i>Text 3
                             </label>
-                            <textarea class="form-control" rows="9" placeholder="Record your insights and patterns discovered...">The landscape of Savoy, located in the Western Alps of France, is defined by its dramatic mountains, deep valleys, and picturesque lakes. Snow-capped peaks, such as those in the Savoy Alps and the Vanoise National Park, rise above green pastures and forests. Winding rivers, like the Isère and Arc, shape fertile valleys where villages and vineyards thrive. The region is dotted with charming towns, including Chambéry and Annecy, each surrounded by rolling hills or steep alpine slopes. Seasonal changes bring lush meadows in the summer and thick snow in winter, making Savoy a destination for hikers, skiers, and nature enthusiasts seeking unspoiled scenery</textarea>
+                            <div class="textarea-like" style="height: 155px;">The landscape of Savoy, located in the Weste<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>n Alps of F<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ance, is defined by its d<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>amatic mountains, deep valleys, and pictu<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>esque lakes. Snow-capped peaks, such as those in the Savoy Alps and the Vanoise National Pa<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>k, <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ise above g<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>een pastu<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>es and fo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ests. Winding <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ive<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s, like the Isè<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>e and A<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>c, shape fe<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>tile valleys whe<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>e villages and vineya<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ds th<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ive.</div>
                         </div>
                         
-                        <!-- Text Area 4 - HIGHLIGHTED -->
+                        <!-- Text Area 4 - HIGHLIGHTED WITH R BOLD -->
                         <div class="col-md-6 mb-4">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-notes-medical me-2"></i>Text 4
                             </label>
-                            <textarea class="form-control" 
-                                      style="background-color: #d4edda; border: 2px solid #c3e6cb;" 
-                                      rows="9" placeholder="Additional observations and notes...">Throughout recorded history, remarkable rulers and ordinary people alike have transformed our world. Researchers carefully explore archives, searching for rare records that reveal important truths. In various eras, revolutions reshaped borders and reorganized societies, inspiring reformers and critics. Cultural progress arose as artists created extraordinary works, while writers shared perspectives reflecting broader realities. Progress, however, rarely arrived without resistance or controversy—struggles, errors, and recurring hardships frequently occurred. History's enduring power remains in our pursuit to remember, interpret, and learn from, ensuring that reverence for the past endures as we create our own future.</textarea>
+                            <div class="textarea-like" 
+                                 style="background-color: #d4edda; border: 2px solid #c3e6cb; height: 155px;">Th<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>oughout <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eco<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ded histo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>y, <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ema<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>kable <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ule<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s and o<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>dina<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>y people alike have t<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ansfo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>med ou<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span> wo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ld. <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">R</span>esea<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>che<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s ca<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>efully explo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>e a<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>chives, sea<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ching fo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span> <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>a<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>e <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eco<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ds that <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eveal impo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>tant t<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>uths. In va<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ious e<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>as, <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>evolutions <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eshaped bo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>de<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s and <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>eo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ganized societies, inspi<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>ing <span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>efo<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>me<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>s and c<span class="bold-r" style="font-weight: 900; background-color: #1e7e34; color: white; padding: 1px 2px; border-radius: 2px;">r</span>itics.</div>
                         </div>
                     </div>
-                    
-
 {% endblock %}
 
 {% block step_scripts %}
 <script>
-// Keyboard shortcut for instructions (Alt+I)
-document.addEventListener('keydown', function(e) {
-    if (e.altKey && e.key === 'i') {
-        e.preventDefault();
-        // Toggle Bootstrap offcanvas
-        const offcanvasElement = document.getElementById('instructionsOffcanvas');
-        const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
-        offcanvas.toggle();
-    }
-});
-
 // Enhanced print functionality
 function printPage() {
     // Set print-friendly title
     const originalTitle = document.title;
-    document.title = 'Step2_TextComparison_{{ ai_game.title|escapejs }}_Matchup{{ matchup.id }}';
+    document.title = 'Step3_RuleApplication_{{ matchup.ai_game.title|escapejs }}_Matchup{{ matchup.id }}';
     
     // Trigger print dialog
     window.print();

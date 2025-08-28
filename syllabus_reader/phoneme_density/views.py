@@ -999,3 +999,41 @@ def analyze_combined_text(request, matchup_id):
     }
     
     return render(request, 'phoneme_density/text_analysis.html', context)
+
+
+@require_POST
+def phoneme_scatter_plot(request, matchup_id):
+    """Create scatter plot of /f/ and /l/ phoneme percentages"""
+    matchup = get_object_or_404(GameMatchup, id=matchup_id)
+    
+    # Get scatter plot data from form
+    scatter_data_json = request.POST.get('scatter_data', '[]')
+    
+    try:
+        scatter_data = json.loads(scatter_data_json)
+    except json.JSONDecodeError:
+        messages.error(request, "Invalid scatter plot data.")
+        return redirect('phoneme_density:step4', matchup_id=matchup_id)
+    
+    if not scatter_data:
+        messages.error(request, "No scatter plot data found.")
+        return redirect('phoneme_density:step4', matchup_id=matchup_id)
+    
+    # Get the user's team
+    user_team = None
+    if request.user in matchup.team1.members.all():
+        user_team = matchup.team1
+    elif request.user in matchup.team2.members.all():
+        user_team = matchup.team2
+    else:
+        # Teachers can view any team's data
+        user_team = matchup.team1  # Default for teachers
+    
+    context = {
+        'matchup': matchup,
+        'team': user_team,
+        'scatter_data': scatter_data,
+        'scatter_data_json': json.dumps(scatter_data),
+    }
+    
+    return render(request, 'phoneme_density/phoneme_scatter_plot.html', context)

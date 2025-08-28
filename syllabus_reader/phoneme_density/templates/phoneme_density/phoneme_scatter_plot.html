@@ -1,0 +1,240 @@
+{% extends 'syllabus/base.html' %}
+
+{% block title %}Phoneme Scatter Plot - /f/ vs /l/{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-scatter"></i>
+                        Phoneme Scatter Plot - /f/ vs /l/ Percentages
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- Scatter Plot -->
+                            <div class="chart-container" style="position: relative; height: 500px;">
+                                <canvas id="phonemeScatterChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Data Table and Legend -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-table"></i> Text Data</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Text #</th>
+                                                    <th>/f/ %</th>
+                                                    <th>/l/ %</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in scatter_data %}
+                                                <tr>
+                                                    <td>{{ item.textNumber }}</td>
+                                                    <td>{{ item.fPercentage }}%</td>
+                                                    <td>{{ item.lPercentage }}%</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-info-circle"></i> Legend</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="legend-item mb-2">
+                                        <span class="legend-color" style="background-color: #007bff; width: 15px; height: 15px; display: inline-block; margin-right: 8px; border-radius: 50%;"></span>
+                                        <strong>Your Texts</strong> - Each point represents one text
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <a href="{% url 'phoneme_density:step4' matchup.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Step 4
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get data from Django context
+    const scatterData = {{ scatter_data_json|safe }};
+    
+    // Prepare data for Chart.js
+    const chartData = scatterData.map(item => ({
+        x: parseFloat(item.fPercentage),
+        y: parseFloat(item.lPercentage),
+        label: `Text ${item.textNumber}`
+    }));
+    
+    // Calculate statistics
+    const fValues = chartData.map(item => item.x);
+    const lValues = chartData.map(item => item.y);
+    
+    const fMean = fValues.reduce((a, b) => a + b, 0) / fValues.length;
+    const lMean = lValues.reduce((a, b) => a + b, 0) / lValues.length;
+    
+    const fMin = Math.min(...fValues);
+    const fMax = Math.max(...fValues);
+    const lMin = Math.min(...lValues);
+    const lMax = Math.max(...lValues);
+    
+    // Calculate correlation coefficient
+    const n = chartData.length;
+    const sumXY = chartData.reduce((sum, item) => sum + item.x * item.y, 0);
+    const sumX = fValues.reduce((a, b) => a + b, 0);
+    const sumY = lValues.reduce((a, b) => a + b, 0);
+    const sumX2 = fValues.reduce((sum, x) => sum + x * x, 0);
+    const sumY2 = lValues.reduce((sum, y) => sum + y * y, 0);
+    
+    const correlation = (n * sumXY - sumX * sumY) / 
+                       Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+    
+    // Create scatter plot
+    const ctx = document.getElementById('phonemeScatterChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Text Phoneme Percentages',
+                data: chartData,
+                backgroundColor: '#007bff',
+                borderColor: '#007bff',
+                borderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '/f/ Phoneme % vs /l/ Phoneme % by Text',
+                    font: {
+                        size: 16
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.raw.label}: /f/=${context.raw.x.toFixed(1)}%, /l/=${context.raw.y.toFixed(1)}%`;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        line1: {
+                            type: 'line',
+                            xMin: 2.5,
+                            xMax: 2.5,
+                            borderColor: 'red',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            label: {
+                                enabled: true,
+                                content: '2.5% /f/ threshold',
+                                position: 'top'
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: '/f/ Phoneme Percentage',
+                        font: {
+                            size: 14
+                        }
+                    },
+                    beginAtZero: true
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: '/l/ Phoneme Percentage',
+                        font: {
+                            size: 14
+                        }
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Display statistics
+    const statsContainer = document.getElementById('statsContainer');
+    statsContainer.innerHTML = `
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-title">/f/ Phoneme</h6>
+                    <p class="mb-1"><strong>Mean:</strong> ${fMean.toFixed(2)}%</p>
+                    <p class="mb-1"><strong>Range:</strong> ${fMin.toFixed(1)}% - ${fMax.toFixed(1)}%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-title">/l/ Phoneme</h6>
+                    <p class="mb-1"><strong>Mean:</strong> ${lMean.toFixed(2)}%</p>
+                    <p class="mb-1"><strong>Range:</strong> ${lMin.toFixed(1)}% - ${lMax.toFixed(1)}%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-title">Correlation</h6>
+                    <p class="mb-1"><strong>r =</strong> ${correlation.toFixed(3)}</p>
+                    <p class="mb-1"><small class="text-muted">${Math.abs(correlation) > 0.5 ? (correlation > 0 ? 'Strong positive' : 'Strong negative') : 'Weak'} relationship</small></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-title">Data Points</h6>
+                    <p class="mb-1"><strong>Texts:</strong> ${n}</p>
+                    <p class="mb-1"><small class="text-muted">Total analyzed</small></p>
+                </div>
+            </div>
+        </div>
+    `;
+});
+</script>
+{% endblock %}
