@@ -48,15 +48,22 @@
     <div class="overlap-form-section">
         <!-- Interactive Overlap Visualization -->
         <div class="config-section">
-            <div class="overlap-canvas-container">
-                <canvas id="overlapCanvas" width="600" height="400"></canvas>
-                <div class="overlap-info mt-3">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="overlap-display">
-                                <span class="overlap-value" id="overlapPercentage">0%</span>
-                                <div class="overlap-label">Overlap Coverage</div>
-                            </div>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="overlap-canvas-container">
+                        <canvas id="overlapCanvas" width="600" height="400"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex flex-column align-items-center justify-content-center h-100">
+                        <div class="overlap-display mb-4">
+                            <span class="overlap-value" id="overlapPercentage">0%</span>
+                            <div class="overlap-label">Overlap Coverage</div>
+                        </div>
+                        <div class="text-center">
+                            <button id="matchPatternBtn" class="btn btn-primary btn-lg">
+                                <i class="fas fa-eye me-2"></i>Match Pattern
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -79,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
+    let showBlueCircle = false; // Flag to control blue circle visibility
     
     function drawCircles() {
         // Clear canvas
@@ -93,46 +101,51 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineWidth = 2;
         ctx.stroke();
         
-        // Draw movable circle (blue with transparency)
-        ctx.beginPath();
-        ctx.arc(movableCircle.x, movableCircle.y, movableCircle.radius, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(33, 150, 243, 0.7)';
-        ctx.fill();
-        ctx.strokeStyle = '#1976d2';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        // Draw movable circle (blue with transparency) - only if showBlueCircle is true
+        if (showBlueCircle) {
+            ctx.beginPath();
+            ctx.arc(movableCircle.x, movableCircle.y, movableCircle.radius, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(33, 150, 243, 0.7)';
+            ctx.fill();
+            ctx.strokeStyle = '#1976d2';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
         
         // Calculate and display overlap
         calculateOverlap();
     }
     
     function calculateOverlap() {
-        const dx = movableCircle.x - fixedCircle.x;
-        const dy = movableCircle.y - fixedCircle.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
         let overlapPercentage = 0;
         
-        if (distance < fixedCircle.radius + movableCircle.radius) {
-            // Circles are overlapping
-            if (distance <= Math.abs(fixedCircle.radius - movableCircle.radius)) {
-                // One circle is completely inside the other
-                overlapPercentage = 100;
-            } else {
-                // Partial overlap - calculate intersection area
-                const r1 = fixedCircle.radius;
-                const r2 = movableCircle.radius;
-                const d = distance;
-                
-                // Calculate intersection area using the lens formula
-                const part1 = r1 * r1 * Math.acos((d * d + r1 * r1 - r2 * r2) / (2 * d * r1));
-                const part2 = r2 * r2 * Math.acos((d * d + r2 * r2 - r1 * r1) / (2 * d * r2));
-                const part3 = 0.5 * Math.sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2));
-                
-                const intersectionArea = part1 + part2 - part3;
-                const fixedCircleArea = Math.PI * r1 * r1;
-                
-                overlapPercentage = (intersectionArea / fixedCircleArea) * 100;
+        // Only calculate overlap if blue circle is visible
+        if (showBlueCircle) {
+            const dx = movableCircle.x - fixedCircle.x;
+            const dy = movableCircle.y - fixedCircle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < fixedCircle.radius + movableCircle.radius) {
+                // Circles are overlapping
+                if (distance <= Math.abs(fixedCircle.radius - movableCircle.radius)) {
+                    // One circle is completely inside the other
+                    overlapPercentage = 100;
+                } else {
+                    // Partial overlap - calculate intersection area
+                    const r1 = fixedCircle.radius;
+                    const r2 = movableCircle.radius;
+                    const d = distance;
+                    
+                    // Calculate intersection area using the lens formula
+                    const part1 = r1 * r1 * Math.acos((d * d + r1 * r1 - r2 * r2) / (2 * d * r1));
+                    const part2 = r2 * r2 * Math.acos((d * d + r2 * r2 - r1 * r1) / (2 * d * r2));
+                    const part3 = 0.5 * Math.sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2));
+                    
+                    const intersectionArea = part1 + part2 - part3;
+                    const fixedCircleArea = Math.PI * r1 * r1;
+                    
+                    overlapPercentage = (intersectionArea / fixedCircleArea) * 100;
+                }
             }
         }
         
@@ -156,6 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mouse event handlers
     canvas.addEventListener('mousedown', function(e) {
+        if (!showBlueCircle) return; // Don't allow interaction if blue circle is hidden
+        
         const mousePos = getMousePos(e);
         
         if (isPointInCircle(mousePos, movableCircle)) {
@@ -167,6 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     canvas.addEventListener('mousemove', function(e) {
+        if (!showBlueCircle) return; // Don't allow interaction if blue circle is hidden
+        
         const mousePos = getMousePos(e);
         
         if (isDragging) {
@@ -196,6 +213,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Touch events for mobile support
     canvas.addEventListener('touchstart', function(e) {
+        if (!showBlueCircle) return; // Don't allow interaction if blue circle is hidden
+        
         e.preventDefault();
         const touch = e.touches[0];
         const mouseEvent = new MouseEvent('mousedown', {
@@ -206,6 +225,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     canvas.addEventListener('touchmove', function(e) {
+        if (!showBlueCircle) return; // Don't allow interaction if blue circle is hidden
+        
         e.preventDefault();
         const touch = e.touches[0];
         const mouseEvent = new MouseEvent('mousemove', {
@@ -216,9 +237,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     canvas.addEventListener('touchend', function(e) {
+        if (!showBlueCircle) return; // Don't allow interaction if blue circle is hidden
+        
         e.preventDefault();
         const mouseEvent = new MouseEvent('mouseup', {});
         canvas.dispatchEvent(mouseEvent);
+    });
+    
+    // Match Pattern button event handler
+    document.getElementById('matchPatternBtn').addEventListener('click', function() {
+        showBlueCircle = true;
+        drawCircles();
+        this.style.display = 'none'; // Hide the button after clicking
     });
     
     // Initial draw
