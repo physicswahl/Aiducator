@@ -295,15 +295,15 @@
                 <!-- Result Banner -->
                 {% if game_result == "victory" %}
                     <div class="result-banner victory-banner">
-                        <i class="fas fa-crown"></i> Congratulations! Your team won!
+                        <i class="fas fa-crown"></i> Congratulations! Your team achieved the highest best score!
                     </div>
                 {% elif game_result == "defeat" %}
                     <div class="result-banner defeat-banner">
-                        <i class="fas fa-handshake"></i> Good game! Better luck next time!
+                        <i class="fas fa-handshake"></i> Good game! Your opponent found a better optimal solution!
                     </div>
                 {% else %}
                     <div class="result-banner tie-banner">
-                        <i class="fas fa-balance-scale"></i> It's a tie! Both teams performed equally well!
+                        <i class="fas fa-balance-scale"></i> It's a tie! Both teams achieved the same best score!
                     </div>
                 {% endif %}
 
@@ -312,12 +312,12 @@
                     <div class="score-team your-team-score">
                         <div class="team-name">{{ team.name }}</div>
                         <div class="score-number">{{ team_score }}</div>
-                        <div>Final Score</div>
+                        <div>Best Score</div>
                     </div>
                     <div class="score-team opponent-team-score">
                         <div class="team-name">{{ opponent_team.name }}</div>
                         <div class="score-number">{{ opponent_score }}</div>
-                        <div>Final Score</div>
+                        <div>Best Score</div>
                     </div>
                 </div>
             </div>
@@ -335,6 +335,13 @@
                 <div class="mb-4">
                     <h6><i class="fas fa-lightbulb"></i> Key Lessons Learned</h6>
                     
+                    <div class="lesson-item">
+                        <div class="lesson-title">Best Score Measures Success</div>
+                        <div class="lesson-content">
+                            Your final score is based on your best single click, not the average of all clicks. This rewards finding the optimal solution rather than just being consistently okay.
+                        </div>
+                    </div>
+
                     <div class="lesson-item">
                         <div class="lesson-title">A Pattern Is Anything You Can Recognise</div>
                         <div class="lesson-content">

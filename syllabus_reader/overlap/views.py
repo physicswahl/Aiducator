@@ -472,7 +472,11 @@ def step5(request, matchup_id):
     
     # Calculate final scores based on step 4 evaluation performance
     def calculate_final_score(team_data, opponent_team_data):
-        """Calculate the final score based on step 4 evaluation performance"""
+        """Calculate the final score based on best click performance (best score approach)
+        
+        This method finds the single best click (highest overlap) rather than 
+        averaging all clicks, rewarding finding the optimal solution.
+        """
         if not team_data.evaluation_clicks or not opponent_team_data:
             return 0
         
@@ -484,8 +488,8 @@ def step5(request, matchup_id):
         opponent_y = opponent_team_data.circle_y
         circle_radius = 40  # Standard circle radius
         
-        # Calculate how many clicks hit the opponent's circle
-        hits = 0
+        # Calculate the best individual click score (highest overlap)
+        best_click_score = 0
         total_clicks = len(team_data.evaluation_clicks)
         
         for click in team_data.evaluation_clicks:
@@ -495,34 +499,36 @@ def step5(request, matchup_id):
             # Calculate distance from click to circle center
             distance = ((click_x - opponent_x)**2 + (click_y - opponent_y)**2)**0.5
             
+            # Calculate overlap score for this click (100 for perfect center, decreasing with distance)
             if distance <= circle_radius:
-                hits += 1
+                # Perfect score at center, decreasing linearly to edge of circle
+                click_score = max(0, 100 * (1 - distance / circle_radius))
+                best_click_score = max(best_click_score, click_score)
         
-        # Calculate score: (hits / total_clicks) * 100, with bonus for completing all clicks
+        # Base score from best click (70% of total)
         if total_clicks == 0:
             return 0
             
-        base_score = (hits / total_clicks) * 70  # 70% of score from accuracy
+        base_score = best_click_score * 0.70  # 70% of score from best click performance
         completion_bonus = 30 if total_clicks >= 12 else (total_clicks / 12) * 30  # 30% for completion
         
         return min(100, base_score + completion_bonus)
     
-    # Calculate final scores for both teams
+    # Calculate final scores for both teams using the new best score method
     team_final_score = calculate_final_score(team_data, opponent_team_data)
     opponent_final_score = calculate_final_score(opponent_team_data, team_data) if opponent_team_data else 0
     
-    # Store the final score if not already stored
-    if team_data.final_score is None:
-        team_data.final_score = team_final_score
-        team_data.save()
+    # Always update the stored scores to use the new calculation method
+    team_data.final_score = team_final_score
+    team_data.save()
     
-    if opponent_team_data and opponent_team_data.final_score is None:
+    if opponent_team_data:
         opponent_team_data.final_score = opponent_final_score
         opponent_team_data.save()
     
-    # Use stored scores if available, otherwise use calculated
-    team_score = team_data.final_score if team_data.final_score is not None else team_final_score
-    opponent_score = opponent_team_data.final_score if (opponent_team_data and opponent_team_data.final_score is not None) else opponent_final_score
+    # Use the newly calculated scores
+    team_score = team_final_score
+    opponent_score = opponent_final_score
     
     # Determine winner based on final scores
     if team_score > opponent_score:
@@ -533,8 +539,8 @@ def step5(request, matchup_id):
         game_result = "tie"
     
     # Calculate additional metrics for display
-    def get_hit_accuracy(team_data, opponent_team_data):
-        """Calculate hit accuracy percentage"""
+    def get_best_click_performance(team_data, opponent_team_data):
+        """Calculate best click performance percentage"""
         if not team_data.evaluation_clicks or not opponent_team_data:
             return 0
             
@@ -545,18 +551,21 @@ def step5(request, matchup_id):
         opponent_y = opponent_team_data.circle_y
         circle_radius = 40
         
-        hits = 0
+        best_click_score = 0
         for click in team_data.evaluation_clicks:
             click_x = click.get('x', 0)
             click_y = click.get('y', 0)
             distance = ((click_x - opponent_x)**2 + (click_y - opponent_y)**2)**0.5
+            
             if distance <= circle_radius:
-                hits += 1
+                # Calculate overlap score for this click (100 for perfect center, decreasing with distance)
+                click_score = max(0, 100 * (1 - distance / circle_radius))
+                best_click_score = max(best_click_score, click_score)
                 
-        return (hits / len(team_data.evaluation_clicks)) * 100 if team_data.evaluation_clicks else 0
-    
-    team_hit_accuracy = get_hit_accuracy(team_data, opponent_team_data)
-    opponent_hit_accuracy = get_hit_accuracy(opponent_team_data, team_data) if opponent_team_data else 0
+        return best_click_score
+
+    team_best_performance = get_best_click_performance(team_data, opponent_team_data)
+    opponent_best_performance = get_best_click_performance(opponent_team_data, team_data) if opponent_team_data else 0
     
     # Check if form submission should be allowed (not for teachers viewing)
     allow_form_submission = should_allow_form_submission(request)
@@ -604,8 +613,8 @@ def step5(request, matchup_id):
         'team_score': round(team_score, 1),
         'opponent_score': round(opponent_score, 1),
         'game_result': game_result,
-        'team_hit_accuracy': round(team_hit_accuracy, 1),
-        'opponent_hit_accuracy': round(opponent_hit_accuracy, 1),
+        'team_best_performance': round(team_best_performance, 1),
+        'opponent_best_performance': round(opponent_best_performance, 1),
         # Navigation context for final step
         'show_final_submit': not step5_submitted and allow_form_submission,
         'can_submit': allow_form_submission,  # Can submit if requirements are met
